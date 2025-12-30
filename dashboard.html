@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/landing" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/markets">Markets</a>
+        <a href="/settings">Settings</a>
+        <a href="/contact">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <a href="/dashboard" class="sidebar-link active">📊 Dashboard</a>
+      <a href="/markets" class="sidebar-link">📈 Markets</a>
+      <a href="/transactions" class="sidebar-link">💳 Transactions</a>
+      <a href="/settings" class="sidebar-link">⚙️ Settings</a>
+      <a href="/help" class="sidebar-link">❓ Help & Docs</a>
+    </aside>
+
+    <main class="main-content">
+      <h1>Dashboard</h1>
+
+      <!-- Portfolio Summary Cards -->
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-title">Total Portfolio Value</div>
+          <div class="card-value" id="total-value">$0.00</div>
+          <div class="card-change positive" id="portfolio-change">+$0.00 (+0%)</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">24h Change</div>
+          <div class="card-value" id="change-24h">+$0.00</div>
+          <div class="card-change positive" id="change-percent">+0%</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Available Balance</div>
+          <div class="card-value" id="available-balance">$5,000.00</div>
+          <div class="muted" style="margin-top:8px">Ready to invest</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Active Positions</div>
+          <div class="card-value" id="active-positions">0</div>
+          <div class="muted" style="margin-top:8px">Holdings</div>
+        </div>
+      </div>
+
+      <!-- Portfolio Holdings Table -->
+      <div class="table-wrapper">
+        <div class="table-header">
+          <h3>Your Holdings</h3>
+        </div>
+        <table id="holdings-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Amount</th>
+              <th>Value</th>
+              <th>% of Portfolio</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="holdings-body">
+            <tr>
+              <td colspan="5" style="text-align:center;color:var(--muted)">No holdings yet. Start trading!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Tabs for Trading & Market Data -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'recent-trades')">Recent Trades</button>
+        <button class="tab-btn" onclick="switchTab(event, 'market-overview')">Market Overview</button>
+      </div>
+
+      <div id="recent-trades" class="tab-content active">
+        <div class="table-wrapper">
+          <div class="table-header">
+            <h3>Recent Trades</h3>
+          </div>
+          <table id="trades-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="trades-body">
+              <tr>
+                <td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="market-overview" class="tab-content">
+        <div class="table-wrapper">
+          <div class="table-header">
+            <h3>Market Overview</h3>
+          </div>
+          <table id="market-table">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Price</th>
+                <th>24h Change</th>
+                <th>Volume</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="market-body">
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--muted)">Loading market data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Trade Panel -->
+      <div style="margin-top:48px">
+        <h2>Quick Trade</h2>
+        <form class="form" id="quick-trade-form" onsubmit="handleQuickTrade(event)">
+          <label>
+            <span>Asset</span>
+            <select name="asset" required>
+              <option value="">Select an asset...</option>
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="ADA">Cardano (ADA)</option>
+              <option value="SOL">Solana (SOL)</option>
+            </select>
+          </label>
+          <label>
+            <span>Amount (USD)</span>
+            <input type="number" name="amount" placeholder="1000.00" required>
+          </label>
+          <label>
+            <span>Order Type</span>
+            <select name="order-type" required>
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+            </select>
+          </label>
+          <div class="btn-group">
+            <button type="submit" class="btn btn-success">Execute Trade</button>
+            <button type="reset" class="btn btn-secondary">Clear</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script src="js/portfolio.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Transactions — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="markets.html">Markets</a>
+        <a href="settings.html">Settings</a>
+        <a href="contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+      <a href="markets.html" class="sidebar-link">📈 Markets</a>
+      <a href="transactions.html" class="sidebar-link active">💳 Transactions</a>
+      <a href="settings.html" class="sidebar-link">⚙️ Settings</a>
+      <a href="help.html" class="sidebar-link">❓ Help & Docs</a>
+    </aside>
+
+    <main class="main-content">
+      <h1>Transactions</h1>
+      <p class="muted">Deposit, withdrawal, and trade history</p>
+
+      <div class="tabs" style="margin:24px 0">
+        <button class="tab-btn active" onclick="switchTab(event, 'deposits')">Deposits</button>
+        <button class="tab-btn" onclick="switchTab(event, 'withdrawals')">Withdrawals</button>
+        <button class="tab-btn" onclick="switchTab(event, 'trades')">Trades</button>
+      </div>
+
+      <div id="deposits" class="tab-content active">
+        <h2>Deposit History</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>TxID</th>
+              </tr>
+            </thead>
+            <tbody id="deposits-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <button class="btn mt-6" onclick="alert('Deposit form coming soon')">Add Funds</button>
+      </div>
+
+      <div id="withdrawals" class="tab-content">
+        <h2>Withdrawal History</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>TxID</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawals-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <button class="btn mt-6" onclick="alert('Withdrawal form coming soon')">Withdraw Funds</button>
+      </div>
+
+      <div id="trades" class="tab-content">
+        <h2>Trade History</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="trades-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script src="js/transactions.js"></script>
+  <script>
+    function switchTab(e, tabId){
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      e.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+    function logout(){
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+</html>
