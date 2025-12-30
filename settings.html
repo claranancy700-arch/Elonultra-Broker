@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Settings — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="markets.html">Markets</a>
+        <a href="settings.html">Settings</a>
+        <a href="contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+      <a href="markets.html" class="sidebar-link">📈 Markets</a>
+      <a href="transactions.html" class="sidebar-link">💳 Transactions</a>
+      <a href="settings.html" class="sidebar-link active">⚙️ Settings</a>
+      <a href="help.html" class="sidebar-link">❓ Help & Docs</a>
+    </aside>
+
+    <main class="main-content">
+      <h1>Account Settings</h1>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:24px">
+        <div>
+          <h2>Profile</h2>
+          <form class="form" id="profile-form">
+            <label><span>Full Name</span><input type="text" value="John Doe"></label>
+            <label><span>Email</span><input type="email" value="john@example.com"></label>
+            <label><span>Phone</span><input type="tel" value="+1 234 567 8900"></label>
+            <button type="submit" class="btn">Save Profile</button>
+          </form>
+        </div>
+
+        <div>
+          <h2>Security</h2>
+          <form class="form" id="security-form">
+            <label><span>Current Password</span><input type="password" placeholder="•••••••"></label>
+            <label><span>New Password</span><input type="password" placeholder="•••••••"></label>
+            <label><span>Confirm Password</span><input type="password" placeholder="•••••••"></label>
+            <button type="submit" class="btn">Update Password</button>
+          </form>
+        </div>
+      </div>
+
+      <h2 style="margin-top:48px">API Keys</h2>
+      <p class="muted">Use these keys to access the API programmatically</p>
+      <div class="table-wrapper">
+        <div class="table-header">
+          <h3>Your API Keys</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Created</th>
+              <th>Last Used</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>sk_live_4e...8f</code></td>
+              <td>2025-01-15</td>
+              <td>2025-01-27</td>
+              <td><button class="btn btn-danger" style="font-size:12px">Revoke</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn mt-6" onclick="alert('API key generation coming soon')">Generate New Key</button>
+
+      <h2 style="margin-top:48px">Preferences</h2>
+      <form class="form" id="preferences-form">
+        <label style="flex-direction:row;align-items:center;gap:12px">
+          <input type="checkbox" checked> Email notifications for trades
+        </label>
+        <label style="flex-direction:row;align-items:center;gap:12px">
+          <input type="checkbox"> Price alerts above 5% change
+        </label>
+        <label style="flex-direction:row;align-items:center;gap:12px">
+          <input type="checkbox" checked> Two-factor authentication
+        </label>
+        <button type="submit" class="btn">Save Preferences</button>
+      </form>
+
+      <h2 style="margin-top:48px;color:var(--danger)">Danger Zone</h2>
+      <button class="btn btn-danger" onclick="if(confirm('Delete account? This cannot be undone.')) alert('Account deletion pending...')">Delete Account</button>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script>
+    function logout(){
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/login.html';
+    }
+    document.getElementById('profile-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Profile updated!');
+    });
+    document.getElementById('security-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Password updated!');
+    });
+    document.getElementById('preferences-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Preferences saved!');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ELON ULTRA ELONS logo">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="64" cy="64" r="62" fill="#f8fbff" stroke="#e6f0ff" stroke-width="1.5"/>
+
+  <g transform="translate(36,28)">
+    <rect x="0" y="0" width="56" height="12" rx="6" fill="url(#g)" transform="skewX(-12)" />
+    <rect x="0" y="22" width="56" height="12" rx="6" fill="#2563eb" transform="skewX(-12)" />
+    <rect x="0" y="44" width="56" height="12" rx="6" fill="url(#g)" transform="skewX(-12)" />
+  </g>
+
+  <text x="64" y="98" font-family="Inter, system-ui, Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#374151">EUE</text>
+</svg>

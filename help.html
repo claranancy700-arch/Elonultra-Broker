@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Help & Docs — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="markets.html">Markets</a>
+        <a href="settings.html">Settings</a>
+        <a href="contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+      <a href="markets.html" class="sidebar-link">📈 Markets</a>
+      <a href="transactions.html" class="sidebar-link">💳 Transactions</a>
+      <a href="settings.html" class="sidebar-link">⚙️ Settings</a>
+      <a href="help.html" class="sidebar-link active">❓ Help & Docs</a>
+    </aside>
+
+    <main class="main-content">
+      <h1>Help & Documentation</h1>
+      <p class="muted">Find answers to common questions and learn how to use ELON ULTRA ELONS</p>
+
+      <input type="text" id="help-search" placeholder="Search documentation..." style="max-width:500px;margin:24px 0">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0">
+        <div class="card">
+          <h3>Getting Started</h3>
+          <ul style="line-height:2">
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Create your account</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Verify your identity</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Add payment method</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Make your first deposit</a></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Trading Guide</h3>
+          <ul style="line-height:2">
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Understanding order types</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">How to place a trade</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Stop loss & take profit</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Risk management tips</a></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Account & Security</h3>
+          <ul style="line-height:2">
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Two-factor authentication</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">API key management</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Withdraw your funds</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Report suspicious activity</a></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Market & Analysis</h3>
+          <ul style="line-height:2">
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Reading market charts</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Technical indicators</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Market news & alerts</a></li>
+            <li><a href="#" style="color:var(--accent);text-decoration:none">Crypto glossary</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <h2 style="margin-top:48px">Frequently Asked Questions</h2>
+      <div style="max-width:800px">
+        <div class="card mb-6">
+          <h3 style="margin:0 0 12px 0">Is my money safe on ELON ULTRA ELONS?</h3>
+          <p class="muted">Yes, we use industry-standard security practices including cold storage for 95% of customer funds and regular security audits.</p>
+        </div>
+
+        <div class="card mb-6">
+          <h3 style="margin:0 0 12px 0">What are the trading fees?</h3>
+          <p class="muted">We charge 0.1% per trade for most users. VIP members get reduced rates starting at 0.05%.</p>
+        </div>
+
+        <div class="card mb-6">
+          <h3 style="margin:0 0 12px 0">How long does withdrawal take?</h3>
+          <p class="muted">Withdrawals typically process within 1-2 business days depending on your bank and payment method.</p>
+        </div>
+
+        <div class="card mb-6">
+          <h3 style="margin:0 0 12px 0">Can I use the API for trading bots?</h3>
+          <p class="muted">Yes, our API supports automated trading. Check the API documentation for rate limits and best practices.</p>
+        </div>
+      </div>
+
+      <h2 style="margin-top:48px">Still need help?</h2>
+      <p class="muted">Can't find what you're looking for? <a href="contact.html" style="color:var(--accent)">Contact our support team</a> or visit our community forums.</p>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script>
+    function logout(){
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+</html>

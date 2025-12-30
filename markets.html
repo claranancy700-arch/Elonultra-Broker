@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Markets — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="markets.html">Markets</a>
+        <a href="settings.html">Settings</a>
+        <a href="contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="app-wrapper">
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-link">📊 Dashboard</a>
+      <a href="markets.html" class="sidebar-link active">📈 Markets</a>
+      <a href="transactions.html" class="sidebar-link">💳 Transactions</a>
+      <a href="settings.html" class="sidebar-link">⚙️ Settings</a>
+      <a href="help.html" class="sidebar-link">❓ Help & Docs</a>
+    </aside>
+
+    <main class="main-content">
+      <h1>Markets</h1>
+      <p class="muted">Real-time cryptocurrency market data</p>
+
+      <!-- Search & Filter -->
+      <div class="form" style="flex-direction:row;gap:12px;max-width:none;margin:24px 0">
+        <input type="text" id="market-search" placeholder="Search assets..." style="flex:1;max-width:400px">
+        <select id="sort-select" style="max-width:200px">
+          <option value="name">Sort by Name</option>
+          <option value="price">Sort by Price</option>
+          <option value="change">Sort by 24h Change</option>
+        </select>
+      </div>
+
+      <!-- Market Table -->
+      <div class="table-wrapper">
+        <div class="table-header">
+          <h3>Cryptocurrency Prices</h3>
+        </div>
+        <table id="market-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Price</th>
+              <th>24h Change</th>
+              <th>24h High</th>
+              <th>24h Low</th>
+              <th>Volume</th>
+              <th>Market Cap</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="market-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Trending & Watchlist -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px">
+        <div>
+          <h2>Trending Today</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Asset</th><th>Price Change</th></tr>
+              </thead>
+              <tbody id="trending-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h2>Your Watchlist</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Asset</th><th>Price</th><th>Action</th></tr>
+              </thead>
+              <tbody id="watchlist-tbody">
+                <tr><td colspan="3" style="text-align:center;color:var(--muted)">No assets in watchlist</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script src="js/animations.js"></script>
+  <script src="js/markets.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
