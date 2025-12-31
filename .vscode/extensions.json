@@ -1,4 +1,11 @@
 {
+  "recommendations": [
+    "ritwickdey.LiveServer",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint"
+  ]
+}
+{
     "recommendations": [
         "github.copilot-chat"
     ]
