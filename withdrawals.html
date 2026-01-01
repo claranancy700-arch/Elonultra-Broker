@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Withdrawal — ELON ULTRA ELONS</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      .withdrawal-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .user-info-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+      .user-info-card h3 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .user-field {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .user-field:last-child {
+        border-bottom: none;
+      }
+      .user-label {
+        font-weight: 500;
+        color: var(--text);
+      }
+      .user-value {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .form-section {
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+      }
+      .form-section h2 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+      }
+      .progress-section {
+        background: var(--card);
+        border: 1px solid var(--border);
+        padding: 20px;
+        border-radius: 8px;
+        display: none;
+      }
+      .progress-section.active {
+        display: block;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .progress-text {
+        text-align: center;
+        font-weight: 500;
+        margin-bottom: 16px;
+        color: var(--text);
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-top: 8px;
+      }
+      .status-pending {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      .status-processing {
+        background: #bfdbfe;
+        color: #1e40af;
+      }
+      .status-completed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status-failed {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .withdrawal-details {
+        margin-top: 16px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      .withdrawal-details-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+      }
+      .error-message {
+        color: var(--danger);
+        padding: 12px;
+        background: #fef2f2;
+        border-left: 4px solid var(--danger);
+        border-radius: 4px;
+        margin-bottom: 16px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE" /><span>ELON ULTRA ELONS</span></a>
+        <nav class="nav">
+          <a href="dashboard.html">Dashboard</a>
+          <a href="withdrawals.html" class="active">Withdrawals</a>
+          <a href="settings.html">Settings</a>
+          <a href="#" onclick="logout()">Logout</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="withdrawal-container">
+      <h1>Withdraw Crypto</h1>
+
+      <!-- Customer Information -->
+      <div class="user-info-card">
+        <h3>Your Account Information</h3>
+        <div class="user-field">
+          <span class="user-label">Name</span>
+          <span class="user-value" id="user-name">Loading...</span>
+        </div>
+        <div class="user-field">
+          <span class="user-label">Email</span>
+          <span class="user-value" id="user-email">Loading...</span>
+        </div>
+        <div class="user-field">
+          <span class="user-label">Account Status</span>
+          <span class="user-value" id="user-status">Verified</span>
+        </div>
+        <div class="user-field">
+          <span class="user-label">Available Balance</span>
+          <span class="user-value" id="user-balance">$0.00</span>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div class="error-message" id="error-message"></div>
+
+      <!-- Withdrawal Form -->
+      <div class="form-section" id="form-section">
+        <h2>Request Withdrawal</h2>
+        <form id="withdrawal-form">
+          <label>
+            <span>Cryptocurrency</span>
+            <select name="crypto_type" required>
+              <option value="">Select a crypto</option>
+              <option value="BTC">Bitcoin (BTC)</option>
+              <option value="ETH">Ethereum (ETH)</option>
+              <option value="USDT">Tether (USDT)</option>
+              <option value="USDC">USD Coin (USDC)</option>
+              <option value="XRP">Ripple (XRP)</option>
+              <option value="ADA">Cardano (ADA)</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Amount</span>
+            <input type="number" name="amount" placeholder="0.00" step="0.00000001" min="0" required />
+          </label>
+
+          <label>
+            <span>Wallet Address</span>
+            <input
+              type="text"
+              name="crypto_address"
+              placeholder="Enter your wallet address"
+              maxlength="255"
+              required
+            />
+          </label>
+
+          <div class="btn-group">
+            <button type="submit" class="btn">Request Withdrawal</button>
+            <button type="reset" class="btn-secondary">Clear</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Progress Section (shown after submission) -->
+      <div class="progress-section" id="progress-section">
+        <h2>Withdrawal Processing</h2>
+        <div class="progress-text" id="progress-status">Pending Review</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="withdrawal-details">
+          <div class="withdrawal-details-row">
+            <span>Withdrawal ID:</span>
+            <span id="withdrawal-id">-</span>
+          </div>
+          <div class="withdrawal-details-row">
+            <span>Amount:</span>
+            <span id="withdrawal-amount">-</span>
+          </div>
+          <div class="withdrawal-details-row">
+            <span>Crypto Type:</span>
+            <span id="withdrawal-crypto">-</span>
+          </div>
+          <div class="withdrawal-details-row">
+            <span>Address:</span>
+            <span id="withdrawal-address" style="word-break: break-all">-</span>
+          </div>
+          <div class="withdrawal-details-row">
+            <span>Status:</span>
+            <span id="withdrawal-status-badge"></span>
+          </div>
+          <div class="withdrawal-details-row">
+            <span>Created:</span>
+            <span id="withdrawal-created">-</span>
+          </div>
+          <div class="withdrawal-details-row" id="txn-hash-row" style="display: none">
+            <span>Transaction Hash:</span>
+            <span id="withdrawal-txn-hash" style="word-break: break-all">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+    </footer>
+
+    <script>
+      const TOKEN = localStorage.getItem('token');
+
+      if (!TOKEN) {
+        window.location.href = 'login.html';
+      }
+
+      // Fetch and display user information
+      async function loadUserInfo() {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { Authorization: `Bearer ${TOKEN}` },
+          });
+          if (!response.ok) throw new Error('Failed to load user info');
+          const data = await response.json();
+          document.getElementById('user-name').textContent = data.user.name || 'N/A';
+          document.getElementById('user-email').textContent = data.user.email;
+          // TODO: fetch and display actual balance from portfolio
+          document.getElementById('user-balance').textContent = '$10,500.00'; // placeholder
+        } catch (err) {
+          console.error(err);
+          showError('Failed to load user information');
+        }
+      }
+
+      // Handle withdrawal form submission
+      document.getElementById('withdrawal-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        try {
+          const response = await fetch('/api/withdrawals', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${TOKEN}`,
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Withdrawal request failed');
+          }
+
+          const result = await response.json();
+          showWithdrawalProgress(result.withdrawal);
+        } catch (err) {
+          console.error(err);
+          showError(err.message);
+        }
+      });
+
+      function showWithdrawalProgress(withdrawal) {
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('progress-section').classList.add('active');
+        updateWithdrawalStatus(withdrawal);
+
+        // Simulate polling for status updates
+        const pollInterval = setInterval(() => {
+          fetchWithdrawalStatus(withdrawal.id).then((updated) => {
+            updateWithdrawalStatus(updated);
+            if (['completed', 'failed'].includes(updated.status)) {
+              clearInterval(pollInterval);
+            }
+          });
+        }, 3000); // Poll every 3 seconds
+      }
+
+      async function fetchWithdrawalStatus(withdrawalId) {
+        const response = await fetch(`/api/withdrawals/${withdrawalId}`, {
+          headers: { Authorization: `Bearer ${TOKEN}` },
+        });
+        if (!response.ok) throw new Error('Failed to fetch withdrawal status');
+        const data = await response.json();
+        return data.withdrawal;
+      }
+
+      function updateWithdrawalStatus(withdrawal) {
+        const statusMap = {
+          pending: { text: 'Pending Review', percent: 25, badge: 'status-pending' },
+          processing: { text: 'Processing...', percent: 50, badge: 'status-processing' },
+          completed: { text: 'Completed', percent: 100, badge: 'status-completed' },
+          failed: { text: 'Failed', percent: 0, badge: 'status-failed' },
+        };
+
+        const statusInfo = statusMap[withdrawal.status] || statusMap.pending;
+
+        document.getElementById('progress-fill').style.width = statusInfo.percent + '%';
+        document.getElementById('progress-status').textContent = statusInfo.text;
+        document.getElementById('withdrawal-id').textContent = withdrawal.id;
+        document.getElementById('withdrawal-amount').textContent = `${withdrawal.amount} ${withdrawal.crypto_type}`;
+        document.getElementById('withdrawal-crypto').textContent = withdrawal.crypto_type;
+        document.getElementById('withdrawal-address').textContent = withdrawal.crypto_address;
+        document.getElementById('withdrawal-created').textContent = new Date(withdrawal.created_at).toLocaleString();
+
+        const badge = document.getElementById('withdrawal-status-badge');
+        badge.className = `status-badge ${statusInfo.badge}`;
+        badge.textContent = withdrawal.status.toUpperCase();
+
+        if (withdrawal.txn_hash) {
+          document.getElementById('txn-hash-row').style.display = 'flex';
+          document.getElementById('withdrawal-txn-hash').textContent = withdrawal.txn_hash;
+        }
+      }
+
+      function showError(message) {
+        const errorEl = document.getElementById('error-message');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        setTimeout(() => {
+          errorEl.style.display = 'none';
+        }, 5000);
+      }
+
+      function logout() {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+      }
+
+      // Load user info on page load
+      loadUserInfo();
+    </script>
+  </body>
+</html>
