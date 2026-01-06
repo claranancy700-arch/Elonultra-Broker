@@ -9,12 +9,12 @@
 <body>
   <header class="site-header">
     <div class="container">
-      <a href="/landing" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <a href="/landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
       <nav class="nav">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/markets">Markets</a>
-        <a href="/settings">Settings</a>
-        <a href="/contact">Support</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/markets.html">Markets</a>
+        <a href="/settings.html">Settings</a>
+        <a href="/contact.html">Support</a>
         <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
       </nav>
     </div>
@@ -22,15 +22,18 @@
 
   <div class="app-wrapper">
     <aside class="sidebar">
-      <a href="/dashboard" class="sidebar-link active">📊 Dashboard</a>
-      <a href="/markets" class="sidebar-link">📈 Markets</a>
-      <a href="/transactions" class="sidebar-link">💳 Transactions</a>
-      <a href="/settings" class="sidebar-link">⚙️ Settings</a>
-      <a href="/help" class="sidebar-link">❓ Help & Docs</a>
+      <a href="/dashboard.html" class="sidebar-link active">📊 Dashboard</a>
+      <a href="/markets.html" class="sidebar-link">📈 Markets</a>
+      <a href="/transactions.html" class="sidebar-link">💳 Transactions</a>
+      <a href="/settings.html" class="sidebar-link">⚙️ Settings</a>
+      <a href="/help.html" class="sidebar-link">❓ Help & Docs</a>
     </aside>
 
     <main class="main-content">
-      <h1>Dashboard</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <h1>Dashboard</h1>
+        <div style="font-size:14px;color:var(--muted)">Welcome, <span id="user-name" style="color:var(--accent);font-weight:600">User</span></div>
+      </div>
 
       <!-- Portfolio Summary Cards -->
       <div class="cards-grid">
@@ -48,7 +51,7 @@
 
         <div class="card">
           <div class="card-title">Available Balance</div>
-          <div class="card-value" id="available-balance">$5,000.00</div>
+          <div class="card-value" id="available-balance">$0.00</div>
           <div class="muted" style="margin-top:8px">Ready to invest</div>
         </div>
 
@@ -175,10 +178,26 @@
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
+  <script src="js/auth.js"></script>
   <script src="js/portfolio.js"></script>
   <script src="js/api.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/main.js"></script>
+  <script>
+    // Load and display user information
+    (async () => {
+      try {
+        AuthService.requireAuth();
+        const user = await AuthService.fetchUserProfile();
+        document.getElementById('user-name').textContent = user.name || user.email;
+      } catch (err) {
+        console.error('Failed to load user:', err);
+        window.location.href = '/login.html';
+      }
+    })();
+  </script>
+  <script src="/js/testimonies.js"></script>
+  <script src="/js/floating-testimonies.js"></script>
 </body>
 </html>

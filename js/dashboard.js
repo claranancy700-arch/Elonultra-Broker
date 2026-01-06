@@ -4,8 +4,12 @@ function renderPortfolioCards(){
   const total = window.CBPortfolio.getTotalValue();
   const active = assets.filter(a => a.amount > 0).length;
 
-  document.getElementById('total-value').textContent = `$${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  document.getElementById('available-balance').textContent = `$${balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  console.log('renderPortfolioCards:', { balance, total, active, assets });
+  
+  const balEl = document.getElementById('available-balance');
+  const totalEl = document.getElementById('total-value');
+  if (balEl) balEl.textContent = `$${balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
   document.getElementById('active-positions').textContent = active;
 
   // Mock 24h change
@@ -73,13 +77,87 @@ function handleQuickTrade(e){
 }
 
 function logout(){
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('currentUser');
+  AuthService.logout(); // This now clears portfolio too
   window.location.href = '/login.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderPortfolioCards();
-  renderHoldings();
-  renderMarketOverview();
+  // First, fetch user profile to populate balance/portfolio from server
+  async function initializeDashboard(){
+    console.log('initializeDashboard starting; isAuthenticated=', AuthService.isAuthenticated());
+    try {
+      if(AuthService && AuthService.isAuthenticated()){
+        console.log('Calling fetchUserProfile and refreshPrices in parallel...');
+        // Fetch profile and prices in parallel for faster initialization
+        const [user, _] = await Promise.all([
+          AuthService.fetchUserProfile(),
+          (async () => {
+            if (window.CBPortfolio && typeof window.CBPortfolio.refreshPrices === 'function') {
+              await window.CBPortfolio.refreshPrices();
+            }
+          })()
+        ]);
+        console.log('Fetched user profile:', user);
+        console.log('CBPortfolio after parallel fetch:', { balance: window.CBPortfolio.getBalance(), total: window.CBPortfolio.getTotalValue() });
+      } else {
+        console.warn('Not authenticated or AuthService not available');
+      }
+    } catch (e) {
+      console.warn('Failed to initialize dashboard profile', e);
+    }
+    // Now render with fetched data — AFTER all async operations complete
+    console.log('Rendering portfolio cards after fetch; balance=', window.CBPortfolio.getBalance());
+    renderPortfolioCards();
+    renderHoldings();
+    renderMarketOverview();
+    console.log('Dashboard initialized');
+  }
+
+  // Initialize immediately
+  initializeDashboard();
+
+  // Periodically refresh profile/portfolio from server so admin changes appear without re-login
+  async function refreshFromServer(){
+    try{
+      if(AuthService && AuthService.isAuthenticated()){
+        await AuthService.fetchUserProfile();
+        // Recalculate asset values from market prices so holdings derive total
+        if (window.CBPortfolio && typeof window.CBPortfolio.refreshPrices === 'function') {
+          await window.CBPortfolio.refreshPrices();
+        }
+        renderPortfolioCards();
+        renderHoldings();
+      }
+    }catch(e){ console.warn('Failed to refresh profile', e); }
+  }
+
+  // initial refresh and then poll every 10 seconds
+  setTimeout(refreshFromServer, 1000);
+  setInterval(refreshFromServer, 10000);
+
+  // Subscribe to server-sent events for live admin-driven updates
+  try{
+    if (AuthService.isAuthenticated()){
+      const me = AuthService.getUser();
+      const userId = me && me.id ? me.id : null;
+      if (userId) {
+        const sseUrl = `${AuthService.API_BASE.replace(/\/api$/,'')}/api/updates/stream?userId=${userId}`;
+        try{
+          const evt = new EventSource(sseUrl);
+          evt.addEventListener('profile_update', async (ev) => {
+            try{
+              await AuthService.fetchUserProfile();
+              if (window.CBPortfolio && typeof window.CBPortfolio.refreshPrices === 'function') {
+                await window.CBPortfolio.refreshPrices();
+              }
+              renderPortfolioCards();
+              renderHoldings();
+            }catch(e){ console.warn('Failed to refresh after SSE', e); }
+          });
+          evt.onopen = () => console.log('SSE connected for user', userId);
+          evt.onerror = (e) => console.warn('SSE error', e);
+        }catch(e){ console.warn('Failed to open SSE', e); }
+      }
+    }
+  }catch(e){ console.warn('SSE setup skipped', e); }
 });

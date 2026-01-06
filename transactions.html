@@ -57,7 +57,7 @@
             </tbody>
           </table>
         </div>
-        <button class="btn mt-6" onclick="alert('Deposit form coming soon')">Add Funds</button>
+        <a class="btn mt-6" href="deposit.html">Add Funds</a>
       </div>
 
       <div id="withdrawals" class="tab-content">
@@ -78,7 +78,7 @@
             </tbody>
           </table>
         </div>
-        <button class="btn mt-6" onclick="alert('Withdrawal form coming soon')">Withdraw Funds</button>
+        <a class="btn mt-6" href="withdrawals.html">Withdraw Funds</a>
       </div>
 
       <div id="trades" class="tab-content">
@@ -109,6 +109,8 @@
   </footer>
 
   <script src="js/transactions.js"></script>
+  <script src="js/testimonies.js"></script>
+  <script src="js/floating-testimonies.js"></script>
   <script>
     function switchTab(e, tabId){
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));

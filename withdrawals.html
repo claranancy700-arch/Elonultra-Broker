@@ -257,6 +257,11 @@
     </footer>
 
     <script>
+      // Use explicit API base when developing locally
+      const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+        ? `http://${location.hostname}:5001/api`
+        : '/api';
+
       const TOKEN = localStorage.getItem('token');
 
       if (!TOKEN) {
@@ -266,15 +271,22 @@
       // Fetch and display user information
       async function loadUserInfo() {
         try {
-          const response = await fetch('/api/auth/me', {
+          const response = await fetch(`${API_BASE}/auth/me`, {
             headers: { Authorization: `Bearer ${TOKEN}` },
           });
-          if (!response.ok) throw new Error('Failed to load user info');
+          if (!response.ok) {
+            const text = await response.text().catch(()=>response.statusText);
+            throw new Error(text || 'Failed to load user info');
+          }
           const data = await response.json();
           document.getElementById('user-name').textContent = data.user.name || 'N/A';
           document.getElementById('user-email').textContent = data.user.email;
-          // TODO: fetch and display actual balance from portfolio
-          document.getElementById('user-balance').textContent = '$10,500.00'; // placeholder
+          // If backend returns balance, use it; otherwise leave placeholder
+          if (typeof data.user.balance === 'number') {
+            document.getElementById('user-balance').textContent = new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(data.user.balance);
+          } else {
+            document.getElementById('user-balance').textContent = '$0.00';
+          }
         } catch (err) {
           console.error(err);
           showError('Failed to load user information');
@@ -307,6 +319,19 @@
         } catch (err) {
           console.error(err);
           showError(err.message);
+        }
+      });
+
+      // Adjust amount step/placeholder based on crypto type selected
+      document.querySelector('select[name="crypto_type"]').addEventListener('change', (e) => {
+        const sel = e.target.value;
+        const amountInput = document.querySelector('input[name="amount"]');
+        if (sel === 'BTC' || sel === 'ETH') {
+          amountInput.step = '0.00000001';
+          amountInput.placeholder = '0.00000000';
+        } else {
+          amountInput.step = '0.01';
+          amountInput.placeholder = '0.00';
         }
       });
 

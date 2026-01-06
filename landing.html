@@ -55,13 +55,57 @@
         <p class="muted">Build trading bots and integrate with your own systems using our API.</p>
       </div>
     </div>
+
+    <!-- Featured Testimonies Section -->
+    <section style="margin-top:100px;padding:60px 20px;background:linear-gradient(135deg,rgba(var(--primary-rgb),0.05),rgba(var(--accent-rgb),0.05));border-radius:12px">
+      <div style="max-width:1200px;margin:0 auto">
+        <h2 style="text-align:center;margin-bottom:50px">What Our Clients Say</h2>
+        <div id="featured-testimonies" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
+          <div style="grid-column:1/-1;text-align:center;color:var(--muted)">Loading testimonies...</div>
+        </div>
+        <div style="text-align:center;margin-top:32px">
+          <a href="/testimonies.html" class="btn">See All Testimonies →</a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
+  <script src="js/testimonies.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/main.js"></script>
+  <script>
+    // Load and display featured testimonies on landing page
+    (async () => {
+      try {
+        const testimonies = await TestimoniesService.fetchFeatured();
+        const container = document.getElementById('featured-testimonies');
+        
+        if (!testimonies || testimonies.length === 0) {
+          container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">More testimonies coming soon...</div>';
+          return;
+        }
+
+        container.innerHTML = testimonies.slice(0, 3).map(t => `
+          <div style="background:white;border-radius:8px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              ${t.client_image ? `<img src="${t.client_image}" alt="${t.client_name}" style="width:50px;height:50px;border-radius:50%;object-fit:cover">` : `<div style="width:50px;height:50px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:20px">${t.client_name.charAt(0)}</div>`}
+              <div style="flex:1">
+                <strong style="display:block">${t.client_name}</strong>
+                ${t.title ? `<small style="color:var(--muted)">${t.title}</small>` : ''}
+              </div>
+            </div>
+            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'⭐'.repeat(t.rating)}</div>` : ''}
+            <p style="color:var(--text);line-height:1.6;margin:0;font-style:italic">"${t.content.substring(0, 150)}${t.content.length > 150 ? '...' : ''}"</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load featured testimonies:', err);
+      }
+    })();
+  </script>
 </body>
 </html>

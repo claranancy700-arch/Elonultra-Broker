@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Testimonies — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/landing.html" class="brand"><img src="/images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="/landing.html">Home</a>
+        <a href="/markets.html">Markets</a>
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/about.html">About</a>
+        <a href="/testimonies.html" class="active">Testimonies</a>
+        <a href="/contact.html">Support</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" style="background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:60px 20px">
+      <div class="container" style="text-align:center">
+        <h1 style="font-size:48px;margin-bottom:20px">What Our Clients Say</h1>
+        <p style="font-size:18px;opacity:0.95">Real experiences from real traders using ELON ULTRA ELONS</p>
+      </div>
+    </section>
+
+    <section class="container" style="padding:60px 20px;max-width:1000px">
+      <div id="testimonies-container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:24px">
+        <div style="grid-column:1/-1;text-align:center;color:var(--muted)">Loading testimonies...</div>
+      </div>
+    </section>
+
+    <section style="background:var(--card-bg);padding:60px 20px;border-top:1px solid var(--border)">
+      <div class="container" style="text-align:center;max-width:600px">
+        <h2 style="margin-top:0">Ready to Get Started?</h2>
+        <p>Join thousands of traders who trust ELON ULTRA ELONS with their crypto investments.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+          <a href="/signup.html" class="btn">Create Account</a>
+          <a href="/dashboard.html" class="btn btn-secondary">Go to Dashboard</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2026 ELON ULTRA ELONS. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/js/testimonies.js"></script>
+  <script>
+    (async () => {
+      try {
+        const testimonies = await TestimoniesService.fetchAll();
+        const container = document.getElementById('testimonies-container');
+        
+        if (testimonies.length === 0) {
+          container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">No testimonies yet. Check back soon!</div>';
+          return;
+        }
+
+        container.innerHTML = testimonies.map(t => `
+          <div style="border:1px solid var(--border);border-radius:8px;padding:24px;background:white">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              ${t.client_image ? `<img src="${t.client_image}" alt="${t.client_name}" style="width:60px;height:60px;border-radius:50%;object-fit:cover">` : `<div style="width:60px;height:60px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:24px">${t.client_name.charAt(0)}</div>`}
+              <div>
+                <strong style="display:block;font-size:18px">${t.client_name}</strong>
+                ${t.title ? `<small style="color:var(--muted)">${t.title}</small>` : ''}
+              </div>
+            </div>
+            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'⭐'.repeat(t.rating)}</div>` : ''}
+            <p style="color:var(--text);line-height:1.8;margin:0">"${t.content}"</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load testimonies:', err);
+        document.getElementById('testimonies-container').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--danger)">Failed to load testimonies</div>';
+      }
+    })();
+  </script>
+</body>
+</html>

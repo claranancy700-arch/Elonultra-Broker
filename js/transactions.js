@@ -13,7 +13,9 @@ async function renderDeposits(){
   const tb = document.getElementById('deposits-tbody');
   // Try to fetch from API
   try{
-    const res = await fetch('http://localhost:5000/api/transactions');
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch('http://localhost:5001/api/transactions', { headers });
     if(res.ok){
       const j = await res.json();
       const tx = (j.transactions||[]).filter(t=>t.type==='DEPOSIT' || t.type==='deposit');
@@ -81,7 +83,10 @@ function openDepositForm(){
 
     // Try API deposit first
     try{
-      const res = await fetch('http://localhost:5000/api/transactions/deposit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,method})});
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch('http://localhost:5001/api/transactions/deposit',{method:'POST',headers,body:JSON.stringify({amount,method})});
       if(res.ok){
         // refresh transactions from server
         await fetchAndRenderTransactions();
@@ -117,7 +122,10 @@ function openWithdrawForm(){
 
     // Try API withdraw first
     try{
-      const res = await fetch('http://localhost:5000/api/transactions/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,method})});
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch('http://localhost:5001/api/transactions/withdraw',{method:'POST',headers,body:JSON.stringify({amount,method})});
       if(res.ok){
         await fetchAndRenderTransactions();
         renderBalancesUI();
@@ -155,7 +163,9 @@ function renderBalancesUI(){
 
 async function fetchAndRenderTransactions(){
   try{
-    const res = await fetch('http://localhost:5000/api/transactions');
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch('http://localhost:5001/api/transactions', { headers });
     if(!res.ok) return;
     const j = await res.json();
     const txs = j.transactions||[];

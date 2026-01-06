@@ -1,0 +1,10 @@
+node_modules
+*.html
+*.css
+js/
+images/
+public/
+dist/
+build/
+.git
+.env

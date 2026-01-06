@@ -1,6 +1,7 @@
 (function(window){
   const PORTFOLIO_KEY = 'portfolio';
   const BALANCE_KEY = 'availableBalance';
+  const TOTAL_KEY = 'portfolioTotal';
 
   const DEFAULT_ASSETS = [
     { symbol: 'BTC', name: 'Bitcoin', amount: 0, value: 0, allocation: 0, color: '#F59E0B' },
@@ -12,6 +13,7 @@
 
   let portfolioAssets = DEFAULT_ASSETS;
   let availableBalance = 5000;
+  let totalPortfolioValue = 0;
 
   function loadFromStorage(){
     try{
@@ -19,9 +21,20 @@
       if(stored) portfolioAssets = JSON.parse(stored);
     }catch(e){ console.error('Failed to parse portfolio:', e); }
     try{
+      // debug
+      console.log('portfolio.loadFromStorage keys:', {PORTFOLIO_KEY, BALANCE_KEY, TOTAL_KEY});
+      console.log('localStorage snapshot:', { portfolio: localStorage.getItem(PORTFOLIO_KEY), balance: localStorage.getItem(BALANCE_KEY), total: localStorage.getItem(TOTAL_KEY) });
+    }catch(e){ console.error('Failed to parse portfolio:', e); }
+    try{
       const storedBal = localStorage.getItem(BALANCE_KEY);
-      if(storedBal) availableBalance = parseFloat(storedBal);
+      if (storedBal !== null) {
+        availableBalance = parseFloat(storedBal);
+      }
     }catch(e){ console.error('Failed to parse balance:', e); }
+    try{
+      const storedTotal = localStorage.getItem(TOTAL_KEY);
+      if(storedTotal) totalPortfolioValue = parseFloat(storedTotal);
+    }catch(e){ console.error('Failed to parse portfolio total:', e); }
   }
 
   function savePortfolio(){
@@ -32,14 +45,27 @@
     localStorage.setItem(BALANCE_KEY, availableBalance.toString());
   }
 
+  function saveTotal(){
+    localStorage.setItem(TOTAL_KEY, (totalPortfolioValue || 0).toString());
+  }
+
   function getTotalValue(){
-    return portfolioAssets.reduce((sum, a) => sum + a.value, 0);
+    const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+    if (derived > 0) return derived;
+    // fallback to server-provided total if assets haven't been valuated yet
+    return totalPortfolioValue || 0;
   }
 
   const portfolio = {
     getAssets: () => portfolioAssets,
     getBalance: () => availableBalance,
     getTotalValue: getTotalValue,
+    setAssets: (assets) => {
+      // Expect assets as array [{symbol, name, amount, value}]
+      if (!Array.isArray(assets)) return;
+      portfolioAssets = assets.map(a => ({ symbol: a.symbol, name: a.name || a.symbol, amount: Number(a.amount)||0, value: Number(a.value)||0, allocation: 0 }));
+      savePortfolio();
+    },
     addAsset: (asset) => {
       const existing = portfolioAssets.find(a => a.symbol === asset.symbol);
       if(existing){
@@ -61,7 +87,59 @@
     },
     setBalance: (balance) => {
       availableBalance = balance;
+      console.log('CBPortfolio.setBalance ->', availableBalance);
       saveBalance();
+    }
+    ,
+    setTotalValue: (val) => {
+      totalPortfolioValue = Number(val) || 0;
+      saveTotal();
+    },
+    // Fetch market prices and recalculate asset values & allocations
+    refreshPrices: async () => {
+      try {
+        // Map symbols to CoinGecko ids
+        const map = { BTC: 'bitcoin', ETH: 'ethereum', ADA: 'cardano', SOL: 'solana', USDC: 'usd-coin', USDT: 'tether', XRP: 'ripple' };
+        const symbols = portfolioAssets.map(a => a.symbol).filter(Boolean);
+        if (symbols.length === 0) return;
+        
+        // Call backend API instead of CoinGecko directly (avoids CORS)
+        const symbolStr = symbols.join(',');
+        const apiBase = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
+          ? `http://${location.hostname}:5001/api`
+          : '/api';
+        const url = `${apiBase}/prices?symbols=${symbolStr}`;
+        console.log('Fetching prices from backend:', url);
+        
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          console.warn('Failed to fetch prices', resp.status);
+          return;
+        }
+        const prices = await resp.json();
+        console.log('Prices fetched:', prices);
+        
+        // Update each asset value = amount * price
+        let total = 0;
+        for (const a of portfolioAssets) {
+          const id = map[a.symbol];
+          const price = id && prices[id] && prices[id].usd ? Number(prices[id].usd) : 0;
+          a.value = (Number(a.amount) || 0) * price;
+          total += a.value;
+        }
+        // calculate allocations
+        if (total > 0) {
+          for (const a of portfolioAssets) {
+            a.allocation = total > 0 ? ((Number(a.value) || 0) / total) : 0;
+          }
+        }
+        totalPortfolioValue = total;
+        console.log('Updated total portfolio value:', totalPortfolioValue);
+        savePortfolio();
+        saveTotal();
+      } catch (err) {
+        console.warn('refreshPrices error', err);
+      }
     }
   };
 

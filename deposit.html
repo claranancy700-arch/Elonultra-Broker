@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deposit — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="landing.html" class="brand"><img src="images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS</span></a>
+      <nav class="nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="markets.html">Markets</a>
+        <a href="settings.html">Settings</a>
+        <a href="contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:700px;margin:48px auto;padding:24px">
+    <h1>Add Funds</h1>
+    <p class="muted">Deposit funds to your account</p>
+
+    <div class="card" style="padding:20px;margin-top:16px">
+      <form id="deposit-form">
+        <label><span>Amount (USD)</span>
+          <input type="number" name="amount" step="0.01" min="0.01" placeholder="100.00" required>
+        </label>
+
+        <label><span>Method</span>
+          <select id="method-select" name="method" required>
+            <option value="bank">Bank Transfer</option>
+            <option value="card">Card</option>
+            <option value="crypto">Crypto Transfer</option>
+          </select>
+        </label>
+
+        <div id="crypto-section" style="display:none;margin-top:12px">
+          <label><span>Currency</span>
+            <select id="currency-select" name="currency">
+              <option value="BTC">BTC</option>
+              <option value="ETH">ETH</option>
+              <option value="USDT">USDT</option>
+              <option value="USDC">USDC</option>
+            </select>
+          </label>
+
+          <div id="address-box" style="margin-top:12px;display:none">
+            <div style="word-break:break-all"><strong>Deposit Address:</strong> <span id="deposit-address"></span></div>
+            <div style="margin-top:8px">
+              <img id="qr-img" alt="QR" style="width:160px;height:160px;border:1px solid #eee" />
+            </div>
+            <div style="margin-top:8px">
+              <button type="button" id="copy-btn" class="btn">Copy Address</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:16px">
+          <button type="submit" class="btn">Deposit</button>
+          <a class="btn btn-secondary" href="transactions.html">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <p class="muted" style="margin-top:16px">Note: This is a simple deposit UI for testing. In production this should call a payment gateway or wallet service.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
+  </footer>
+
+  <script>
+    function logout(){
+      localStorage.removeItem('token');
+      window.location.href = '/login.html';
+    }
+
+    const apiBase = (location.hostname === 'localhost' ? `http://${location.hostname}:5001` : '');
+
+    const methodSelect = document.getElementById('method-select');
+    const cryptoSection = document.getElementById('crypto-section');
+    const currencySelect = document.getElementById('currency-select');
+    const addressBox = document.getElementById('address-box');
+    const depositAddressEl = document.getElementById('deposit-address');
+    const qrImg = document.getElementById('qr-img');
+    const copyBtn = document.getElementById('copy-btn');
+
+    methodSelect.addEventListener('change', async (ev) => {
+      const v = ev.target.value;
+      if (v === 'crypto') {
+        cryptoSection.style.display = 'block';
+        await fetchAndShowAddress(currencySelect.value);
+      } else {
+        cryptoSection.style.display = 'none';
+        addressBox.style.display = 'none';
+      }
+    });
+
+    currencySelect.addEventListener('change', () => fetchAndShowAddress(currencySelect.value));
+
+    copyBtn.addEventListener('click', () => {
+      const addr = depositAddressEl.textContent.trim();
+      if (!addr) return;
+      navigator.clipboard && navigator.clipboard.writeText(addr);
+      alert('Address copied to clipboard');
+    });
+
+    async function fetchAndShowAddress(currency) {
+      try {
+        const res = await fetch(`${apiBase}/api/deposit/address?currency=${encodeURIComponent(currency)}`);
+        if (!res.ok) throw new Error('Failed to fetch address');
+        const data = await res.json();
+        if (!data || !data.address) throw new Error('No address returned');
+        depositAddressEl.textContent = data.address;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(data.address)}`;
+        addressBox.style.display = 'block';
+      } catch (err) {
+        console.error('Address fetch error', err);
+        addressBox.style.display = 'none';
+      }
+    }
+
+    document.getElementById('deposit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      const token = localStorage.getItem('token');
+
+      if (!token) return window.location.href = '/login.html';
+
+      try {
+        const res = await fetch(apiBase + '/api/transactions/deposit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ amount: parseFloat(data.amount), method: data.method })
+        });
+
+        if (res.ok) {
+          alert('Deposit recorded (server).');
+          window.location.href = 'transactions.html';
+          return;
+        }
+
+        const text = await res.text();
+        alert('Deposit failed: ' + (text || res.statusText));
+      } catch (err) {
+        console.error(err);
+        alert('Network error while submitting deposit');
+      }
+    });
+  </script>
+</body>
+</html>

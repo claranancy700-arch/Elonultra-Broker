@@ -21,10 +21,18 @@
         <input type="email" name="email" placeholder="your@email.com" required>
       </label>
       <label><span>Password</span>
-        <input type="password" name="password" placeholder="••••••••" required>
+        <div style="position:relative;display:flex;align-items:center">
+          <input type="password" name="password" id="password-input" placeholder="••••••••" required>
+          <button type="button" id="toggle-password" style="position:absolute;right:12px;background:none;border:none;cursor:pointer;color:var(--text-light);padding:4px;font-size:18px">👁️</button>
+        </div>
       </label>
       <button type="submit" class="btn" style="width:100%">Sign In</button>
     </form>
+    <div style="margin-top:12px;padding:12px;border:1px dashed var(--muted);border-radius:6px">
+      <h4 style="margin:6px 0">Admin Access</h4>
+      <label><span>Admin Key</span><input id="admin-key-input" placeholder="paste admin key to open admin console"></label>
+      <div style="margin-top:8px"><button id="open-admin" class="btn btn-secondary">Open Admin Console</button></div>
+    </div>
     <p class="muted">Don't have an account? <a href="signup.html" style="color:var(--accent)">Sign up here</a></p>
     <p class="muted"><a href="#" style="color:var(--accent)">Forgot password?</a></p>
 
@@ -32,7 +40,35 @@
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
+  <script src="js/auth.js"></script>
   <script src="js/animations.js"></script>
-  <script src="js/main.js"></script>
+  <script>
+    // Password visibility toggle
+    document.getElementById('toggle-password')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('password-input');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { email, password } = Object.fromEntries(new FormData(e.target));
+
+      try {
+        await AuthService.login(email, password);
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        alert('Login failed: ' + err.message);
+      }
+    });
+
+    document.getElementById('open-admin').addEventListener('click', (e) => {
+      const k = document.getElementById('admin-key-input').value.trim();
+      if (!k) return alert('Paste admin key');
+      // store key in sessionStorage for admin page convenience and redirect
+      sessionStorage.setItem('adminKey', k);
+      window.location.href = '/admin.html';
+    });
+  </script>
 </body>
 </html>

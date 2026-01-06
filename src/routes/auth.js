@@ -82,4 +82,37 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// GET: Retrieve current user profile (requires JWT)
+const { verifyToken } = require('../middleware/auth');
+
+router.get('/me', verifyToken, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const { rows } = await db.query('SELECT id, name, email, COALESCE(balance,0) as balance, created_at FROM users WHERE id=$1', [
+      userId,
+    ]);
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = rows[0];
+
+    // Fetch portfolio holdings if table exists
+    let portfolio = null;
+    try {
+      const p = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio WHERE user_id=$1', [userId]);
+      if (p && p.rows && p.rows.length) portfolio = p.rows[0];
+    } catch (e) {
+      // ignore if portfolio table is missing
+    }
+
+    res.json({ success: true, user, portfolio });
+  } catch (err) {
+    console.error('Get user error:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — ELON ULTRA ELONS</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body { overflow-x: hidden; }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .app-wrapper { display:flex; gap:24px; align-items:flex-start; }
+    .sidebar { width:200px; }
+    .main-content { flex:1; min-width:0; }
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+    @media (max-width:900px){ .app-wrapper{ flex-direction:column; } .sidebar{ width:100%; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/landing.html" class="brand"><img src="/images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS - ADMIN</span></a>
+      <nav class="nav">
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/markets.html">Markets</a>
+        <a href="/settings.html">Settings</a>
+        <a href="/contact.html">Support</a>
+        <a href="#" onclick="logout()" style="color:#ef4444">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <div class="app-wrapper">
+      <aside class="sidebar">
+        <a href="/dashboard.html" class="sidebar-link">📊 Dashboard</a>
+        <a href="/markets.html" class="sidebar-link">📈 Markets</a>
+        <a href="/transactions.html" class="sidebar-link">💳 Transactions</a>
+        <a href="/settings.html" class="sidebar-link">⚙️ Settings</a>
+        <a href="/help.html" class="sidebar-link">❓ Help & Docs</a>
+      </aside>
+
+      <main class="main-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h1>Admin — Broker View</h1>
+          <div style="font-size:14px;color:var(--muted);display:flex;gap:12px;align-items:center">
+            <div>Admin preview for user <span id="user-name" style="color:var(--accent);font-weight:600">User</span></div>
+            <label style="display:flex;gap:6px;align-items:center"><span class="muted">Preview:</span>
+              <select id="current-user-select" style="padding:6px;font-size:13px"><option value="">-- none --</option></select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Admin Controls (embedded) -->
+        <div class="card" style="margin-bottom:16px;padding:12px">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <label style="flex:1;min-width:220px;display:flex;gap:8px;align-items:center">
+              <strong>Admin Key:</strong>
+              <input id="admin-key" placeholder="paste x-admin-key here" style="flex:1;padding:8px" />
+            </label>
+            <button id="load-users" class="btn">Load Users</button>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:12px;align-items:flex-start">
+            <div style="flex:1;min-width:240px">
+              <h4>Users</h4>
+              <div style="max-height:220px;overflow:auto;border:1px solid var(--muted);border-radius:6px;padding:8px">
+                <table style="width:100%"><thead><tr><th>ID</th><th>Email</th><th>Balance</th><th></th></tr></thead>
+                <tbody id="users-tbody"></tbody></table>
+              </div>
+            </div>
+
+            <div style="flex:1;min-width:320px">
+              <h4>User Details</h4>
+              <div id="user-detail">Select a user to view details</div>
+
+              <div style="margin-top:8px">
+                <form id="credit-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <input id="credit-user-id" type="hidden" />
+                  <label style="flex:1;min-width:140px"><span>Amount</span><input id="credit-amount" type="number" step="0.01" required></label>
+                  <label style="flex:1;min-width:120px"><span>Currency</span>
+                    <select id="credit-currency"><option>USD</option><option>BTC</option><option>ETH</option><option>USDT</option><option>USDC</option></select>
+                  </label>
+                  <label style="flex:1;min-width:160px"><span>Reference</span><input id="credit-reference" placeholder="admin-credit"></label>
+                  <div style="width:100%;display:flex;gap:8px;margin-top:8px">
+                    <button type="submit" class="btn">Credit (add)</button>
+                    <button type="button" id="set-balance-btn" class="btn btn-secondary">Set Balance</button>
+                  </div>
+                </form>
+              </div>
+
+              <div style="margin-top:12px">
+                <form id="portfolio-form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center">
+                  <input id="portfolio-user-id" type="hidden" />
+                  <label><span>BTC</span><input id="pf-btc" type="number" step="0.00000001" placeholder="0"></label>
+                  <label><span>ETH</span><input id="pf-eth" type="number" step="0.00000001" placeholder="0"></label>
+                  <label><span>USDT</span><input id="pf-usdt" type="number" step="0.00000001" placeholder="0"></label>
+                  <label><span>USDC</span><input id="pf-usdc" type="number" step="0.00000001" placeholder="0"></label>
+                  <div style="grid-column:1 / -1;margin-top:8px"><button type="submit" class="btn">Set Holdings</button></div>
+                </form>
+              </div>
+
+              <div style="margin-top:12px">
+                <h4>Transactions</h4>
+                <div style="max-height:200px;overflow:auto;border:1px solid var(--muted);border-radius:6px;padding:8px">
+                  <table style="width:100%"><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Currency</th></tr></thead>
+                  <tbody id="transactions-tbody"></tbody></table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio Summary Cards -->
+        <div class="cards-grid">
+          <div class="card">
+            <div class="card-title">Total Portfolio Value</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="card-value" id="total-value">$0.00</div>
+              <button id="edit-total-btn" class="btn btn-small">Edit</button>
+            </div>
+            <div class="card-change positive" id="portfolio-change">+$0.00 (+0%)</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">24h Change</div>
+            <div class="card-value" id="change-24h">+$0.00</div>
+            <div class="card-change positive" id="change-percent">+0%</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Available Balance</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="card-value" id="available-balance">$0.00</div>
+              <button id="edit-balance-btn" class="btn btn-small">Edit</button>
+            </div>
+            <div class="muted" style="margin-top:8px">Ready to invest</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Active Positions</div>
+            <div class="card-value" id="active-positions">0</div>
+            <div class="muted" style="margin-top:8px">Holdings</div>
+          </div>
+        </div>
+
+        <!-- Portfolio Holdings Table -->
+        <div class="table-wrapper">
+          <div class="table-header">
+            <h3>User Holdings</h3>
+          </div>
+          <table id="holdings-table">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Value</th>
+                <th>% of Portfolio</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="holdings-body">
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--muted)">No holdings yet. Select a user.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tabs for Trading & Market Data -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab(event, 'recent-trades')">Recent Trades</button>
+          <button class="tab-btn" onclick="switchTab(event, 'market-overview')">Market Overview</button>
+        </div>
+
+        <div id="recent-trades" class="tab-content active">
+          <div class="table-wrapper">
+            <div class="table-header">
+              <h3>Recent Trades</h3>
+            </div>
+            <table id="trades-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Asset</th>
+                  <th>Amount</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="trades-body">
+                <tr>
+                  <td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="market-overview" class="tab-content">
+          <div class="table-wrapper">
+            <div class="table-header">
+              <h3>Market Overview</h3>
+            </div>
+            <table id="market-table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Price</th>
+                  <th>24h Change</th>
+                  <th>Volume</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="market-body">
+                <tr>
+                  <td colspan="5" style="text-align:center;color:var(--muted)">Loading market data...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Testimonies Management -->
+        <div class="card" style="margin-top:24px;padding:16px">
+          <h3 style="margin-top:0">Manage Testimonies</h3>
+          
+          <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="showTestimonyForm()" class="btn">+ Add Testimony</button>
+            <button onclick="loadAllTestimonies()" class="btn btn-secondary">Refresh List</button>
+            <button onclick="autoGenerateTestimonies()" class="btn" style="background:linear-gradient(135deg,#10b981,#059669)">🤖 Auto-Generate (10)</button>
+          </div>
+
+          <!-- Add/Edit Testimony Form -->
+          <form id="testimony-form" style="display:none;gap:12px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
+            <input id="testimony-id" type="hidden" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <label><span>Client Name *</span><input id="testimony-name" placeholder="John Doe" required></label>
+              <label><span>Title/Position</span><input id="testimony-title" placeholder="CEO, Tech Company"></label>
+              <label><span>Image URL</span><input id="testimony-image" placeholder="https://...jpg" type="url"></label>
+              <label><span>Rating (1-5)</span><select id="testimony-rating"><option value="5">5 ⭐</option><option value="4">4 ⭐</option><option value="3">3 ⭐</option><option value="2">2 ⭐</option><option value="1">1 ⭐</option></select></label>
+            </div>
+            <label style="width:100%"><span>Testimony Content *</span><textarea id="testimony-content" placeholder="What was your experience with our platform?" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit" required></textarea></label>
+            <label style="display:flex;align-items:center;gap:8px"><input id="testimony-featured" type="checkbox"><span>Feature this testimony on landing page</span></label>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn">Save Testimony</button>
+              <button type="button" onclick="cancelTestimonyForm()" class="btn btn-secondary">Cancel</button>
+            </div>
+          </form>
+
+          <!-- Testimonies List -->
+          <div id="testimonies-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">Admin Console</div>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/portfolio.js"></script>
+  <script src="/js/testimonies.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/animations.js"></script>  <script src="/js/admin-testimonies.js"></script>  <script src="/js/dashboard.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/admin.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/portfolio.js"></script>
+  <script src="/js/testimonies.js"></script>
+  <script src="/js/admin.js"></script>
+  <script>
+    (async () => {
+      try {
+        if (AuthService.isAuthenticated()) {
+          const user = await AuthService.fetchUserProfile();
+          document.getElementById('user-name').textContent = user.name || user.email;
+        } else {
+          document.getElementById('user-name').textContent = 'Not logged in';
+        }
+      } catch (err) { console.warn('Admin init warning', err); }
+    })();
+  </script>
+</body>
+</html>
