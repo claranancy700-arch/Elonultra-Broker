@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: elonu-elon-web
+    env: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm run server
+    envVars:
+      - key: NODE_ENV
+        value: production
