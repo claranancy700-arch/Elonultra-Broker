@@ -158,6 +158,9 @@ const AuthService = {
   logout() {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('token');
+    localStorage.removeItem('transactions');
+    localStorage.removeItem('balance');
     // Also clear portfolio and balance when logging out
     localStorage.removeItem('portfolio');
     localStorage.removeItem('availableBalance');

@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio Tracker - PRO</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="cmc-pro">
+  <!-- Top Bar -->
+  <header class="cmc-header">
+    <div class="header-left">
+      <div class="logo">PORTFOLIO PRO</div>
+      <nav class="header-nav">
+        <a href="#" class="nav-link active">Portfolio</a>
+        <a href="#" class="nav-link">Dashboard</a>
+        <a href="#" class="nav-link">Watchlist</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <input id="search-input" type="text" class="search-box" placeholder="Search coins..." />
+      <button id="btn-add-asset" class="btn-add">+ Add Asset</button>
+      <button id="btn-refresh" class="btn-icon" title="Refresh">↻</button>
+    </div>
+  </header>
+
+  <!-- Inline Message Display -->
+  <div id="message-container" class="message-container"></div>
+
+  <div class="cmc-wrapper">
+    <!-- Left Sidebar -->
+    <aside class="cmc-sidebar">
+      <div class="sidebar-section">
+        <h3>Portfolio</h3>
+        <ul class="sidebar-menu">
+          <li class="active">
+            <span class="icon">📊</span>
+            <span>Overview</span>
+          </li>
+          <li>
+            <span class="icon">📈</span>
+            <span>Holdings</span>
+          </li>
+          <li>
+            <span class="icon">⭐</span>
+            <span>Watchlist</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sidebar-section">
+        <h3>Account</h3>
+        <ul class="sidebar-menu">
+          <li>
+            <span class="icon">⚙️</span>
+            <span>Settings</span>
+          </li>
+          <li>
+            <span class="icon">👤</span>
+            <span>Profile</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="cmc-main">
+      <!-- Summary Stats -->
+      <section class="stats-section">
+        <div class="stat-card">
+          <div class="stat-label">Portfolio Value</div>
+          <div class="stat-value" id="total-value">$0.00</div>
+          <div class="stat-change" id="stat-change">+0.00%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">24h Change</div>
+          <div class="stat-value" id="total-change">0.00%</div>
+          <div class="stat-subtext">Last 24 hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Holdings</div>
+          <div class="stat-value" id="asset-count">0</div>
+          <div class="stat-subtext">Assets</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Balance</div>
+          <div class="stat-value" id="total-value">$0.00</div>
+          <div class="stat-subtext">Total Portfolio</div>
+        </div>
+      </section>
+
+      <!-- Admin Section (merged from existing admin UI) -->
+      <section id="admin-section" class="admin-section" style="margin-top:28px; display:none">
+        <div class="section-header">
+          <h2>Admin — Users</h2>
+          <div class="section-controls">
+            <button id="admin-refresh-users" class="btn-secondary">Refresh Users</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="holdings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Balance</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="admin-user-preview" style="margin-top:14px;display:none">
+          <div class="panel-card">
+            <h3 id="preview-user-name">User Preview</h3>
+            <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+              <div style="flex:1">
+                <div class="muted">Email</div>
+                <div id="preview-user-email">—</div>
+              </div>
+              <div style="width:180px">
+                <div class="muted">Balance</div>
+                <div id="preview-user-balance">—</div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <h4 style="margin:0 0 8px 0">Holdings</h4>
+              <div id="preview-user-holdings">No holdings loaded</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button id="preview-load-into-main" class="btn-secondary">Load Into Main</button>
+              <button id="preview-open-modal" class="btn-add">Edit In Modal</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transactions Panel -->
+      <section class="admin-section" style="margin-top:24px; display:none" id="transactions-section">
+        <div class="section-header">
+          <h2>Admin — Transactions</h2>
+          <div class="section-controls">
+            <button id="admin-add-transaction" class="btn-secondary">+ Add Transaction</button>
+            <button id="admin-refresh-transactions" class="btn-secondary">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Transaction Tabs -->
+        <div class="tabs" style="margin:16px 0">
+          <button class="tab-btn active transaction-tab" data-tab="all-tx">All Transactions</button>
+          <button class="tab-btn transaction-tab" data-tab="deposits-tx">Deposits</button>
+          <button class="tab-btn transaction-tab" data-tab="withdrawals-tx">Withdrawals</button>
+          <button class="tab-btn transaction-tab" data-tab="trades-tx">Trades</button>
+        </div>
+
+        <!-- All Transactions Tab -->
+        <div id="all-tx" class="tx-tab-content active">
+          <div class="table-wrapper">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-all-transactions-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Deposits Tab -->
+        <div id="deposits-tx" class="tx-tab-content" style="display:none">
+          <div class="table-wrapper">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>User</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>TxID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-deposits-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Withdrawals Tab -->
+        <div id="withdrawals-tx" class="tx-tab-content" style="display:none">
+          <div class="table-wrapper">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>User</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>TxID</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-withdrawals-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Trades Tab -->
+        <div id="trades-tx" class="tx-tab-content" style="display:none">
+          <div class="table-wrapper">
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>User</th>
+                  <th>Type</th>
+                  <th>Asset</th>
+                  <th>Amount</th>
+                  <th>Price</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-trades-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add/Edit Transaction Modal Form -->
+        <div id="tx-form-panel" style="margin-top:20px;padding:16px;background:var(--panel);border:1px solid var(--border);border-radius:8px;display:none">
+          <h3 style="margin-top:0">Add/Edit Transaction</h3>
+          <form id="tx-edit-form" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input type="hidden" id="tx-edit-id" />
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">User ID</label>
+              <input id="tx-edit-user" class="form-input" placeholder="user id" required />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Type</label>
+              <select id="tx-edit-type" class="control-select" required>
+                <option value="deposit">Deposit</option>
+                <option value="withdrawal">Withdrawal</option>
+                <option value="trade">Trade</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Amount</label>
+              <input id="tx-edit-amount" class="form-input" type="number" step="0.01" placeholder="0.00" required />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Status</label>
+              <select id="tx-edit-status" class="control-select" required>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Date</label>
+              <input id="tx-edit-date" class="form-input" type="datetime-local" required />
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Method/Asset</label>
+              <input id="tx-edit-method" class="form-input" placeholder="e.g. Bank, BTC" />
+            </div>
+            <div style="grid-column:1/-1;display:flex;gap:8px;margin-top:8px">
+              <button type="submit" class="btn-primary" style="flex:1">Save Transaction</button>
+              <button type="button" id="tx-form-cancel" class="btn-secondary" style="flex:1">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Testimonies Panel -->
+      <section class="admin-section" style="margin-top:24px; display:none" id="testimonies-section">
+        <div class="section-header">
+          <h2>Admin — Testimonies</h2>
+          <div class="section-controls">
+            <button id="admin-refresh-testimonies" class="btn-secondary">Refresh</button>
+          </div>
+        </div>
+        
+        <div class="table-wrapper">
+          <table class="holdings-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Message</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-testimonies-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Holdings Table -->
+      <section class="holdings-section">
+        <div class="section-header">
+          <h2>Holdings</h2>
+          <div class="section-controls">
+            <select id="sort-select" class="control-select">
+              <option value="value">Sort by Value</option>
+              <option value="change">Sort by Change</option>
+              <option value="symbol">Sort by Symbol</option>
+            </select>
+            <select id="filter-select" class="control-select">
+              <option value="all">All Assets</option>
+              <option value="gainers">Gainers</option>
+              <option value="losers">Losers</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="holdings-table">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-asset">Asset</th>
+                <th class="col-price">Price</th>
+                <th class="col-change">24H Change</th>
+                <th class="col-holdings">Holdings</th>
+                <th class="col-value">Value</th>
+                <th class="col-alloc">% of Portfolio</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="holdings-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Sidebar -->
+    <aside class="cmc-right">
+      <!-- Portfolio Breakdown -->
+      <div class="right-card">
+        <h3>Portfolio Breakdown</h3>
+        <div id="breakdown-list" class="breakdown">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Performance -->
+      <div class="right-card">
+        <h3>Performance</h3>
+        <div class="perf-item">
+          <span>Best Performer</span>
+          <span class="perf-value" id="best-perf">--</span>
+        </div>
+        <div class="perf-item">
+          <span>Worst Performer</span>
+          <span class="perf-value" id="worst-perf">--</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Modal for Add Asset -->
+  <div id="asset-modal" class="modal hidden">
+    <div class="modal-overlay" id="modal-close"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Add Asset to Portfolio</h3>
+        <button class="modal-close" id="modal-cancel">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Select Coin</label>
+          <select id="modal-symbol" class="form-input">
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount</label>
+          <input id="modal-amount" type="number" step="any" class="form-input" placeholder="0.00" />
+        </div>
+        <hr />
+        <div class="admin-controls">
+          <h4 style="margin:8px 0;color:var(--text-muted);font-size:13px">Admin Controls</h4>
+          
+          <!-- Key Verification Section -->
+          <div id="admin-key-verify" style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;background:#f0f4ff">
+            <div class="form-group">
+              <label style="font-weight:600;color:var(--text)">Verify Admin Key</label>
+              <input id="admin-key-input" type="password" class="form-input" placeholder="Enter admin key" />
+            </div>
+            <button id="admin-verify-btn" class="btn-primary" style="width:100%;background:var(--accent)">🔓 Verify Key</button>
+          </div>
+
+          <!-- User Controls (hidden until verified) -->
+          <div id="admin-params" style="display:none">
+            <div class="form-group">
+              <label>Target User</label>
+              <select id="admin-user-select" class="form-input">
+                <option value="">(select user)</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <button id="admin-load-user" class="btn-secondary" style="flex:1">Load User Portfolio</button>
+              <button id="admin-save-portfolio" class="btn-primary" style="flex:1">Save Portfolio</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="admin-balance" type="number" step="any" class="form-input" placeholder="Set balance" style="flex:1" />
+              <button id="admin-set-balance" class="btn-add" style="flex:0">Set Balance</button>
+            </div>
+            <button id="admin-clear-key" class="btn-secondary" style="width:100%;margin-top:8px">🔒 Clear Key</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modal-cancel-btn" class="btn-secondary">Cancel</button>
+        <button id="modal-add-btn" class="btn-primary">Add to Portfolio</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/markets.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

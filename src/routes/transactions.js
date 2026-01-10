@@ -8,7 +8,18 @@ router.get('/', verifyToken, async (req, res) => {
   const userId = req.userId;
   try {
     const result = await db.query(
-      'SELECT id, type, amount, currency, status, reference, created_at FROM transactions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',
+      `SELECT
+         id,
+         type,
+         amount,
+         currency AS method,
+         status,
+         reference AS txid,
+         created_at AS "createdAt"
+       FROM transactions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 50`,
       [userId]
     );
     return res.json({ success: true, transactions: result.rows });

@@ -256,37 +256,52 @@
       <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
     </footer>
 
+    <script src="/js/auth.js"></script>
     <script>
       // Use explicit API base when developing locally
       const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
         ? `http://${location.hostname}:5001/api`
         : '/api';
 
-      const TOKEN = localStorage.getItem('token');
+      const TOKEN = (window.AuthService && typeof AuthService.getToken === 'function')
+        ? AuthService.getToken()
+        : (localStorage.getItem('authToken') || localStorage.getItem('token'));
 
       if (!TOKEN) {
         window.location.href = 'login.html';
       }
 
+      function formatUSD(n){
+        return new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(Number(n)||0);
+      }
+
       // Fetch and display user information
-      async function loadUserInfo() {
+      async function loadUserInfo(forceRefresh = false) {
         try {
-          const response = await fetch(`${API_BASE}/auth/me`, {
-            headers: { Authorization: `Bearer ${TOKEN}` },
-          });
-          if (!response.ok) {
-            const text = await response.text().catch(()=>response.statusText);
-            throw new Error(text || 'Failed to load user info');
+          let profile = null;
+          if (!forceRefresh && window.AuthService && typeof AuthService.getUser === 'function') {
+            profile = AuthService.getUser();
           }
-          const data = await response.json();
-          document.getElementById('user-name').textContent = data.user.name || 'N/A';
-          document.getElementById('user-email').textContent = data.user.email;
-          // If backend returns balance, use it; otherwise leave placeholder
-          if (typeof data.user.balance === 'number') {
-            document.getElementById('user-balance').textContent = new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(data.user.balance);
-          } else {
-            document.getElementById('user-balance').textContent = '$0.00';
+          if (!profile) {
+            const response = await fetch(`${API_BASE}/auth/me`, {
+              headers: { Authorization: `Bearer ${TOKEN}` },
+            });
+            if (!response.ok) {
+              const text = await response.text().catch(()=>response.statusText);
+              throw new Error(text || 'Failed to load user info');
+            }
+            const data = await response.json();
+            profile = data.user;
+            if (window.AuthService && typeof AuthService.setUser === 'function') {
+              AuthService.setUser(profile);
+            }
           }
+          document.getElementById('user-name').textContent = profile?.name || profile?.email || 'N/A';
+          document.getElementById('user-email').textContent = profile?.email || '—';
+          const balanceFromProfile = typeof profile?.balance === 'number' ? profile.balance : null;
+          const fallbackBalance = parseFloat(localStorage.getItem('availableBalance') || localStorage.getItem('balance') || '0');
+          const effectiveBalance = balanceFromProfile != null ? balanceFromProfile : fallbackBalance;
+          document.getElementById('user-balance').textContent = formatUSD(effectiveBalance);
         } catch (err) {
           console.error(err);
           showError('Failed to load user information');
@@ -300,7 +315,7 @@
         const data = Object.fromEntries(formData);
 
         try {
-          const response = await fetch('/api/withdrawals', {
+          const response = await fetch(`${API_BASE}/withdrawals`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -316,6 +331,10 @@
 
           const result = await response.json();
           showWithdrawalProgress(result.withdrawal);
+          if (window.AuthService && typeof AuthService.fetchUserProfile === 'function') {
+            try { await AuthService.fetchUserProfile(); } catch (err) { console.warn('Failed to refresh profile cache', err); }
+          }
+          await loadUserInfo(true);
         } catch (err) {
           console.error(err);
           showError(err.message);
@@ -352,7 +371,7 @@
       }
 
       async function fetchWithdrawalStatus(withdrawalId) {
-        const response = await fetch(`/api/withdrawals/${withdrawalId}`, {
+        const response = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, {
           headers: { Authorization: `Bearer ${TOKEN}` },
         });
         if (!response.ok) throw new Error('Failed to fetch withdrawal status');
@@ -398,7 +417,12 @@
       }
 
       function logout() {
-        localStorage.removeItem('token');
+        if (window.AuthService && typeof AuthService.logout === 'function') {
+          AuthService.logout();
+        } else {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('token');
+        }
         window.location.href = 'login.html';
       }
 

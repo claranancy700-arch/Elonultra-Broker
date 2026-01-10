@@ -2,12 +2,11 @@
  * Admin Testimonies Manager — Handle testimony CRUD operations
  */
 
-let allTestimonies = [];
-let currentEditingId = null;
+(function(){
+  let allTestimonies = [];
+  let currentEditingId = null;
 
-const apiBase = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-  ? `http://${location.hostname}:5001/api`
-  : '/api';
+  const baseApi = window.__apiBase ? (window.__apiBase + '/api') : '/api';
 
 async function loadAllTestimonies() {
   try {
@@ -113,7 +112,7 @@ async function autoGenerateTestimonies(count = 10) {
   }
 
   try {
-    const response = await fetch(`${apiBase}/testimonies-generate/generate-batch`, {
+    const response = await fetch(`${baseApi}/testimonies-generate/generate-batch`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -188,3 +187,4 @@ if (document.readyState === 'loading') {
 } else {
   loadAllTestimonies();
 }
+})();

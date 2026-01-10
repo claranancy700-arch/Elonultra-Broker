@@ -89,13 +89,14 @@
               </div>
 
               <div style="margin-top:12px">
-                <form id="portfolio-form" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center">
+                <form id="portfolio-form" style="display:grid;grid-template-columns:1fr;gap:8px;align-items:center">
                   <input id="portfolio-user-id" type="hidden" />
-                  <label><span>BTC</span><input id="pf-btc" type="number" step="0.00000001" placeholder="0"></label>
-                  <label><span>ETH</span><input id="pf-eth" type="number" step="0.00000001" placeholder="0"></label>
-                  <label><span>USDT</span><input id="pf-usdt" type="number" step="0.00000001" placeholder="0"></label>
-                  <label><span>USDC</span><input id="pf-usdc" type="number" step="0.00000001" placeholder="0"></label>
-                  <div style="grid-column:1 / -1;margin-top:8px"><button type="submit" class="btn">Set Holdings</button></div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <button type="button" id="add-asset-btn" class="btn">+ Add Asset</button>
+                    <div style="color:var(--muted);font-size:13px">Use the button to add asset rows</div>
+                  </div>
+                  <div id="portfolio-fields" style="display:grid;grid-template-columns:1fr;gap:8px"></div>
+                  <div style="margin-top:8px"><button type="submit" class="btn">Set Holdings</button></div>
                 </form>
               </div>
 
@@ -108,6 +109,21 @@
               </div>
 
             </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;padding:16px">
+          <h3 style="margin-top:0">Deposit Addresses</h3>
+          <p class="muted" style="margin-bottom:12px">Customize the wallet addresses shown on the deposit page.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <label><span>BTC</span><input data-deposit-symbol="BTC" placeholder="bc1..." /></label>
+            <label><span>ETH</span><input data-deposit-symbol="ETH" placeholder="0x..." /></label>
+            <label><span>USDT</span><input data-deposit-symbol="USDT" placeholder="T..." /></label>
+            <label><span>USDC</span><input data-deposit-symbol="USDC" placeholder="0x..." /></label>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <button id="save-deposit-addresses" class="btn">Save Addresses</button>
+            <button type="button" id="reset-deposit-addresses" class="btn btn-secondary">Reset to defaults</button>
           </div>
         </div>
 
@@ -152,56 +168,144 @@
           <table id="holdings-table">
             <thead>
               <tr>
-                <th>Asset</th>
-                <th>Amount</th>
-                <th>Value</th>
-                <th>% of Portfolio</th>
-                <th>Actions</th>
-              </tr>
+                  <th>Asset</th>
+                  <th>Amount</th>
+                  <th>Price</th>
+                  <th>Value</th>
+                  <th>% of Portfolio</th>
+                  <th>Actions</th>
+                </tr>
             </thead>
             <tbody id="holdings-body">
               <tr>
-                <td colspan="5" style="text-align:center;color:var(--muted)">No holdings yet. Select a user.</td>
+                <td colspan="6" style="text-align:center;color:var(--muted)">No holdings yet. Select a user.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Tabs for Trading & Market Data -->
-        <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab(event, 'recent-trades')">Recent Trades</button>
-          <button class="tab-btn" onclick="switchTab(event, 'market-overview')">Market Overview</button>
-        </div>
+        <!-- Transaction Management Tabs (Editable Admin View) -->
+        <div style="margin-top:32px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h2>Transaction Management</h2>
+            <button onclick="refreshAllTransactions()" class="btn btn-secondary">Refresh All</button>
+          </div>
+          
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'deposits-admin')">Deposits</button>
+            <button class="tab-btn" onclick="switchTab(event, 'withdrawals-admin')">Withdrawals</button>
+            <button class="tab-btn" onclick="switchTab(event, 'trades-admin')">Trades</button>
+            <button class="tab-btn" onclick="switchTab(event, 'all-transactions')">All Transactions</button>
+          </div>
 
-        <div id="recent-trades" class="tab-content active">
-          <div class="table-wrapper">
-            <div class="table-header">
-              <h3>Recent Trades</h3>
+          <div id="deposits-admin" class="tab-content active">
+            <div class="table-wrapper">
+              <div class="table-header">
+                <h3>Deposit History</h3>
+                <button onclick="addNewTransaction('deposit')" class="btn">+ Add Deposit</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>TxID</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="deposits-admin-tbody">
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>
+                </tbody>
+              </table>
             </div>
-            <table id="trades-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Asset</th>
-                  <th>Amount</th>
-                  <th>Price</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="trades-body">
-                <tr>
-                  <td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td>
-                </tr>
-              </tbody>
-            </table>
+          </div>
+
+          <div id="withdrawals-admin" class="tab-content">
+            <div class="table-wrapper">
+              <div class="table-header">
+                <h3>Withdrawal History</h3>
+                <button onclick="addNewTransaction('withdrawal')" class="btn">+ Add Withdrawal</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>TxID</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="withdrawals-admin-tbody">
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="trades-admin" class="tab-content">
+            <div class="table-wrapper">
+              <div class="table-header">
+                <h3>Trade History</h3>
+                <button onclick="addNewTransaction('trade')" class="btn">+ Add Trade</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Side</th>
+                    <th>Asset</th>
+                    <th>Amount</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="trades-admin-tbody">
+                  <tr><td colspan="8" style="text-align:center;color:var(--muted)">No trades yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="all-transactions" class="tab-content">
+            <div class="table-wrapper">
+              <div class="table-header">
+                <h3>All Transactions</h3>
+                <button onclick="addNewTransaction('deposit')" class="btn">+ Add Transaction</button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="all-transactions-tbody">
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted)">No transactions yet</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <div id="market-overview" class="tab-content">
+        <!-- Market Overview Section -->
+        <div style="margin-top:32px">
+          <h2>Market Overview</h2>
           <div class="table-wrapper">
             <div class="table-header">
-              <h3>Market Overview</h3>
+              <h3>Live Prices</h3>
             </div>
             <table id="market-table">
               <thead>
@@ -265,12 +369,24 @@
   <script src="/js/portfolio.js"></script>
   <script src="/js/testimonies.js"></script>
   <script src="/js/api.js"></script>
-  <script src="/js/animations.js"></script>  <script src="/js/admin-testimonies.js"></script>  <script src="/js/dashboard.js"></script>
+  <script src="/js/animations.js"></script>
+  <script src="/js/markets.js"></script>
+  <script src="/js/dashboard.js"></script>
   <script src="/js/main.js"></script>
-  <script src="/js/admin.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/portfolio.js"></script>
-  <script src="/js/testimonies.js"></script>
+
+  <!-- Force admin tools to use the Express API on port 5001 in local dev -->
+  <script>
+    (function() {
+      var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
+      var isLocal = host === 'localhost' || host === '127.0.0.1';
+      if (!window.__apiBase) {
+        window.__apiBase = isLocal ? 'http://localhost:5001/api' : '/api';
+      }
+    })();
+  </script>
+
+  <script src="/js/admin-testimonies.js"></script>
+  <script src="/js/admin-transactions.js"></script>
   <script src="/js/admin.js"></script>
   <script>
     (async () => {
@@ -283,6 +399,132 @@
         }
       } catch (err) { console.warn('Admin init warning', err); }
     })();
+
+    // Helper function for tab switching
+    function switchTab(evt, tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      evt.target.classList.add('active');
+      const tab = document.getElementById(tabId);
+      if(tab) tab.classList.add('active');
+    }
+
+    // Transaction management functions
+    function refreshAllTransactions() {
+      if (window.ADMIN_TX && typeof window.ADMIN_TX.fetchTransactions === 'function') {
+        window.ADMIN_TX.fetchTransactions();
+      } else {
+        console.log('Refresh transactions: function not available yet');
+      }
+    }
+
+    function addNewTransaction(type) {
+      if (typeof openTxForm === 'function') {
+        openTxForm(null, type);
+      } else {
+        alert('Add transaction: function not available yet.');
+      }
+    }
+
+    function editTransaction(txId) {
+      if (typeof openTxForm === 'function') {
+        openTxForm(txId);
+      }
+    }
+
+    function deleteTransaction(txId) {
+      if (!confirm('Delete this transaction?')) return;
+      const key = sessionStorage.getItem('adminKey');
+      if (!key) return alert('Admin key required');
+      
+      fetch(`http://localhost:5001/api/admin/transactions/${txId}`, {
+        method: 'DELETE',
+        headers: {'x-admin-key': key}
+      })
+      .then(r => r.ok ? Promise.resolve() : Promise.reject())
+      .then(() => {
+        alert('Transaction deleted');
+        refreshAllTransactions();
+      })
+      .catch(() => alert('Unable to delete transaction'));
+    }
+
+    function approveTransaction(txId) {
+      const key = sessionStorage.getItem('adminKey');
+      if (!key) return alert('Admin key required');
+      
+      fetch(`http://localhost:5001/api/admin/transactions/${txId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json', 'x-admin-key': key},
+        body: JSON.stringify({status: 'completed'})
+      })
+      .then(r => r.ok ? Promise.resolve() : Promise.reject())
+      .then(() => {
+        alert('Transaction approved');
+        refreshAllTransactions();
+      })
+      .catch(() => alert('Unable to approve transaction'));
+    }
+
+    // Simple prompt-based transaction editor used by add/edit buttons
+    function openTxForm(existingId, presetType) {
+      const key = sessionStorage.getItem('adminKey');
+      if (!key) {
+        alert('Admin key required');
+        return;
+      }
+
+      const userId = prompt('User ID for transaction:');
+      if (!userId) return;
+
+      const amountStr = prompt('Amount (e.g. 1000.00):');
+      const amount = parseFloat(amountStr);
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert('Invalid amount');
+        return;
+      }
+
+      const type = presetType || prompt('Type (deposit/withdrawal/trade):', 'deposit') || 'deposit';
+      const status = prompt('Status (pending/completed/failed):', 'pending') || 'pending';
+      const method = prompt('Method/asset (e.g. Bank, BTC, USDT):', 'USD') || 'USD';
+      const dateInput = prompt('Date/time (YYYY-MM-DD HH:MM, leave blank for now):', '');
+
+      const payload = {
+        user: userId,
+        type,
+        amount,
+        status,
+        method,
+        date: dateInput || undefined
+      };
+
+      const url = existingId ? `http://localhost:5001/api/admin/transactions/${existingId}` : 'http://localhost:5001/api/admin/transactions';
+      const httpMethod = existingId ? 'PUT' : 'POST';
+
+      fetch(url, {
+        method: httpMethod,
+        headers: {'Content-Type': 'application/json', 'x-admin-key': key},
+        body: JSON.stringify(payload)
+      })
+      .then(async r => {
+        if (!r.ok) {
+          let msg = 'failed to save';
+          try {
+            const body = await r.json();
+            if (body && body.error) msg = body.error;
+          } catch (_) {}
+          return Promise.reject(new Error(msg));
+        }
+        return r.json().catch(() => ({}));
+      })
+      .then(() => {
+        alert('Transaction saved');
+        refreshAllTransactions();
+      })
+      .catch(err => {
+        alert('Unable to save transaction: ' + (err && err.message ? err.message : err));
+      });
+    }
   </script>
 </body>
 </html>

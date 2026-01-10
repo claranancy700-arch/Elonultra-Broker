@@ -9,13 +9,6 @@ const sse = require('../sse/broadcaster');
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || null;
 
-router.get('/verify-key', (req, res) => {
-  const provided = req.headers['x-admin-key'];
-  if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
-  if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Invalid admin key' });
-  return res.json({ success: true });
-});
-
 router.post('/credit', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
@@ -100,10 +93,29 @@ router.get('/users', async (req, res) => {
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
     const q = await db.query('SELECT id, email, COALESCE(balance,0) as balance, created_at FROM users ORDER BY id LIMIT 500');
-    return res.json({ success: true, users: q.rows });
+    // Return directly as array for frontend compatibility
+    return res.json(q.rows);
   } catch (err) {
     console.error('Admin users list error:', err.message || err);
     return res.status(500).json({ error: 'failed to list users' });
+  }
+});
+
+// GET /api/admin/users/:id - get single user
+router.get('/users/:id', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
+
+    const q = await db.query('SELECT id, email, COALESCE(balance,0) as balance, created_at FROM users WHERE id=$1', [userId]);
+    return res.json(q.rows[0] || null);
+  } catch (err) {
+    console.error('Admin get user error:', err.message || err);
+    return res.status(500).json({ error: 'failed to fetch user' });
   }
 });
 
@@ -221,7 +233,20 @@ router.get('/users/:id/portfolio', async (req, res) => {
     if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
 
     const q = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id=$1', [userId]);
-    return res.json({ success: true, portfolio: q.rows[0] || null });
+    const portfolio = q.rows[0];
+    
+    // Convert to assets format expected by frontend
+    const assets = {};
+    if (portfolio) {
+      if (portfolio.btc_balance) assets.BTC = parseFloat(portfolio.btc_balance);
+      if (portfolio.eth_balance) assets.ETH = parseFloat(portfolio.eth_balance);
+      if (portfolio.usdt_balance) assets.USDT = parseFloat(portfolio.usdt_balance);
+      if (portfolio.usdc_balance) assets.USDC = parseFloat(portfolio.usdc_balance);
+      if (portfolio.xrp_balance) assets.XRP = parseFloat(portfolio.xrp_balance);
+      if (portfolio.ada_balance) assets.ADA = parseFloat(portfolio.ada_balance);
+    }
+    
+    return res.json({ assets });
   } catch (err) {
     console.error('Admin get portfolio error:', err.message || err);
     return res.status(500).json({ error: err.message || 'failed to fetch portfolio' });
@@ -236,6 +261,7 @@ router.get('/transactions', async (req, res) => {
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
     const q = await db.query('SELECT id, user_id, type, amount, currency, status, reference, created_at FROM transactions ORDER BY created_at DESC LIMIT 500');
+    // Map to format expected by frontend
     const transactions = q.rows.map(t => ({
       id: t.id,
       user: t.user_id,
@@ -244,9 +270,8 @@ router.get('/transactions', async (req, res) => {
       status: t.status,
       method: t.currency,
       date: t.created_at,
-      txid: t.reference,
+      txid: t.reference
     }));
-
     return res.json(transactions);
   } catch (err) {
     console.error('Admin transactions list error:', err.message || err);
@@ -254,79 +279,34 @@ router.get('/transactions', async (req, res) => {
   }
 });
 
-// POST /api/admin/transactions - create new transaction (manual admin entry)
+// POST /api/admin/transactions - create or update transaction
 router.post('/transactions', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
-    const { user, type, amount, status, method, date } = req.body;
-    const userId = parseInt(user, 10);
-    const amt = parseFloat(amount);
-
-    if (!user || isNaN(userId)) return res.status(400).json({ error: 'Invalid user id' });
-    if (!type) return res.status(400).json({ error: 'Missing transaction type' });
-    if (!amt || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
-
-    // Optional custom created_at timestamp for admin-created rows
-    let createdAt = null;
-    if (date) {
-      const d = new Date(date);
-      if (!isNaN(d.getTime())) createdAt = d;
-    }
-    if (!createdAt) createdAt = new Date();
+    const { user, type, amount, status, date, method } = req.body;
+    if (!user || !type || !amount) return res.status(400).json({ error: 'Missing required fields' });
 
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
       const result = await client.query(
-        'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id, created_at',
-        [userId, type, amt, method || 'USD', status || 'pending', `manual-admin-${Date.now()}`, createdAt]
+        'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at',
+        [user, type, amount, method || 'USD', status || 'pending', `manual-admin-${Date.now()}`, date || 'NOW()']
       );
       await client.query('COMMIT');
-      return res.json({ success: true, id: result.rows[0].id, created_at: result.rows[0].created_at });
+      return res.json({ success: true, id: result.rows[0].id });
     } catch (err) {
       await client.query('ROLLBACK');
-      console.error('Create transaction error:', err.message || err);
-      return res.status(500).json({ error: 'failed to create transaction' });
+      throw err;
     } finally {
       client.release();
     }
   } catch (err) {
-    console.error('Create transaction route error:', err.message || err);
-    return res.status(500).json({ error: 'server error' });
-  }
-});
-
-// PUT /api/admin/transactions/:id - update transaction fields
-router.put('/transactions/:id', async (req, res) => {
-  try {
-    const provided = req.headers['x-admin-key'];
-    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
-    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
-
-    const txId = parseInt(req.params.id, 10);
-    if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
-
-    const { type, amount, status, method, date } = req.body;
-    const amt = amount != null ? parseFloat(amount) : null;
-
-    let createdAt = null;
-    if (date) {
-      const d = new Date(date);
-      if (!isNaN(d.getTime())) createdAt = d;
-    }
-
-    await db.query(
-      'UPDATE transactions SET type = COALESCE($2,type), amount = COALESCE($3,amount), currency = COALESCE($4,currency), status = COALESCE($5,status), created_at = COALESCE($6, created_at), updated_at = NOW() WHERE id=$1',
-      [txId, type || null, amt, method || null, status || null, createdAt]
-    );
-
-    return res.json({ success: true, id: txId });
-  } catch (err) {
-    console.error('Update transaction error:', err.message || err);
-    return res.status(500).json({ error: 'failed to update transaction' });
+    console.error('Create transaction error:', err.message || err);
+    return res.status(500).json({ error: 'failed to create transaction' });
   }
 });
 
@@ -345,6 +325,65 @@ router.delete('/transactions/:id', async (req, res) => {
   } catch (err) {
     console.error('Delete transaction error:', err.message || err);
     return res.status(500).json({ error: 'failed to delete transaction' });
+  }
+});
+
+// GET /api/admin/testimonies - list all testimonies (admin key required)
+router.get('/testimonies', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const q = await db.query('SELECT id, user_id, message, approved, created_at FROM testimonies ORDER BY created_at DESC LIMIT 500');
+    // Map to format expected by frontend
+    const testimonies = q.rows.map(t => ({
+      id: t.id,
+      user: t.user_id,
+      message: t.message,
+      approved: t.approved,
+      date: t.created_at
+    }));
+    return res.json(testimonies);
+  } catch (err) {
+    console.error('Admin testimonies list error:', err.message || err);
+    return res.status(500).json({ error: 'failed to list testimonies' });
+  }
+});
+
+// POST /api/admin/testimonies/:id/approve - approve testimony
+router.post('/testimonies/:id/approve', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'invalid testimony id' });
+
+    const result = await db.query('UPDATE testimonies SET approved = true WHERE id=$1', [id]);
+    return res.json({ success: true, updated: result.rowCount });
+  } catch (err) {
+    console.error('Approve testimony error:', err.message || err);
+    return res.status(500).json({ error: 'failed to approve testimony' });
+  }
+});
+
+// DELETE /api/admin/testimonies/:id - delete testimony
+router.delete('/testimonies/:id', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'invalid testimony id' });
+
+    const result = await db.query('DELETE FROM testimonies WHERE id=$1', [id]);
+    return res.json({ success: true, deleted: result.rowCount });
+  } catch (err) {
+    console.error('Delete testimony error:', err.message || err);
+    return res.status(500).json({ error: 'failed to delete testimony' });
   }
 });
 

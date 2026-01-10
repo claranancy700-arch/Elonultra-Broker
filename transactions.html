@@ -108,21 +108,19 @@
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
-  <script src="js/transactions.js"></script>
-  <script src="js/testimonies.js"></script>
-  <script src="js/floating-testimonies.js"></script>
+  <script src="/js/auth.js"></script>
   <script>
-    function switchTab(e, tabId){
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      e.target.classList.add('active');
-      document.getElementById(tabId).classList.add('active');
-    }
-    function logout(){
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('currentUser');
-      window.location.href = '/login.html';
+    try {
+      AuthService.requireAuth();
+    } catch (err) {
+      console.warn('Transactions page redirecting to login', err);
     }
   </script>
+  <script src="/js/portfolio.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/transactions.js"></script>
+  <script src="/js/testimonies.js"></script>
+  <script src="/js/floating-testimonies.js"></script>
 </body>
 </html>

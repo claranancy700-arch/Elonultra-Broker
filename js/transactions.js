@@ -9,39 +9,91 @@ function saveTransactions(tx){
   localStorage.setItem('transactions', JSON.stringify(tx));
 }
 
-async function renderDeposits(){
-  const tb = document.getElementById('deposits-tbody');
-  // Try to fetch from API
-  try{
-    const token = localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res = await fetch('http://localhost:5001/api/transactions', { headers });
-    if(res.ok){
-      const j = await res.json();
-      const tx = (j.transactions||[]).filter(t=>t.type==='DEPOSIT' || t.type==='deposit');
-      if(!tx.length){ tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>'; return }
-      tb.innerHTML = tx.map(t=>`<tr><td>${t.createdAt||t.date||''}</td><td>${t.method||'-'}</td><td>${formatCurrency(t.amount)}</td><td>${t.status||'Completed'}</td><td>${t.txid||t.id||'-'}</td></tr>`).join('');
-      return;
+function getAuthToken(){
+  try {
+    if (window.AuthService && typeof AuthService.getToken === 'function') {
+      const t = AuthService.getToken();
+      if (t) return t;
     }
-  }catch(e){/*fallback*/}
+  } catch (_) {}
+  return localStorage.getItem('authToken') || localStorage.getItem('token') || null;
+}
+
+function clearTransactionCache(){
+  localStorage.removeItem('transactions');
+}
+
+let transactionsLoaded = false;
+let transactionsError = null;
+
+function renderDeposits(){
+  const tb = document.getElementById('deposits-tbody');
+  const token = getAuthToken();
+  if(!tb) return;
+
+  if (!token) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Log in to view deposits</td></tr>';
+    return;
+  }
+
+  if (transactionsError) {
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626">${transactionsError}</td></tr>`;
+    return;
+  }
 
   const tx = loadTransactions().filter(t=>t.type==='deposit');
-  if(!tx.length){ tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>'; return }
-  tb.innerHTML = tx.map(t=>`<tr><td>${t.date}</td><td>${t.method}</td><td>${formatCurrency(t.amount)}</td><td>${t.status}</td><td>${t.txid||'-'}</td></tr>`).join('');
+  if(!tx.length){
+    const msg = transactionsLoaded ? 'No deposits yet' : 'Loading latest deposits...';
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">${msg}</td></tr>`;
+    return;
+  }
+  tb.innerHTML = tx.map(t=>`<tr><td>${t.date||''}</td><td>${t.method||'-'}</td><td>${formatCurrency(Number(t.amount)||0)}</td><td>${t.status||'-'}</td><td>${t.txid||'-'}</td></tr>`).join('');
 }
 
 function renderWithdrawals(){
   const tb = document.getElementById('withdrawals-tbody');
+  const token = getAuthToken();
+  if(!tb) return;
+
+  if (!token) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Log in to view withdrawals</td></tr>';
+    return;
+  }
+  if (transactionsError) {
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626">${transactionsError}</td></tr>`;
+    return;
+  }
+
   const tx = loadTransactions().filter(t=>t.type==='withdrawal');
-  if(!tx.length){ tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>'; return }
-  tb.innerHTML = tx.map(t=>`<tr><td>${t.date}</td><td>${t.method}</td><td>${formatCurrency(t.amount)}</td><td>${t.status}</td><td>${t.txid||'-'}</td></tr>`).join('');
+  if(!tx.length){
+    const msg = transactionsLoaded ? 'No withdrawals yet' : 'Loading latest withdrawals...';
+    tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">${msg}</td></tr>`;
+    return;
+  }
+  tb.innerHTML = tx.map(t=>`<tr><td>${t.date||''}</td><td>${t.method||'-'}</td><td>${formatCurrency(Number(t.amount)||0)}</td><td>${t.status||'-'}</td><td>${t.txid||'-'}</td></tr>`).join('');
 }
 
 function renderTrades(){
   const tb = document.getElementById('trades-tbody');
+  const token = getAuthToken();
+  if(!tb) return;
+
+  if (!token) {
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Log in to view trades</td></tr>';
+    return;
+  }
+  if (transactionsError) {
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626">${transactionsError}</td></tr>`;
+    return;
+  }
+
   const tx = loadTransactions().filter(t=>t.type==='trade');
-  if(!tx.length){ tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td></tr>'; return }
-  tb.innerHTML = tx.map(t=>`<tr><td>${t.date}</td><td>${t.side}</td><td>${t.asset}</td><td>${t.amount}</td><td>${t.price}</td><td>${formatCurrency(t.total)}</td></tr>`).join('');
+  if(!tx.length){
+    const msg = transactionsLoaded ? 'No trades yet' : 'Loading latest trades...';
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">${msg}</td></tr>`;
+    return;
+  }
+  tb.innerHTML = tx.map(t=>`<tr><td>${t.date||''}</td><td>${t.side||'-'}</td><td>${t.asset||'-'}</td><td>${t.amount||'-'}</td><td>${t.price||'-'}</td><td>${formatCurrency(Number(t.total)||0)}</td></tr>`).join('');
 }
 
 function formatCurrency(n){
@@ -83,7 +135,7 @@ function openDepositForm(){
 
     // Try API deposit first
     try{
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch('http://localhost:5001/api/transactions/deposit',{method:'POST',headers,body:JSON.stringify({amount,method})});
@@ -122,7 +174,7 @@ function openWithdrawForm(){
 
     // Try API withdraw first
     try{
-      const token = localStorage.getItem('token');
+      const token = getAuthToken();
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch('http://localhost:5001/api/transactions/withdraw',{method:'POST',headers,body:JSON.stringify({amount,method})});
@@ -161,30 +213,93 @@ function renderBalancesUI(){
   });
 }
 
+// Tab + logout helpers (needed by transactions.html inline handlers)
+function switchTab(e, tabId){
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  if (e && e.target) e.target.classList.add('active');
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+}
+function logout(){
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('currentUser');
+  window.location.href = '/login.html';
+}
+window.switchTab = switchTab;
+window.logout = logout;
+
 async function fetchAndRenderTransactions(){
+  const token = getAuthToken();
+  if (!token) {
+    transactionsLoaded = false;
+    transactionsError = null;
+    clearTransactionCache();
+    renderDeposits();
+    renderWithdrawals();
+    renderTrades();
+    return;
+  }
+
   try{
-    const token = localStorage.getItem('token');
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    transactionsError = null;
+    const headers = { Authorization: `Bearer ${token}` };
     const res = await fetch('http://localhost:5001/api/transactions', { headers });
-    if(!res.ok) return;
+    if(!res.ok) {
+      transactionsLoaded = true;
+      transactionsError = 'Unable to load transactions (HTTP ' + res.status + ')';
+      clearTransactionCache();
+      renderDeposits();
+      renderWithdrawals();
+      renderTrades();
+      return;
+    }
     const j = await res.json();
     const txs = j.transactions||[];
     // Map API format to display format
     const mapped = txs.map(t=>{
-      let type = t.type.toLowerCase();
-      if(type === 'deposit') return {id:t.id,type:'deposit',date:new Date(t.createdAt).toLocaleString(),method:'API',amount:t.amount,status:'Completed',txid:t.id};
-      if(type === 'withdrawal') return {id:t.id,type:'withdrawal',date:new Date(t.createdAt).toLocaleString(),method:'API',amount:t.amount,status:'Completed',txid:t.id};
-      if(type === 'buy') return {id:t.id,type:'trade',side:'buy',asset:t.symbol,amount:t.amount,price:t.price,total:t.total,date:new Date(t.createdAt).toLocaleString()};
-      if(type === 'sell') return {id:t.id,type:'trade',side:'sell',asset:t.symbol,amount:t.amount,price:t.price,total:t.total,date:new Date(t.createdAt).toLocaleString()};
+      const rawDate = t.createdAt || t.created_at || t.date;
+      const dateStr = rawDate ? new Date(rawDate).toLocaleString() : '';
+      const type = (t.type || '').toLowerCase();
+      if(type === 'deposit') {
+        return {
+          id: t.id,
+          type: 'deposit',
+          date: dateStr,
+          method: t.method || 'Bank Transfer',
+          amount: t.amount,
+          status: t.status || 'Completed',
+          txid: t.txid || t.reference || t.id
+        };
+      }
+      if(type === 'withdrawal') {
+        return {
+          id: t.id,
+          type: 'withdrawal',
+          date: dateStr,
+          method: t.method || 'Bank Transfer',
+          amount: t.amount,
+          status: t.status || 'Completed',
+          txid: t.txid || t.reference || t.id
+        };
+      }
+      if(type === 'buy')  return {id:t.id,type:'trade',side:'buy', asset:t.symbol,amount:t.amount,price:t.price,total:t.total,date:dateStr};
+      if(type === 'sell') return {id:t.id,type:'trade',side:'sell',asset:t.symbol,amount:t.amount,price:t.price,total:t.total,date:dateStr};
       return null;
     }).filter(t=>t);
-    // Update localStorage cache if desired
+    transactionsLoaded = true;
     localStorage.setItem('transactions',JSON.stringify(mapped));
     renderDeposits();
     renderWithdrawals();
     renderTrades();
   }catch(e){
     console.warn('Could not fetch transactions from API',e);
+    transactionsLoaded = true;
+    transactionsError = 'Unable to load transactions. Please try again later.';
+    clearTransactionCache();
+    renderDeposits();
+    renderWithdrawals();
+    renderTrades();
   }
 }
 
@@ -198,5 +313,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
   renderDeposits();
   renderWithdrawals();
   renderTrades();
+  fetchAndRenderTransactions();
   renderBalancesUI();
 });

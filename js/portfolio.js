@@ -98,16 +98,23 @@
     // Fetch market prices and recalculate asset values & allocations
     refreshPrices: async () => {
       try {
-        // Map symbols to CoinGecko ids
-        const map = { BTC: 'bitcoin', ETH: 'ethereum', ADA: 'cardano', SOL: 'solana', USDC: 'usd-coin', USDT: 'tether', XRP: 'ripple' };
-        const symbols = portfolioAssets.map(a => a.symbol).filter(Boolean);
+        // Build symbol -> coin id map using global SYMBOL_MAP if available (more comprehensive)
+        const globalMap = (typeof window !== 'undefined' && window.SYMBOL_MAP) ? Object.fromEntries(Object.entries(window.SYMBOL_MAP).map(([k,v]) => [k, v.id])) : null;
+        const map = globalMap || { BTC: 'bitcoin', ETH: 'ethereum', ADA: 'cardano', SOL: 'solana', USDC: 'usd-coin', USDT: 'tether', XRP: 'ripple' };
+        const symbols = portfolioAssets.map(a => (a.symbol || '').toUpperCase()).filter(Boolean);
         if (symbols.length === 0) return;
-        
+
+        // Only request symbols we know how to map to coin ids
+        const requestSymbols = symbols.filter(s => map[s]);
+        if (requestSymbols.length === 0) {
+          console.warn('No known symbols to fetch prices for', symbols);
+          return;
+        }
+
         // Call backend API instead of CoinGecko directly (avoids CORS)
-        const symbolStr = symbols.join(',');
-        const apiBase = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-          ? `http://${location.hostname}:5001/api`
-          : '/api';
+        const symbolStr = requestSymbols.join(',');
+        // Prefer the centralized window.__apiBase when available (keeps URLs consistent across pages)
+        const apiBase = (window.__apiBase ? (window.__apiBase + '/api') : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001/api` : '/api'));
         const url = `${apiBase}/prices?symbols=${symbolStr}`;
         console.log('Fetching prices from backend:', url);
         
@@ -122,8 +129,10 @@
         // Update each asset value = amount * price
         let total = 0;
         for (const a of portfolioAssets) {
-          const id = map[a.symbol];
-          const price = id && prices[id] && prices[id].usd ? Number(prices[id].usd) : 0;
+          const sym = (a.symbol || '').toUpperCase();
+          const id = map[sym];
+          const price = id && prices[id] && prices[id].usd ? Number(prices[id].usd) : (Number(a.price) || 0);
+          a.price = price;
           a.value = (Number(a.amount) || 0) * price;
           total += a.value;
         }

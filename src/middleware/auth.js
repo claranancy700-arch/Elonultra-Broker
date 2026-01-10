@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this';
-const ADMIN_KEY = process.env.ADMIN_KEY || 'admin_key_12345';
+const ADMIN_KEY = process.env.ADMIN_API_KEY || 'admin_key_12345';
 
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {

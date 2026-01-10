@@ -9,12 +9,12 @@ router.post('/', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   // Validate input
-  if (!amount || !crypto_type || !crypto_address) {
-    return res.status(400).json({ error: 'Amount, crypto type, and address are required' });
-  }
-
-  if (isNaN(amount) || amount <= 0) {
+  const amt = parseFloat(amount);
+  if (!amt || isNaN(amt) || amt <= 0) {
     return res.status(400).json({ error: 'Amount must be a positive number' });
+  }
+  if (!crypto_type || !crypto_address) {
+    return res.status(400).json({ error: 'Crypto type and address are required' });
   }
 
   const supportedCryptos = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
@@ -30,27 +30,54 @@ router.post('/', verifyToken, async (req, res) => {
     return res.status(400).json({ error: 'Invalid crypto address format' });
   }
 
+  const client = await db.pool.connect();
   try {
-    // Insert withdrawal request with 'pending' status
-    const result = await db.query(
+    await client.query('BEGIN');
+
+    // Lock user balance and ensure sufficient funds
+    const balRes = await client.query('SELECT COALESCE(balance,0) AS balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
+    if (!balRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const currentBalance = parseFloat(balRes.rows[0].balance) || 0;
+    if (currentBalance < amt) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Insufficient balance' });
+    }
+
+    const withdrawalResult = await client.query(
       'INSERT INTO withdrawals(user_id, amount, crypto_type, crypto_address, status) VALUES($1, $2, $3, $4, $5) RETURNING id, status, created_at',
-      [userId, amount, crypto_type.toUpperCase(), crypto_address, 'pending']
+      [userId, amt, crypto_type.toUpperCase(), crypto_address, 'pending']
     );
 
-    const withdrawal = result.rows[0];
+    await client.query('UPDATE users SET balance = COALESCE(balance,0) - $2, updated_at = NOW() WHERE id=$1', [userId, amt]);
+
+    await client.query(
+      'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())',
+      [userId, 'withdrawal', amt, crypto_type.toUpperCase(), 'pending', `withdrawal-${withdrawalResult.rows[0].id}`]
+    );
+
+    await client.query('COMMIT');
+
+    const withdrawal = withdrawalResult.rows[0];
     res.status(201).json({
       success: true,
       withdrawal: {
         id: withdrawal.id,
-        amount,
+        amount: amt,
         crypto_type: crypto_type.toUpperCase(),
         status: withdrawal.status,
         created_at: withdrawal.created_at,
       },
     });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Withdrawal creation error:', err);
     res.status(500).json({ error: 'Failed to create withdrawal request' });
+  } finally {
+    client.release();
   }
 });
 

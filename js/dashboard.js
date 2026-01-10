@@ -33,8 +33,9 @@ function renderHoldings(){
     .filter(a => a.amount > 0)
     .map(asset => `
       <tr>
-        <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name}</span></td>
+        <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name || ''}</span></td>
         <td>${asset.amount.toLocaleString()}</td>
+        <td>$${(asset.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         <td>$${asset.value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : 0}%</td>
         <td><button class="btn" onclick="alert('Trade panel coming soon')">Trade</button></td>
@@ -42,8 +43,47 @@ function renderHoldings(){
     `).join('');
 }
 
-function renderMarketOverview(){
+async function renderMarketOverview(){
   const tbody = document.getElementById('market-body');
+  // Determine symbols from holdings (only show coins present in holdings)
+  const assets = (window.CBPortfolio && typeof window.CBPortfolio.getAssets === 'function') ? window.CBPortfolio.getAssets().filter(a => Number(a.amount) > 0) : [];
+  let symbols = assets.map(a => (a.symbol || '').toUpperCase()).filter(Boolean);
+  const defaultSymbols = ['BTC','ETH','ADA','SOL'];
+  if (!symbols || symbols.length === 0) symbols = defaultSymbols;
+
+  // Use global SYMBOL_MAP if present to resolve CoinGecko ids and names, otherwise fall back to small local maps
+  const symbolMeta = (typeof window !== 'undefined' && window.SYMBOL_MAP) ? window.SYMBOL_MAP : { BTC: { id: 'bitcoin', name: 'Bitcoin' }, ETH: { id: 'ethereum', name: 'Ethereum' }, ADA: { id: 'cardano', name: 'Cardano' }, SOL: { id: 'solana', name: 'Solana' }, XRP: { id: 'ripple', name: 'Ripple' }, USDT: { id: 'tether', name: 'Tether' }, USDC: { id: 'usd-coin', name: 'USD Coin' }, DOGE: { id: 'dogecoin', name: 'Dogecoin' }, LTC: { id: 'litecoin', name: 'Litecoin' }, BCH: { id: 'bitcoin-cash', name: 'Bitcoin Cash' } };
+  const baseApi = window.__apiBase ? (window.__apiBase + '/api') : '/api';
+
+  try {
+    const resp = await fetch(`${baseApi}/prices?symbols=${symbols.join(',')}`);
+    if (!resp.ok) throw new Error('Price API returned ' + resp.status);
+    const prices = await resp.json();
+
+    const market = symbols.map(sym => {
+      const meta = symbolMeta[sym] || { id: (sym||'').toLowerCase(), name: sym };
+      const id = meta.id;
+      const price = prices[id] && prices[id].usd ? Number(prices[id].usd) : 0;
+      return { symbol: sym, name: meta.name || sym, price, change: 0, volume: '' };
+    }).filter(m => m.price > 0);
+
+    if (market.length === 0) throw new Error('No prices returned');
+
+    tbody.innerHTML = market.map(m => `
+      <tr>
+        <td><strong>${m.symbol}</strong><br><span class=\"muted\">${m.name}</span></td>
+        <td>$${m.price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td style=\"color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}\">${m.change >= 0 ? '+' : ''}${m.change}%</td>
+        <td>${m.volume}</td>
+        <td><button class=\"btn btn-success\" style=\"font-size:12px\">Buy</button></td>
+      </tr>
+    `).join('');
+    return;
+  } catch (err) {
+    console.warn('Market API failed, falling back to mock data:', err.message || err);
+  }
+
+  // Fallback mock market if API not available
   const mockMarket = [
     { symbol: 'BTC', name: 'Bitcoin', price: 43250.00, change: 2.45, volume: '$24.5B' },
     { symbol: 'ETH', name: 'Ethereum', price: 2650.75, change: -1.23, volume: '$12.8B' },
@@ -53,11 +93,11 @@ function renderMarketOverview(){
 
   tbody.innerHTML = mockMarket.map(m => `
     <tr>
-      <td><strong>${m.symbol}</strong><br><span class="muted">${m.name}</span></td>
+      <td><strong>${m.symbol}</strong><br><span class=\"muted\">${m.name}</span></td>
       <td>$${m.price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-      <td style="color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}">${m.change >= 0 ? '+' : ''}${m.change}%</td>
+      <td style=\"color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}\">${m.change >= 0 ? '+' : ''}${m.change}%</td>
       <td>${m.volume}</td>
-      <td><button class="btn btn-success" style="font-size:12px">Buy</button></td>
+      <td><button class=\"btn btn-success\" style=\"font-size:12px\">Buy</button></td>
     </tr>
   `).join('');
 }
@@ -113,8 +153,19 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Dashboard initialized');
   }
 
-  // Initialize immediately
-  initializeDashboard();
+  // Initialize when AuthService is available and user is authenticated
+  function waitForAuthService() {
+    if (typeof AuthService !== 'undefined' && AuthService !== null) {
+      if (AuthService.isAuthenticated()) {
+        initializeDashboard();
+      } else {
+        console.log('Dashboard: User not authenticated, skipping initialization');
+      }
+    } else {
+      setTimeout(waitForAuthService, 50);
+    }
+  }
+  waitForAuthService();
 
   // Periodically refresh profile/portfolio from server so admin changes appear without re-login
   async function refreshFromServer(){

@@ -31,77 +31,88 @@
 
     <main class="main-content">
       <h1>Help & Documentation</h1>
-      <p class="muted">Find answers to common questions and learn how to use ELON ULTRA ELONS</p>
+      <p class="muted">Quick links to onboarding, trading, account security, and troubleshooting.</p>
 
-      <input type="text" id="help-search" placeholder="Search documentation..." style="max-width:500px;margin:24px 0">
+      <div class="card" style="padding:16px;margin:24px 0">
+        <h3 style="margin-top:0">Popular Guides</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+          <a class="guide-link" href="guides/getting-started.html">Getting Started Checklist</a>
+          <a class="guide-link" href="guides/deposits-withdrawals.html">Deposits & Withdrawals</a>
+          <a class="guide-link" href="guides/trading-basics.html">Trading Basics</a>
+          <a class="guide-link" href="guides/security.html">Account & Security</a>
+          <a class="guide-link" href="guides/faq.html">FAQ Library</a>
+          <a class="guide-link" href="guides/api.html">API Integration</a>
+        </div>
+      </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:24px 0">
         <div class="card">
-          <h3>Getting Started</h3>
+          <h3>Onboarding</h3>
           <ul style="line-height:2">
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Create your account</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Verify your identity</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Add payment method</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Make your first deposit</a></li>
+            <li><a href="guides/getting-started.html#account" class="guide-link">Create & verify your account</a></li>
+            <li><a href="guides/deposits-withdrawals.html#deposit" class="guide-link">Fund your wallet</a></li>
+            <li><a href="guides/deposits-withdrawals.html#withdraw" class="guide-link">Withdraw to bank</a></li>
+            <li><a href="guides/trading-basics.html#demo" class="guide-link">Practice in demo mode</a></li>
           </ul>
         </div>
 
         <div class="card">
           <h3>Trading Guide</h3>
           <ul style="line-height:2">
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Understanding order types</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">How to place a trade</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Stop loss & take profit</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Risk management tips</a></li>
+            <li><a href="guides/trading-basics.html#orders" class="guide-link">Order types explained</a></li>
+            <li><a href="guides/trading-basics.html#execution" class="guide-link">Execute your first trade</a></li>
+            <li><a href="guides/trading-basics.html#risk" class="guide-link">Risk management tips</a></li>
+            <li><a href="guides/trading-basics.html#fees" class="guide-link">Fees & limits</a></li>
           </ul>
         </div>
 
         <div class="card">
           <h3>Account & Security</h3>
           <ul style="line-height:2">
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Two-factor authentication</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">API key management</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Withdraw your funds</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Report suspicious activity</a></li>
+            <li><a href="guides/security.html#2fa" class="guide-link">Enable 2FA</a></li>
+            <li><a href="guides/security.html#devices" class="guide-link">Manage trusted devices</a></li>
+            <li><a href="guides/security.html#alerts" class="guide-link">Security alerts & recovery</a></li>
+            <li><a href="guides/security.html#report" class="guide-link">Report suspicious activity</a></li>
           </ul>
         </div>
 
         <div class="card">
-          <h3>Market & Analysis</h3>
+          <h3>Resources</h3>
           <ul style="line-height:2">
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Reading market charts</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Technical indicators</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Market news & alerts</a></li>
-            <li><a href="#" style="color:var(--accent);text-decoration:none">Crypto glossary</a></li>
+            <li><a href="guides/faq.html" class="guide-link">Frequently asked questions</a></li>
+            <li><a href="guides/api.html" class="guide-link">API & developer docs</a></li>
+            <li><a href="https://status.elonultraelons.com" target="_blank" rel="noopener" class="guide-link">Status page</a></li>
+            <li><a href="https://community.elonultraelons.com" target="_blank" rel="noopener" class="guide-link">Community forum</a></li>
           </ul>
         </div>
       </div>
 
       <h2 style="margin-top:48px">Frequently Asked Questions</h2>
       <div style="max-width:800px">
-        <div class="card mb-6">
-          <h3 style="margin:0 0 12px 0">Is my money safe on ELON ULTRA ELONS?</h3>
-          <p class="muted">Yes, we use industry-standard security practices including cold storage for 95% of customer funds and regular security audits.</p>
-        </div>
-
-        <div class="card mb-6">
-          <h3 style="margin:0 0 12px 0">What are the trading fees?</h3>
-          <p class="muted">We charge 0.1% per trade for most users. VIP members get reduced rates starting at 0.05%.</p>
-        </div>
-
-        <div class="card mb-6">
-          <h3 style="margin:0 0 12px 0">How long does withdrawal take?</h3>
-          <p class="muted">Withdrawals typically process within 1-2 business days depending on your bank and payment method.</p>
-        </div>
-
-        <div class="card mb-6">
-          <h3 style="margin:0 0 12px 0">Can I use the API for trading bots?</h3>
-          <p class="muted">Yes, our API supports automated trading. Check the API documentation for rate limits and best practices.</p>
-        </div>
+        <details class="card mb-4" open>
+          <summary style="font-weight:600;cursor:pointer">Is my money safe on ELON ULTRA ELONS?</summary>
+          <p class="muted">Yes. 95% of customer funds are held in offline cold wallets, and withdrawals undergo multi-sig approval. See <a href="guides/security.html#custody" class="guide-link">our custody model</a>.</p>
+        </details>
+        <details class="card mb-4">
+          <summary style="font-weight:600;cursor:pointer">What are the trading fees?</summary>
+          <p class="muted">Standard fee is 0.1% per trade. VIP tiers start at 5 BTC monthly volume. View the <a href="guides/trading-basics.html#fees" class="guide-link">full fee schedule</a>.</p>
+        </details>
+        <details class="card mb-4">
+          <summary style="font-weight:600;cursor:pointer">How long do withdrawals take?</summary>
+          <p class="muted">Crypto withdrawals are near-instant once approved; bank transfers take 1-2 business days. Review the <a href="guides/deposits-withdrawals.html#withdraw" class="guide-link">withdrawal guide</a>.</p>
+        </details>
+        <details class="card mb-4">
+          <summary style="font-weight:600;cursor:pointer">Can I use the API for trading bots?</summary>
+          <p class="muted">Yes—generate API keys under Settings → Developer. Rate limits and sample code are in the <a href="guides/api.html" class="guide-link">API docs</a>.</p>
+        </details>
       </div>
 
       <h2 style="margin-top:48px">Still need help?</h2>
-      <p class="muted">Can't find what you're looking for? <a href="contact.html" style="color:var(--accent)">Contact our support team</a> or visit our community forums.</p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px">
+        <a class="btn" href="contact.html">Contact Support</a>
+        <a class="btn btn-secondary" target="_blank" rel="noopener" href="https://status.elonultraelons.com">Status Page</a>
+        <a class="btn btn-secondary" target="_blank" rel="noopener" href="https://community.elonultraelons.com">Community Forum</a>
+      </div>
     </main>
   </div>
 
@@ -109,6 +120,10 @@
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
+  <style>
+    .guide-link { color: var(--accent); text-decoration:none; font-weight:500; }
+    .guide-link:hover { text-decoration:underline; }
+  </style>
   <script>
     function logout(){
       localStorage.removeItem('authToken');

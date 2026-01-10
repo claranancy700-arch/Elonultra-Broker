@@ -81,12 +81,28 @@ router.get('/', async (req, res) => {
       FRAX: 'frax',
     };
 
-    const symbolList = symbols.split(',').map(s => s.toUpperCase().trim());
-    const ids = Array.from(new Set(symbolList.map(s => map[s]).filter(Boolean)));
-
-    if (ids.length === 0) {
+    const symbolList = symbols.split(',').map(s => s.trim());
+    const ids = [];
+    
+    // Handle both symbols (BTC, ETH) and direct IDs (bitcoin, ethereum)
+    for (const s of symbolList) {
+      const upper = s.toUpperCase();
+      if (map[upper]) {
+        ids.push(map[upper]);
+      } else if (s.toLowerCase() === s) {
+        // Already an ID (e.g. 'bitcoin')
+        ids.push(s.toLowerCase());
+      }
+    }
+    
+    const uniqueIds = Array.from(new Set(ids));
+    
+    if (uniqueIds.length === 0) {
+      console.log('[Prices] No valid symbols/IDs provided:', symbols);
       return res.json({});
     }
+    
+    console.log('[Prices] Mapped symbols to IDs:', symbolList, '->', uniqueIds);
 
     // Check cache first
     const now = Date.now();
@@ -116,7 +132,7 @@ router.get('/', async (req, res) => {
     // Fetch from CoinGecko
     isFetching = true;
     fetchPromise = (async () => {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${uniqueIds.join(',')}&vs_currencies=usd`;
       console.log('[Fetch] Requesting CoinGecko:', url);
 
       const response = await fetch(url);

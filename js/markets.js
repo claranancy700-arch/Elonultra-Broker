@@ -53,6 +53,14 @@ const SYMBOL_MAP = {
   FRAX: { id: 'frax', name: 'Frax' },
 };
 
+// Expose maps to window so other scripts (admin/dashboard) can use them
+try{
+  if (typeof window !== 'undefined') {
+    window.SYMBOL_MAP = SYMBOL_MAP;
+    window.MARKET_SYMBOLS = MARKET_SYMBOLS;
+  }
+}catch(e){ /* ignore in non-browser env */ }
+
 async function fetchMarketData(){
   try {
     const apiBase = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
@@ -158,6 +166,7 @@ function useMockData(){
   ];
 }function renderMarketTable(){
   const tbody = document.getElementById('market-tbody');
+  if (!tbody) return; // page may use a different market table (dashboard uses 'market-body')
   if (marketData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">Loading market data...</td></tr>';
     return;
@@ -178,6 +187,7 @@ function useMockData(){
 
 function renderTrending(){
   const tbody = document.getElementById('trending-tbody');
+  if (!tbody) return;
   if (marketData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
     return;
@@ -201,13 +211,7 @@ function logout(){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Ensure user is authenticated
-  if (!AuthService || !AuthService.isAuthenticated()) {
-    window.location.href = '/login.html';
-    return;
-  }
-  
-  // Fetch and render market data
+  // Fetch and render market data (do not force auth redirect here so markets.js can be used on other pages)
   const success = await fetchMarketData();
   if (!success) {
     useMockData();
@@ -216,20 +220,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTrending();
 
   // Search filter
-  document.getElementById('market-search').addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
+  const searchEl = document.getElementById('market-search');
+  if (searchEl) {
+    searchEl.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
     document.querySelectorAll('#market-tbody tr').forEach(row => {
       const match = row.textContent.toLowerCase().includes(query);
       row.style.display = match ? '' : 'none';
     });
-  });
+    });
+  }
 
-  // Sort select
-  document.getElementById('sort-select').addEventListener('change', (e) => {
-    const sortBy = e.target.value;
-    if (sortBy === 'name') marketData.sort((a, b) => a.name.localeCompare(b.name));
-    else if (sortBy === 'price') marketData.sort((a, b) => b.price - a.price);
-    else if (sortBy === 'change') marketData.sort((a, b) => b.change - a.change);
-    renderMarketTable();
-  });
+  // Sort select (guard in case the control doesn't exist on the page)
+  const sortEl = document.getElementById('sort-select');
+  if (sortEl) {
+    sortEl.addEventListener('change', (e) => {
+      const sortBy = e.target.value;
+      if (sortBy === 'name') marketData.sort((a, b) => a.name.localeCompare(b.name));
+      else if (sortBy === 'price') marketData.sort((a, b) => b.price - a.price);
+      else if (sortBy === 'change') marketData.sort((a, b) => b.change - a.change);
+      renderMarketTable();
+    });
+  }
 });
