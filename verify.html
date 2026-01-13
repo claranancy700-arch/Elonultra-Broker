@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Email Verification</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:24px}
+    .card{max-width:420px;margin:0 auto;padding:18px;border:1px solid #ddd;border-radius:8px}
+    label{display:block;margin-top:12px;font-weight:600}
+    input{width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:4px}
+    button{margin-top:16px;padding:10px 14px;border:0;background:#0b76ef;color:#fff;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Verify email</h2>
+    <p>Enter the verification code sent to your email.</p>
+    <form id="verifyForm">
+      <label>Email</label>
+      <input name="email" type="email" required />
+      <label>Verification code</label>
+      <input name="code" required />
+      <button type="submit">Verify</button>
+    </form>
+    <p id="vm" style="color:green;margin-top:12px"></p>
+  </div>
+  <script>
+    document.getElementById('verifyForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      document.getElementById('vm').textContent = 'Email verified (simulated)';
+      setTimeout(()=>document.getElementById('vm').textContent='',3000);
+    });
+  </script>
+</body>
+</html>

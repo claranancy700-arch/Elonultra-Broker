@@ -6,7 +6,9 @@ const { verifyToken } = require('../middleware/auth');
 // GET /api/transactions - return recent transactions for the authenticated user
 router.get('/', verifyToken, async (req, res) => {
   const userId = req.userId;
+
   try {
+    // Only show deposits that were admin-confirmed with tax id/reference 'deposit'
     const result = await db.query(
       `SELECT
          id,
@@ -18,10 +20,18 @@ router.get('/', verifyToken, async (req, res) => {
          created_at AS "createdAt"
        FROM transactions
        WHERE user_id = $1
+         AND (
+           type <> 'deposit'
+           OR (
+             status = 'completed'
+             AND LOWER(COALESCE(reference,'')) = 'deposit'
+           )
+         )
        ORDER BY created_at DESC
        LIMIT 50`,
       [userId]
     );
+
     return res.json({ success: true, transactions: result.rows });
   } catch (err) {
     // If transactions table does not exist or other DB error, return empty array for graceful fallback
@@ -30,23 +40,31 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/transactions/deposit - record a deposit (dev/stub safe)
+// POST /api/transactions/deposit - create a deposit request (pending until admin approval)
 router.post('/deposit', verifyToken, async (req, res) => {
   const userId = req.userId;
-  const { amount, method, currency = 'USD' } = req.body;
-  if (!amount || isNaN(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+  const { amount, method } = req.body;
+
+  const amt = parseFloat(amount);
+  if (!amt || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
   try {
-    // Try to insert into transactions table if present
+    const reference = `deposit-request-${Date.now()}`;
+
     const result = await db.query(
       'INSERT INTO transactions(user_id, type, amount, currency, status, reference) VALUES($1,$2,$3,$4,$5,$6) RETURNING id, created_at',
-      [userId, 'deposit', amount, currency, 'completed', 'api-deposit']
+      [userId, 'deposit', amt, (method || 'USD'), 'pending', reference]
     );
-    return res.status(201).json({ success: true, id: result.rows[0].id, created_at: result.rows[0].created_at });
+
+    return res.status(201).json({
+      success: true,
+      id: result.rows[0].id,
+      created_at: result.rows[0].created_at,
+      status: 'pending',
+    });
   } catch (err) {
-    console.error('Deposit record error (falling back):', err.message || err);
-    // Fallback: return created response without DB persistence
-    return res.status(201).json({ success: true, id: `stub-${Date.now()}`, created_at: new Date().toISOString() });
+    console.error('Deposit request record error:', err.message || err);
+    return res.status(500).json({ error: 'Failed to create deposit request' });
   }
 });
 

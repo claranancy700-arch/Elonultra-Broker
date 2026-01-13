@@ -12,15 +12,23 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// Run DB init (create audit/columns) and start background jobs
-try {
-  const { ensureSchema } = require('./db/init');
-  ensureSchema();
-  const { startPriceUpdater } = require('./jobs/priceUpdater');
-  // start daily job (24h)
-  startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
-} catch (err) {
-  console.warn('Failed to start background jobs or init:', err.message || err);
+// Run DB init and start background jobs
+async function initializeApp() {
+  try {
+    const { ensureSchema } = require('./db/init');
+    await ensureSchema();
+
+    const { startPriceUpdater } = require('./jobs/priceUpdater');
+    const { startUserTradeSimulator } = require('./jobs/userTradeSimulator');
+
+    // start daily valuation job (24h)
+    startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
+
+    // start per-user trade simulator (runs based on per-user schedules)
+    startUserTradeSimulator();
+  } catch (err) {
+    console.warn('Failed to start background jobs or init:', err.message || err);
+  }
 }
 
 // Serve frontend static files from project root (so /markets or /markets.html work)
@@ -94,14 +102,18 @@ try {
   console.log('Health endpoint available at /api/health, other routes may fail if DB is offline');
 }
 
-const server = app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+// Initialize (schema + jobs) then start server
+initializeApp().then(() => {
+  const server = app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, closing server...');
+    server.close();
+  });
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
-  server.close();
-});
 
 module.exports = app;
