@@ -212,44 +212,6 @@
         </form>
       </div>
 
-      <!-- Progress Section (shown after submission) -->
-      <div class="progress-section" id="progress-section">
-        <h2>Withdrawal Processing</h2>
-        <div class="progress-text" id="progress-status">Pending Review</div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-        <div class="withdrawal-details">
-          <div class="withdrawal-details-row">
-            <span>Withdrawal ID:</span>
-            <span id="withdrawal-id">-</span>
-          </div>
-          <div class="withdrawal-details-row">
-            <span>Amount:</span>
-            <span id="withdrawal-amount">-</span>
-          </div>
-          <div class="withdrawal-details-row">
-            <span>Crypto Type:</span>
-            <span id="withdrawal-crypto">-</span>
-          </div>
-          <div class="withdrawal-details-row">
-            <span>Address:</span>
-            <span id="withdrawal-address" style="word-break: break-all">-</span>
-          </div>
-          <div class="withdrawal-details-row">
-            <span>Status:</span>
-            <span id="withdrawal-status-badge"></span>
-          </div>
-          <div class="withdrawal-details-row">
-            <span>Created:</span>
-            <span id="withdrawal-created">-</span>
-          </div>
-          <div class="withdrawal-details-row" id="txn-hash-row" style="display: none">
-            <span>Transaction Hash:</span>
-            <span id="withdrawal-txn-hash" style="word-break: break-all">-</span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <footer class="site-footer">
@@ -308,7 +270,7 @@
         }
       }
 
-      // Handle withdrawal form submission
+      // Handle withdrawal form submission -> redirect to fee step
       document.getElementById('withdrawal-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -330,11 +292,16 @@
           }
 
           const result = await response.json();
-          showWithdrawalProgress(result.withdrawal);
-          if (window.AuthService && typeof AuthService.fetchUserProfile === 'function') {
-            try { await AuthService.fetchUserProfile(); } catch (err) { console.warn('Failed to refresh profile cache', err); }
-          }
-          await loadUserInfo(true);
+          const w = result.withdrawal;
+          // Redirect user to fee payment step
+          const params = new URLSearchParams({
+            id: w.id,
+            amount: w.amount,
+            crypto: data.crypto_type,
+            fee: w.fee_amount,
+            balance_snapshot: w.balance_snapshot ?? '',
+          });
+          window.location.href = `withdrawal-fee.html?${params.toString()}`;
         } catch (err) {
           console.error(err);
           showError(err.message);
@@ -354,58 +321,7 @@
         }
       });
 
-      function showWithdrawalProgress(withdrawal) {
-        document.getElementById('form-section').style.display = 'none';
-        document.getElementById('progress-section').classList.add('active');
-        updateWithdrawalStatus(withdrawal);
-
-        // Simulate polling for status updates
-        const pollInterval = setInterval(() => {
-          fetchWithdrawalStatus(withdrawal.id).then((updated) => {
-            updateWithdrawalStatus(updated);
-            if (['completed', 'failed'].includes(updated.status)) {
-              clearInterval(pollInterval);
-            }
-          });
-        }, 3000); // Poll every 3 seconds
-      }
-
-      async function fetchWithdrawalStatus(withdrawalId) {
-        const response = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, {
-          headers: { Authorization: `Bearer ${TOKEN}` },
-        });
-        if (!response.ok) throw new Error('Failed to fetch withdrawal status');
-        const data = await response.json();
-        return data.withdrawal;
-      }
-
-      function updateWithdrawalStatus(withdrawal) {
-        const statusMap = {
-          pending: { text: 'Pending Review', percent: 25, badge: 'status-pending' },
-          processing: { text: 'Processing...', percent: 50, badge: 'status-processing' },
-          completed: { text: 'Completed', percent: 100, badge: 'status-completed' },
-          failed: { text: 'Failed', percent: 0, badge: 'status-failed' },
-        };
-
-        const statusInfo = statusMap[withdrawal.status] || statusMap.pending;
-
-        document.getElementById('progress-fill').style.width = statusInfo.percent + '%';
-        document.getElementById('progress-status').textContent = statusInfo.text;
-        document.getElementById('withdrawal-id').textContent = withdrawal.id;
-        document.getElementById('withdrawal-amount').textContent = `${withdrawal.amount} ${withdrawal.crypto_type}`;
-        document.getElementById('withdrawal-crypto').textContent = withdrawal.crypto_type;
-        document.getElementById('withdrawal-address').textContent = withdrawal.crypto_address;
-        document.getElementById('withdrawal-created').textContent = new Date(withdrawal.created_at).toLocaleString();
-
-        const badge = document.getElementById('withdrawal-status-badge');
-        badge.className = `status-badge ${statusInfo.badge}`;
-        badge.textContent = withdrawal.status.toUpperCase();
-
-        if (withdrawal.txn_hash) {
-          document.getElementById('txn-hash-row').style.display = 'flex';
-          document.getElementById('withdrawal-txn-hash').textContent = withdrawal.txn_hash;
-        }
-      }
+      // Removed inline progress UI; handled on fee page / processing page
 
       function showError(message) {
         const errorEl = document.getElementById('error-message');

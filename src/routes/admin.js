@@ -299,6 +299,51 @@ router.post('/transactions', async (req, res) => {
   }
 });
 
+// -------------------------------
+// Withdrawal fee confirmations
+// -------------------------------
+router.get('/withdrawals', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const { fee_status } = req.query;
+    const where = fee_status ? 'WHERE fee_status = $1' : '';
+    const params = fee_status ? [fee_status] : [];
+    const q = await db.query(`SELECT * FROM withdrawals ${where} ORDER BY created_at DESC`, params);
+    return res.json({ success: true, withdrawals: q.rows });
+  } catch (err) {
+    console.error('Admin list withdrawals error:', err.message || err);
+    return res.status(500).json({ error: 'failed to list withdrawals' });
+  }
+});
+
+router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const { id } = req.params;
+    const confirmedBy = req.body.confirmedBy || 'admin';
+    await db.query(
+      `UPDATE withdrawals
+         SET fee_status='confirmed',
+             status='processing',
+             fee_confirmed_at=NOW(),
+             fee_confirmed_by=$2,
+             updated_at=NOW()
+       WHERE id=$1`,
+      [id, confirmedBy]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Admin confirm fee error:', err.message || err);
+    return res.status(500).json({ error: 'failed to confirm fee' });
+  }
+});
+
 // PUT /api/admin/transactions/:id - update transaction fields
 router.put('/transactions/:id', async (req, res) => {
   try {

