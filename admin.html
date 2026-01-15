@@ -12,6 +12,21 @@
     .sidebar { width:200px; flex-shrink: 0; }
     .main-content { flex:1; min-width:0; }
     .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+    
+    /* Mobile Menu Toggle */
+    .mobile-menu-toggle { display:none; background:none; border:none; font-size:24px; cursor:pointer; color:var(--text); padding:8px; }
+    .mobile-menu-toggle:hover { color:var(--accent); }
+    
+    /* Modern Testimonies Modal */
+    .testimonies-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:1000; justify-content:center; align-items:center; padding:20px; animation:fadeIn 0.3s ease-out; overflow-y:auto; }
+    .testimonies-modal.active { display:flex; }
+    .testimonies-modal-content { background:#fff; border-radius:12px; width:90%; max-width:900px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); padding:24px; animation:slideUp 0.3s ease-out; }
+    .testimonies-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:2px solid #f0f0f0; }
+    .testimonies-modal-header h2 { margin:0; color:var(--text); }
+    .testimonies-modal-close { background:none; border:none; font-size:28px; cursor:pointer; color:var(--muted); padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+    .testimonies-modal-close:hover { color:var(--text); }
+    .testimonies-grid-modal { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    
     /* Modern Futuristic Users Modal */
     .users-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:1000; justify-content:center; align-items:center; padding:20px; animation:fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
@@ -34,14 +49,31 @@
     .user-item-email { font-size:15px; font-weight:600; margin:6px 0; color:#fff; }
     .user-item-balance { font-size:13px; color:rgba(0,255,150,0.8); font-weight:500; margin:2px 0; }
     .user-item-actions { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
-    @media (max-width:900px){ .app-wrapper{ flex-direction:column; } .sidebar{ width:100%; } }
+    
+    /* Mobile Responsive */
+    @media (max-width:900px) { 
+      .app-wrapper{ flex-direction:column; } 
+      .sidebar{ width:100%; } 
+      .nav { display:none; }
+      .nav.active { display:flex; flex-direction:column; position:absolute; top:60px; left:0; right:0; background:#fff; border-bottom:1px solid var(--border); padding:12px 0; z-index:99; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+      .nav.active a { padding:12px 24px; margin-left:0; border-left:3px solid transparent; }
+      .nav.active a:hover { background:#f3f4f6; border-left-color:var(--accent); }
+      .mobile-menu-toggle { display:block; }
+    }
+    
+    @media (max-width:640px) {
+      .page-container { padding:12px; }
+      .testimonies-grid-modal { grid-template-columns:1fr; }
+      .testimonies-modal-content { padding:16px; }
+    }
   </style>
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
+    <div class="container" style="display:flex; align-items:center; justify-content:space-between;">
       <a href="/landing.html" class="brand"><img src="/images/elon-logo-v2.svg" alt="EUE"><span>ELON ULTRA ELONS - ADMIN</span></a>
-      <nav class="nav">
+      <button class="mobile-menu-toggle" onclick="toggleMobileNav()">☰</button>
+      <nav class="nav" id="mobile-nav">
         <a href="/dashboard.html">Dashboard</a>
         <a href="/markets.html">Markets</a>
         <a href="/settings.html">Settings</a>
@@ -465,7 +497,7 @@
           <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
             <button onclick="showTestimonyForm()" class="btn">+ Add Testimony</button>
             <button onclick="loadAllTestimonies()" class="btn btn-secondary">Refresh List</button>
-            <button onclick="autoGenerateTestimonies()" class="btn" style="background:linear-gradient(135deg,#10b981,#059669)">🤖 Auto-Generate (10)</button>
+            <button onclick="openTestimoniesModal()" class="btn btn-secondary">👁️ View All</button>
           </div>
 
           <!-- Add/Edit Testimony Form -->
@@ -485,7 +517,20 @@
             </div>
           </form>
 
-          <!-- Testimonies List -->
+          <!-- On Desktop: Show grid (limited) -->
+          <div id="testimonies-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;max-height:400px;overflow:hidden"></div>
+          <div style="text-align:center;color:var(--muted);margin-top:12px;font-size:13px">👆 Click "View All" to see all testimonies in a modal</div>
+        </div>
+
+        <!-- Testimonies Modal -->
+        <div id="testimonies-modal" class="testimonies-modal">
+          <div class="testimonies-modal-content">
+            <div class="testimonies-modal-header">
+              <h2>All Testimonies</h2>
+              <button class="testimonies-modal-close" onclick="document.getElementById('testimonies-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div id="testimonies-modal-list" class="testimonies-grid-modal"></div>
+          
           <div id="testimonies-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
         </div>
 
@@ -520,6 +565,40 @@
   <script src="/js/admin-testimonies.js"></script>
   <script src="/js/admin-transactions.js"></script>
   <script src="/js/admin.js"></script>
+  
+  <!-- Mobile Navigation & Testimonies Modal -->
+  <script>
+    // Toggle mobile nav
+    function toggleMobileNav() {
+      const nav = document.getElementById('mobile-nav');
+      nav.classList.toggle('active');
+    }
+    
+    // Close mobile nav when clicking a link
+    document.querySelectorAll('#mobile-nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('mobile-nav').classList.remove('active');
+      });
+    });
+    
+    // Open testimonies modal
+    function openTestimoniesModal() {
+      const modal = document.getElementById('testimonies-modal');
+      const list = document.getElementById('testimonies-list');
+      const modalList = document.getElementById('testimonies-modal-list');
+      
+      // Clone the testimonies from the main list
+      modalList.innerHTML = list.innerHTML;
+      modal.classList.add('active');
+    }
+    
+    // Close testimonies modal when clicking outside
+    document.getElementById('testimonies-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'testimonies-modal') {
+        document.getElementById('testimonies-modal').classList.remove('active');
+      }
+    });
+  </script>
   <script>
     (async () => {
       try {
