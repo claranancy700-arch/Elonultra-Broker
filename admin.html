@@ -518,8 +518,23 @@
           </form>
 
           <!-- On Desktop: Show grid (limited) -->
-          <div id="testimonies-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;max-height:400px;overflow:hidden"></div>
-          <div style="text-align:center;color:var(--muted);margin-top:12px;font-size:13px">👆 Click "View All" to see all testimonies in a modal</div>
+          <div id="testimonies-list" style="display:none" class="testimonies-desktop-only"></div>
+          
+          <!-- Mobile: Show button instead -->
+          <div class="testimonies-mobile-view">
+            <button onclick="loadAllTestimonies(); openTestimoniesModal()" class="btn" style="width:100%">👁️ View Testimonies ({count})</button>
+          </div>
+          
+          <style>
+            @media (min-width:901px) {
+              #testimonies-list { display:grid !important; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; max-height:400px; overflow:hidden; }
+              .testimonies-mobile-view { display:none; }
+            }
+            @media (max-width:900px) {
+              #testimonies-list { display:none !important; }
+              .testimonies-mobile-view { display:block; }
+            }
+          </style>
         </div>
 
         <!-- Testimonies Modal -->

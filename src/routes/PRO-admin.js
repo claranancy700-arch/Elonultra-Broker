@@ -86,8 +86,8 @@ router.post('/credit', async (req, res) => {
   }
 });
 
-// GET /api/admin/users - list users (admin key required)
-router.get('/users', async (req, res) => {
+// GET /api/admin/users - list users (admin key required) - PRO ADMIN VERSION
+router.get('/users-pro', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
