@@ -121,37 +121,33 @@ const AuthService = {
 
   // Signup (does NOT store token — user must login after)
   async signup(name, email, password) {
-    try {
-      const response = await fetch(`${this.API_BASE}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
+    const response = await fetch(`${this.API_BASE}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
 
-      // Try to parse JSON, with fallback for empty responses
-      let data;
-      const text = await response.text();
-      
-      if (!text) {
-        console.error('Server returned empty response:', response.status);
-        throw new Error(`Server error (${response.status}): Empty response`);
-      }
-
-      try {
-        data = JSON.parse(text);
-      } catch (parseErr) {
-        console.error('Failed to parse JSON:', text);
-        throw new Error(`Server returned invalid JSON: ${text.substring(0, 100)}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `Signup failed (${response.status})`);
-      }
-
-      return data;
-    } catch (err) {
-      throw err;
+    // Try to parse JSON, with fallback for empty responses
+    let data;
+    const text = await response.text();
+    
+    if (!text) {
+      console.error('Server returned empty response:', response.status);
+      throw new Error(`Server error (${response.status}): Empty response`);
     }
+
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('Failed to parse JSON:', text);
+      throw new Error(`Server returned invalid JSON: ${text.substring(0, 100)}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || `Signup failed (${response.status})`);
+    }
+
+    return data;
   },
 
   // Logout and clear token/user
@@ -165,6 +161,10 @@ const AuthService = {
     localStorage.removeItem('portfolio');
     localStorage.removeItem('availableBalance');
     localStorage.removeItem('portfolioTotal');
+    // Clear CBPortfolio if available
+    if (typeof window !== 'undefined' && window.CBPortfolio && typeof window.CBPortfolio.clearAll === 'function') {
+      window.CBPortfolio.clearAll();
+    }
   },
 
   // Ensure authentication and redirect if not logged in

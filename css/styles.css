@@ -113,9 +113,11 @@ textarea{resize:vertical;min-height:120px}
 
 /* Responsive */
 @media (max-width:768px){
+  /* Use an off-canvas vertical sidebar on small screens */
   .app-wrapper{flex-direction:column}
-  .sidebar{width:100%;height:auto;position:static;border-right:none;border-bottom:1px solid rgba(59,130,246,0.1);padding:0}
-  .sidebar-link{display:inline-block;padding:8px 16px}
+  .sidebar{width:260px;height:calc(100vh - 60px);position:fixed;left:-260px;top:60px;border-right:none;border-bottom:none;padding:12px;transition:left 0.25s ease;z-index:220;box-shadow:0 8px 24px rgba(2,6,23,0.12)}
+  body.sidebar-open .sidebar, .sidebar-open .sidebar{left:0}
+  .sidebar-link{display:block;padding:10px 14px}
   .main-content{margin-left:0;padding:16px}
   .cards-grid{grid-template-columns:1fr}
   .table-wrapper{overflow-x:auto}
@@ -123,4 +125,21 @@ textarea{resize:vertical;min-height:120px}
   th,td{padding:8px 12px}
   .hero h1{font-size:36px}
   .hero p{font-size:16px}
-}
+  /* Mobile header menu toggle */
+  .site-header .menu-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:6px; background:transparent; border:none; cursor:pointer; margin-right:8px; font-size:20px }
+  .site-header .menu-toggle:focus { outline: 3px solid rgba(37,99,235,0.2); outline-offset:2px }
+  /* Larger tap targets for buttons on mobile */
+  .btn { padding:10px 14px; }
+  .btn-small { padding:8px 10px; font-size:14px }
+  /* Reduce card padding on mobile to reduce scroll */
+  .card { padding:12px }
+  /* Tighter table cell spacing for small screens */
+  table { width:100%; border-collapse:collapse }
+  th, td { padding:8px 10px }
+  /* Improve focus visibility for interactive elements */
+  :focus { outline: 3px solid rgba(59,130,246,0.18); outline-offset:2px }
+  :focus:not(:focus-visible) { outline: none }
+  /* Ensure table headers remain readable and accessible */
+  th { text-align:left; font-weight:600 }
+  body.sidebar-open { overflow: hidden; }
+}  

@@ -68,6 +68,55 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Inject mobile menu toggle when a sidebar exists and wire toggle logic
+  try {
+    const headerContainer = document.querySelector('.site-header .container');
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && headerContainer) {
+      const btn = document.createElement('button');
+      btn.id = 'mobile-menu-toggle';
+      btn.className = 'menu-toggle';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Toggle menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.innerHTML = '☰';
+      btn.addEventListener('click', () => {
+        const opened = document.body.classList.toggle('sidebar-open');
+        btn.setAttribute('aria-expanded', opened ? 'true' : 'false');
+      });
+      const nav = headerContainer.querySelector('.nav');
+      headerContainer.insertBefore(btn, nav);
+
+      // Add a skip-to-content link for keyboard users
+      if (!document.getElementById('skip-link')) {
+        const skip = document.createElement('a');
+        skip.id = 'skip-link';
+        skip.href = '#main-content';
+        skip.textContent = 'Skip to content';
+        skip.style = 'position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden';
+        skip.addEventListener('focus', () => { skip.style.position = 'static'; skip.style.left = '8px'; skip.style.top = '8px'; skip.style.background = '#fff'; skip.style.padding = '8px'; skip.style.zIndex = 9999; skip.style.borderRadius = '4px'; skip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)'; });
+        skip.addEventListener('blur', () => { skip.style.position = 'absolute'; skip.style.left = '-9999px'; skip.style.top = 'auto'; skip.style.background = 'none'; skip.style.padding = '0'; skip.style.boxShadow = 'none'; });
+        headerContainer.parentElement.insertBefore(skip, headerContainer);
+      }
+
+      // Close sidebar when clicking main content or pressing Escape
+      document.querySelector('.main-content')?.addEventListener('click', () => {
+        if (document.body.classList.contains('sidebar-open')) {
+          document.body.classList.remove('sidebar-open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      });
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+          document.body.classList.remove('sidebar-open');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
+        }
+      });
+    }
+  } catch (e) { console.warn('Mobile menu inject failed', e); }
+
 });
 
 // Mount components if available

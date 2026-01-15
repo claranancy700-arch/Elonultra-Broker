@@ -116,8 +116,9 @@
           body: JSON.stringify({ amount, method: methodSelect.value })
         });
         if (res.ok) {
-          alert('Deposit confirmation received.');
-          window.location.href = 'transactions.html';
+          // Show awaiting admin confirmation message instead of redirecting
+          const formSection = document.getElementById('form-section');
+          formSection.innerHTML = '<div class="alert alert-info">Deposit confirmation received. <strong>Awaiting Admin confirmation</strong>. You will see the deposit in Transactions once approved.</div><div style="margin-top:8px"><a href="transactions.html" class="btn btn-secondary">View transactions</a></div>';
           return;
         }
         const text = await res.text();

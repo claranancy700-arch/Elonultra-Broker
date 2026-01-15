@@ -8,7 +8,7 @@ router.get('/', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    // Only show deposits that were admin-confirmed with tax id/reference 'deposit'
+    // Show all transactions including pending deposits (so users can see their deposit history)
     const result = await db.query(
       `SELECT
          id,
@@ -20,13 +20,6 @@ router.get('/', verifyToken, async (req, res) => {
          created_at AS "createdAt"
        FROM transactions
        WHERE user_id = $1
-         AND (
-           type <> 'deposit'
-           OR (
-             status = 'completed'
-             AND LOWER(COALESCE(reference,'')) = 'deposit'
-           )
-         )
        ORDER BY created_at DESC
        LIMIT 50`,
       [userId]

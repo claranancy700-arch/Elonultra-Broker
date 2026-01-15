@@ -7,11 +7,33 @@
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     body { overflow-x: hidden; }
-    .page-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .app-wrapper { display:flex; gap:24px; align-items:flex-start; }
-    .sidebar { width:200px; }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 20px; width: 100%; box-sizing: border-box; }
+    .app-wrapper { display:flex; gap:24px; align-items:flex-start; width: 100%; }
+    .sidebar { width:200px; flex-shrink: 0; }
     .main-content { flex:1; min-width:0; }
     .cards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+    /* Modern Futuristic Users Modal */
+    .users-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:1000; justify-content:center; align-items:center; padding:20px; animation:fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .users-modal.active { display:flex; }
+    .users-modal-content { background:linear-gradient(135deg, rgba(20,20,35,0.95) 0%, rgba(30,25,50,0.95) 100%); border:1px solid rgba(100,200,255,0.2); border-radius:12px; width:90%; max-width:550px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,150,255,0.2), inset 0 1px 0 rgba(255,255,255,0.1); backdrop-filter:blur(10px); animation:slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform:translateY(40px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+    .users-modal-header { padding:20px; border-bottom:1px solid rgba(100,200,255,0.15); display:flex; justify-content:space-between; align-items:center; background:linear-gradient(90deg, rgba(0,150,255,0.1) 0%, transparent 100%); }
+    .users-modal-header h3 { margin:0; font-size:18px; font-weight:700; background:linear-gradient(135deg, #00d4ff 0%, #0099ff 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .users-modal-close { background:none; border:none; font-size:28px; cursor:pointer; color:rgba(100,200,255,0.6); transition:all 0.2s; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; }
+    .users-modal-close:hover { color:rgba(100,200,255,1); transform:rotate(90deg); }
+    .users-modal-body { overflow-y:auto; flex:1; padding:12px; background:linear-gradient(180deg, rgba(0,100,200,0.05) 0%, transparent 100%); }
+    .users-modal-body::-webkit-scrollbar { width:6px; }
+    .users-modal-body::-webkit-scrollbar-track { background:rgba(100,200,255,0.1); border-radius:10px; }
+    .users-modal-body::-webkit-scrollbar-thumb { background:linear-gradient(180deg, rgba(0,200,255,0.5), rgba(0,100,200,0.3)); border-radius:10px; }
+    .user-item { padding:14px; border:1px solid rgba(100,200,255,0.15); border-radius:8px; margin-bottom:10px; cursor:pointer; transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1); background:linear-gradient(135deg, rgba(0,50,100,0.3) 0%, rgba(20,60,120,0.2) 100%); position:relative; overflow:hidden; }
+    .user-item::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(0,200,255,0.1), transparent); transition:left 0.5s; }
+    .user-item:hover::before { left:100%; }
+    .user-item:hover { border-color:rgba(100,200,255,0.4); background:linear-gradient(135deg, rgba(0,80,150,0.4) 0%, rgba(30,100,180,0.3) 100%); box-shadow:0 8px 32px rgba(0,200,255,0.15), inset 0 1px 0 rgba(255,255,255,0.05); transform:translateY(-2px); }
+    .user-item-id { font-size:11px; color:rgba(100,200,255,0.7); font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+    .user-item-email { font-size:15px; font-weight:600; margin:6px 0; color:#fff; }
+    .user-item-balance { font-size:13px; color:rgba(0,255,150,0.8); font-weight:500; margin:2px 0; }
+    .user-item-actions { margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; }
     @media (max-width:900px){ .app-wrapper{ flex-direction:column; } .sidebar{ width:100%; } }
   </style>
 </head>
@@ -50,76 +72,131 @@
           </div>
         </div>
 
-        <!-- Admin Controls (embedded) -->
-        <div class="card" style="margin-bottom:16px;padding:12px">
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <label style="flex:1;min-width:220px;display:flex;gap:8px;align-items:center">
-              <strong>Admin Key:</strong>
-              <input id="admin-key" placeholder="paste x-admin-key here" style="flex:1;padding:8px" />
-            </label>
-            <button id="load-users" class="btn">Load Users</button>
-          </div>
-
-          <div style="margin-top:12px;display:flex;gap:12px;align-items:flex-start">
-            <div style="flex:1;min-width:240px">
-              <h4>Users</h4>
-              <div style="max-height:220px;overflow:auto;border:1px solid var(--muted);border-radius:6px;padding:8px">
-                <table style="width:100%"><thead><tr><th>ID</th><th>Email</th><th>Balance</th><th></th></tr></thead>
-                <tbody id="users-tbody"></tbody></table>
-              </div>
+        <!-- Admin Access (outside main panel) -->
+        <div class="card" style="margin-bottom:16px;padding:12px;background:var(--bg);border:1px solid var(--border)">
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <div style="flex:1;max-width:300px">
+              <label style="display:flex;flex-direction:column;gap:6px">
+                <strong>Admin Key</strong>
+                <input id="admin-key" name="admin_key" placeholder="paste x-admin-key here" style="padding:8px;border:1px solid var(--border);border-radius:4px" />
+              </label>
+              <button id="load-users" class="btn" style="width:100%;margin-top:8px">Load Users</button>
             </div>
-
-            <div style="flex:1;min-width:320px">
-              <h4>User Details</h4>
-              <div id="user-detail">Select a user to view details</div>
-
-              <div style="margin-top:8px">
-                <form id="credit-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <input id="credit-user-id" type="hidden" />
-                  <label style="flex:1;min-width:140px"><span>Amount</span><input id="credit-amount" type="number" step="0.01" required></label>
-                  <label style="flex:1;min-width:120px"><span>Currency</span>
-                    <select id="credit-currency"><option>USD</option><option>BTC</option><option>ETH</option><option>USDT</option><option>USDC</option></select>
-                  </label>
-                  <label style="flex:1;min-width:160px"><span>Reference</span><input id="credit-reference" placeholder="admin-credit"></label>
-                  <div style="width:100%;display:flex;gap:8px;margin-top:8px">
-                    <button type="submit" class="btn">Credit (add)</button>
-                    <button type="button" id="set-balance-btn" class="btn btn-secondary">Set Balance</button>
-                  </div>
-                </form>
-              </div>
-
-              <div style="margin-top:12px">
-                <form id="portfolio-form" style="display:grid;grid-template-columns:1fr;gap:8px;align-items:center">
-                  <input id="portfolio-user-id" type="hidden" />
-                  <div style="display:flex;gap:8px;align-items:center">
-                    <button type="button" id="add-asset-btn" class="btn">+ Add Asset</button>
-                    <div style="color:var(--muted);font-size:13px">Use the button to add asset rows</div>
-                  </div>
-                  <div id="portfolio-fields" style="display:grid;grid-template-columns:1fr;gap:8px"></div>
-                  <div style="margin-top:8px"><button type="submit" class="btn">Set Holdings</button></div>
-                </form>
-              </div>
-
-              <div style="margin-top:12px">
-                <h4>Transactions</h4>
-                <div style="max-height:200px;overflow:auto;border:1px solid var(--muted);border-radius:6px;padding:8px">
-                  <table style="width:100%"><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Currency</th></tr></thead>
-                  <tbody id="transactions-tbody"></tbody></table>
-                </div>
-              </div>
-
+            <div style="flex:1">
+              <button id="users-list-btn" class="btn" style="width:100%;padding:32px;font-size:16px;text-align:center">
+                👥 View Users<br><span style="font-size:12px;color:var(--muted)">Click to open users list</span>
+              </button>
             </div>
           </div>
         </div>
+
+        <!-- Users List Modal -->
+        <div id="users-modal" class="users-modal">
+          <div class="users-modal-content">
+            <div class="users-modal-header">
+              <h3>Select User</h3>
+              <button class="users-modal-close" onclick="document.getElementById('users-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="users-modal-body" id="users-list-container">
+              <div style="text-align:center;color:var(--muted);padding:20px">Click "Load Users" to populate list</div>
+            </div>
+          </div>
+        </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch">
+            <!-- Simulator Control -->
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column">
+              <h4 style="margin-top:0;margin-bottom:10px">⚙️ Simulator</h4>
+              <div style="font-size:13px;margin-bottom:10px">
+                <div style="margin-bottom:6px">Status: <strong id="sim-status">—</strong></div>
+                <div>Next run: <span id="sim-next" style="color:var(--muted)">—</span></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button id="sim-start" class="btn btn-small" style="flex:1">Start</button>
+                <button id="sim-pause" class="btn btn-secondary btn-small" style="flex:1">Pause</button>
+              </div>
+            </div>
+
+            <!-- Balance Management -->
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column">
+              <h4 style="margin-top:0;margin-bottom:10px">💰 Balance</h4>
+              <form id="credit-form" style="display:flex;flex-direction:column;gap:8px;font-size:13px;flex:1">
+                <input id="credit-user-id" type="hidden" />
+                <label style="display:flex;flex-direction:column"><span style="font-weight:600;margin-bottom:4px">Amount</span><input id="credit-amount" name="amount" type="number" step="0.01" required style="padding:6px"></label>
+                <label style="display:flex;flex-direction:column"><span style="font-weight:600;margin-bottom:4px">Currency</span>
+                  <select id="credit-currency" name="currency" style="padding:6px"><option>USD</option><option>BTC</option><option>ETH</option><option>USDT</option><option>USDC</option></select>
+                </label>
+                <label style="display:flex;flex-direction:column"><span style="font-weight:600;margin-bottom:4px">Tax ID</span><input id="credit-tax-id" name="tax_id" type="text" placeholder="Optional tax ID" style="padding:6px"></label>
+                <button type="submit" class="btn" style="font-size:12px">Credit (add)</button>
+                <button type="button" id="set-balance-btn" class="btn btn-secondary" style="font-size:12px">Set Balance</button>
+              </form>
+            </div>
+
+            <!-- Manual Trade Trigger -->
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column">
+              <h4 style="margin-top:0;margin-bottom:10px">📈 Manual Trade</h4>
+              <div style="font-size:13px;margin-bottom:10px;color:var(--muted);flex:1">Trigger balance growth immediately for selected user</div>
+              <button id="trigger-growth-btn" class="btn" style="width:100%;font-size:12px">Trigger Growth Now</button>
+              <button id="trigger-growth-btn-all" class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:12px">Trigger All Users</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch">
+            <!-- Portfolio Management -->
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column">
+              <h4 style="margin-top:0;margin-bottom:12px">🏆 Portfolio</h4>
+              <form id="portfolio-form" style="display:grid;grid-template-columns:1fr;gap:10px;font-size:13px">
+                <input id="portfolio-user-id" name="portfolio_user_id" type="hidden" />
+                <button type="button" id="add-asset-btn" class="btn" style="width:100%;font-size:13px">+ Add Asset</button>
+                <div style="color:var(--muted);font-size:12px;text-align:center">Click to add or edit holdings</div>
+                <div id="portfolio-fields" style="display:grid;grid-template-columns:1fr;gap:8px;max-height:140px;overflow-y:auto;padding:8px 0"></div>
+                <button type="submit" class="btn" style="margin-top:8px;font-size:13px;width:100%">💾 Save Holdings</button>
+              </form>
+            </div>
+
+            <!-- Danger Zone -->
+            <div style="padding:12px;border:1px solid var(--border);border-radius:6px;border-color:#f87171;background:rgba(239,68,68,0.05);display:flex;flex-direction:column">
+              <h4 style="margin-top:0;margin-bottom:10px;color:#dc2626">⚠️ Danger Zone</h4>
+              <div style="font-size:13px;margin-bottom:10px;color:var(--muted)">Delete all trades for all users (silent operation)</div>
+              <button type="button" class="btn" style="width:100%;font-size:12px;background:#dc2626;color:white;border:none" onclick="clearAllTrades()">🗑️ Clear All Trades</button>
+              <button type="button" id="reset-user-btn" class="btn btn-secondary" style="width:100%;margin-top:8px;font-size:12px">Reset User Data</button>
+            </div>
+          </div>
+
+          <!-- Send Prompt to Users -->
+          <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-top:16px;margin-bottom:16px">
+            <h4 style="margin-top:0;margin-bottom:10px">📢 Send Prompt to Users</h4>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+              <label style="display:flex;flex-direction:column">
+                <strong style="margin-bottom:4px">Message</strong>
+                <textarea id="prompt-message" placeholder="Message to appear as a prompt to users" style="min-height:80px;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit"></textarea>
+              </label>
+              <label style="display:flex;flex-direction:column">
+                <strong style="margin-bottom:4px">Target User IDs</strong>
+                <input id="prompt-user-ids" placeholder="Leave blank for broadcast, or enter comma-separated IDs (e.g., 1,2,5)" style="padding:8px;border:1px solid var(--border);border-radius:4px" />
+              </label>
+              <button id="send-prompt-btn" type="button" class="btn" style="width:100%;font-size:13px">Send Prompt</button>
+            </div>
+          </div>
+
+          <!-- Manage Active Prompts -->
+          <div style="padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:16px">
+            <h4 style="margin-top:0;margin-bottom:10px">🛑 Active Prompts</h4>
+            <div style="font-size:13px;margin-bottom:12px;color:var(--muted)">Click "Disable" to stop a prompt from showing to users</div>
+            <div id="active-prompts-list" style="display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto">
+              <div style="text-align:center;color:var(--muted);padding:12px">No active prompts</div>
+            </div>
+            <button id="refresh-prompts-btn" type="button" class="btn btn-secondary" style="width:100%;margin-top:12px;font-size:12px">Refresh Prompts</button>
+          </div>
 
         <div class="card" style="margin-bottom:16px;padding:16px">
           <h3 style="margin-top:0">Deposit Addresses</h3>
           <p class="muted" style="margin-bottom:12px">Customize the wallet addresses shown on the deposit page.</p>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-            <label><span>BTC</span><input data-deposit-symbol="BTC" placeholder="bc1..." /></label>
-            <label><span>ETH</span><input data-deposit-symbol="ETH" placeholder="0x..." /></label>
-            <label><span>USDT</span><input data-deposit-symbol="USDT" placeholder="T..." /></label>
-            <label><span>USDC</span><input data-deposit-symbol="USDC" placeholder="0x..." /></label>
+            <label><span>BTC</span><input data-deposit-symbol="BTC" id="deposit-address-BTC" name="deposit_address[BTC]" placeholder="bc1..." /></label>
+            <label><span>ETH</span><input data-deposit-symbol="ETH" id="deposit-address-ETH" name="deposit_address[ETH]" placeholder="0x..." /></label>
+            <label><span>USDT</span><input data-deposit-symbol="USDT" id="deposit-address-USDT" name="deposit_address[USDT]" placeholder="T..." /></label>
+            <label><span>USDC</span><input data-deposit-symbol="USDC" id="deposit-address-USDC" name="deposit_address[USDC]" placeholder="0x..." /></label>
           </div>
           <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
             <button id="save-deposit-addresses" class="btn">Save Addresses</button>
@@ -184,17 +261,44 @@
           </table>
         </div>
 
+        <!-- Recent Trades Table -->
+        <div class="table-wrapper">
+          <div class="table-header">
+            <h3>Recent Trades</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="recent-trades-user">
+              <tr>
+                <td colspan="6" style="text-align:center;color:var(--muted)">Select a user to view recent trades.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Transaction Management Tabs (Editable Admin View) -->
         <div style="margin-top:32px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <h2>Transaction Management</h2>
-            <button onclick="refreshAllTransactions()" class="btn btn-secondary">Refresh All</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="refreshAllTransactions()" class="btn btn-secondary">Refresh All</button>
+              <button onclick="clearAllTrades()" class="btn btn-danger" style="font-size:12px">🗑️ Clear All Trades</button>
+            </div>
           </div>
           
           <div class="tabs">
             <button class="tab-btn active" onclick="switchTab(event, 'deposits-admin')">Deposits</button>
             <button class="tab-btn" onclick="switchTab(event, 'withdrawals-admin')">Withdrawals</button>
-            <button class="tab-btn" onclick="switchTab(event, 'trades-admin')">Trades</button>
+            <button class="tab-btn" onclick="switchTab(event, 'growth-trades-admin')">Growth Trades</button>
             <button class="tab-btn" onclick="switchTab(event, 'all-transactions')">All Transactions</button>
           </div>
 
@@ -227,7 +331,10 @@
             <div class="table-wrapper">
               <div class="table-header">
                 <h3>Withdrawal History</h3>
-                <button onclick="addNewTransaction('withdrawal')" class="btn">+ Add Withdrawal</button>
+                <div style="display:flex;gap:8px">
+                  <button onclick="loadWithdrawals()" class="btn btn-small">Refresh</button>
+                  <button onclick="addNewTransaction('withdrawal')" class="btn">+ Add Withdrawal</button>
+                </div>
               </div>
               <table>
                 <thead>
@@ -237,38 +344,63 @@
                     <th>Method</th>
                     <th>Amount</th>
                     <th>Status</th>
+                    <th>Fee Status</th>
                     <th>TxID</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="withdrawals-admin-tbody">
-                  <tr><td colspan="7" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>
+                  <tr><td colspan="8" style="text-align:center;color:var(--muted)">Click Refresh to load withdrawals</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div id="trades-admin" class="tab-content">
+          <div id="growth-trades-admin" class="tab-content">
             <div class="table-wrapper">
               <div class="table-header">
-                <h3>Trade History</h3>
-                <button onclick="addNewTransaction('trade')" class="btn">+ Add Trade</button>
+                <h3>Balance Growth Trades</h3>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button onclick="loadGrowthTrades()" class="btn btn-small">Refresh</button>
+                  <button onclick="triggerGrowthNow()" class="btn btn-small">Trigger Growth Now</button>
+                </div>
+              </div>
+              <div id="growth-stats" style="margin-bottom:16px;padding:12px;background:var(--bg-secondary);border-radius:6px">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+                  <div>
+                    <div style="color:var(--muted);font-size:12px">Total Growth Trades</div>
+                    <div style="font-size:18px;font-weight:600" id="growth-total-trades">—</div>
+                  </div>
+                  <div>
+                    <div style="color:var(--muted);font-size:12px">Total Volume</div>
+                    <div style="font-size:18px;font-weight:600" id="growth-total-volume">—</div>
+                  </div>
+                  <div>
+                    <div style="color:var(--muted);font-size:12px">Avg Boost per Trade</div>
+                    <div style="font-size:18px;font-weight:600;color:var(--success)" id="growth-avg-boost">—</div>
+                  </div>
+                  <div>
+                    <div style="color:var(--muted);font-size:12px">Peak Balance</div>
+                    <div style="font-size:18px;font-weight:600" id="growth-peak-balance">—</div>
+                  </div>
+                </div>
               </div>
               <table>
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>User</th>
-                    <th>Side</th>
+                    <th>Type</th>
                     <th>Asset</th>
                     <th>Amount</th>
                     <th>Price</th>
                     <th>Total</th>
-                    <th>Actions</th>
+                    <th>Balance Before</th>
+                    <th>Balance After</th>
+                    <th>Boost %</th>
                   </tr>
                 </thead>
-                <tbody id="trades-admin-tbody">
-                  <tr><td colspan="8" style="text-align:center;color:var(--muted)">No trades yet</td></tr>
+                <tbody id="growth-trades-tbody">
+                  <tr><td colspan="9" style="text-align:center;color:var(--muted)">Select a user to view growth trades</td></tr>
                 </tbody>
               </table>
             </div>
@@ -340,13 +472,13 @@
           <form id="testimony-form" style="display:none;gap:12px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
             <input id="testimony-id" type="hidden" />
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <label><span>Client Name *</span><input id="testimony-name" placeholder="John Doe" required></label>
-              <label><span>Title/Position</span><input id="testimony-title" placeholder="CEO, Tech Company"></label>
-              <label><span>Image URL</span><input id="testimony-image" placeholder="https://...jpg" type="url"></label>
-              <label><span>Rating (1-5)</span><select id="testimony-rating"><option value="5">5 ⭐</option><option value="4">4 ⭐</option><option value="3">3 ⭐</option><option value="2">2 ⭐</option><option value="1">1 ⭐</option></select></label>
+              <label><span>Client Name *</span><input id="testimony-name" name="client_name" placeholder="John Doe" required></label>
+              <label><span>Title/Position</span><input id="testimony-title" name="title" placeholder="CEO, Tech Company"></label>
+              <label><span>Image URL</span><input id="testimony-image" name="client_image" placeholder="https://...jpg" type="url"></label>
+              <label><span>Rating (1-5)</span><select id="testimony-rating" name="rating"><option value="5">5 ⭐</option><option value="4">4 ⭐</option><option value="3">3 ⭐</option><option value="2">2 ⭐</option><option value="1">1 ⭐</option></select></label>
             </div>
-            <label style="width:100%"><span>Testimony Content *</span><textarea id="testimony-content" placeholder="What was your experience with our platform?" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit" required></textarea></label>
-            <label style="display:flex;align-items:center;gap:8px"><input id="testimony-featured" type="checkbox"><span>Feature this testimony on landing page</span></label>
+            <label style="width:100%"><span>Testimony Content *</span><textarea id="testimony-content" name="content" placeholder="What was your experience with our platform?" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit" required></textarea></label>
+            <label style="display:flex;align-items:center;gap:8px"><input id="testimony-featured" name="is_featured" type="checkbox"><span>Feature this testimony on landing page</span></label>
             <div style="display:flex;gap:8px">
               <button type="submit" class="btn">Save Testimony</button>
               <button type="button" onclick="cancelTestimonyForm()" class="btn btn-secondary">Cancel</button>
@@ -437,7 +569,8 @@
       const key = sessionStorage.getItem('adminKey');
       if (!key) return alert('Admin key required');
       
-      fetch(`http://localhost:5001/api/admin/transactions/${txId}`, {
+      const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
+      fetch(`${apiBase}/admin/transactions/${txId}`, {
         method: 'DELETE',
         headers: {'x-admin-key': key}
       })
@@ -453,7 +586,8 @@
       const key = sessionStorage.getItem('adminKey');
       if (!key) return alert('Admin key required');
       
-      fetch(`http://localhost:5001/api/admin/transactions/${txId}`, {
+      const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
+      fetch(`${apiBase}/admin/transactions/${txId}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json', 'x-admin-key': key},
         body: JSON.stringify({status: 'completed'})
@@ -497,8 +631,8 @@
         method,
         date: dateInput || undefined
       };
-
-      const url = existingId ? `http://localhost:5001/api/admin/transactions/${existingId}` : 'http://localhost:5001/api/admin/transactions';
+      const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
+      const url = existingId ? `${apiBase}/admin/transactions/${existingId}` : `${apiBase}/admin/transactions`;
       const httpMethod = existingId ? 'PUT' : 'POST';
 
       fetch(url, {

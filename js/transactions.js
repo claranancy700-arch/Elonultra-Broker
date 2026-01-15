@@ -1,6 +1,8 @@
+/* global AuthService */
 // transactions.js — client-side deposit/withdraw logic (localStorage-backed)
 
 function loadTransactions(){
+
   const tx = JSON.parse(localStorage.getItem('transactions')||'[]');
   return tx;
 }
@@ -15,8 +17,8 @@ function getAuthToken(){
       const t = AuthService.getToken();
       if (t) return t;
     }
-  } catch (_) {}
-  return localStorage.getItem('authToken') || localStorage.getItem('token') || null;
+  } catch (_) { /* ignore if AuthService not present */ }
+  return localStorage.getItem('authToken') || localStorage.getItem('token') || null; 
 }
 
 function clearTransactionCache(){

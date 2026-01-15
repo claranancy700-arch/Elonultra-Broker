@@ -150,15 +150,19 @@ async function updatePortfolio(userId, allocation, newBalance) {
     client = await db.getClient();
     await client.query('BEGIN');
     
-    // Lock user and portfolio rows
-    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [userId]);
+    // Lock user and portfolio rows and read current balance
+    const userRes = await client.query('SELECT id, COALESCE(balance,0) as balance FROM users WHERE id = $1 FOR UPDATE', [userId]);
     await client.query('SELECT id FROM portfolio WHERE user_id = $1 FOR UPDATE', [userId]);
-    
+    const oldBalance = userRes.rows.length ? parseFloat(userRes.rows[0].balance) : 0;
+
     // Update user balance
     await client.query(
       'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
       [newBalance, userId]
     );
+
+    // If balance decreased, record trading loss if applicable
+    try { await recordLossIfApplicable(client, userId, oldBalance, newBalance); } catch (e) { console.warn('[portfolio] failed to record loss', e && e.message ? e.message : e); }
     
     // Update portfolio with new coin amounts
     const setClauses = [];
@@ -195,6 +199,9 @@ async function updatePortfolio(userId, allocation, newBalance) {
     }
     
     await client.query('COMMIT');
+
+    // Notify client via SSE
+    try { sse.emit(userId, 'profile_update', { userId, balance: newBalance, type: 'portfolio' }); } catch (e) { /* ignore */ }
     
     console.log(
       `[Portfolio] User ${userId}: Updated portfolio | Balance: $${newBalance.toFixed(2)} | Allocated across ${ALL_COINS.length} coins`

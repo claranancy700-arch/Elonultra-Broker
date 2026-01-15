@@ -29,22 +29,44 @@
       <a href="help.html" class="sidebar-link">❓ Help & Docs</a>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" style="max-width:900px">
       <h1>Account Settings</h1>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:24px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:24px">
         <div>
-          <h2>Profile</h2>
-          <form class="form" id="profile-form">
-            <label><span>Full Name</span><input type="text" value="John Doe"></label>
-            <label><span>Email</span><input type="email" value="john@example.com"></label>
-            <label><span>Phone</span><input type="tel" value="+1 234 567 8900"></label>
-            <button type="submit" class="btn">Save Profile</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h2 style="margin:0">Profile</h2>
+            <button type="button" id="edit-profile-btn" class="btn" style="padding:6px 12px;font-size:14px">Edit</button>
+          </div>
+          <div id="profile-view" style="display:block">
+            <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+              <div style="margin-bottom:16px">
+                <p style="color:var(--muted);font-size:12px;margin:0 0 4px 0">Full Name</p>
+                <p style="font-weight:500;margin:0" id="profile-name">John Doe</p>
+              </div>
+              <div style="margin-bottom:16px">
+                <p style="color:var(--muted);font-size:12px;margin:0 0 4px 0">Email</p>
+                <p style="font-weight:500;margin:0" id="profile-email">john@example.com</p>
+              </div>
+              <div>
+                <p style="color:var(--muted);font-size:12px;margin:0 0 4px 0">Phone</p>
+                <p style="font-weight:500;margin:0" id="profile-phone">+1 234 567 8900</p>
+              </div>
+            </div>
+          </div>
+          <form class="form" id="profile-form" style="display:none">
+            <label><span>Full Name</span><input type="text" id="input-name" value="John Doe"></label>
+            <label><span>Email</span><input type="email" id="input-email" value="john@example.com"></label>
+            <label><span>Phone</span><input type="tel" id="input-phone" value="+1 234 567 8900"></label>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn">Save Profile</button>
+              <button type="button" id="cancel-profile-btn" class="btn" style="background:var(--muted);color:white">Cancel</button>
+            </div>
           </form>
         </div>
 
         <div>
-          <h2>Security</h2>
+          <h2 style="margin-top:0">Security</h2>
           <form class="form" id="security-form">
             <label><span>Current Password</span><input type="password" placeholder="•••••••"></label>
             <label><span>New Password</span><input type="password" placeholder="•••••••"></label>
@@ -95,6 +117,48 @@
         <button type="submit" class="btn">Save Preferences</button>
       </form>
 
+      <h2 style="margin-top:48px">Account Banking & Verification</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:12px">
+        <div class="card" style="padding:12px">
+          <h3 style="margin-top:0">Banking / Registration</h3>
+          <form id="embedded-reg">
+            <label><span>Country</span>
+              <select name="country">
+                <option value="">Select country</option>
+                <option>United States</option>
+                <option>Nigeria</option>
+                <option>United Kingdom</option>
+                <option>Kenya</option>
+                <option>Ghana</option>
+              </select>
+            </label>
+            <label><span>Account number</span><input name="acctNumber" placeholder="1234567890"></label>
+            <label><span>Account name</span><input name="acctName" placeholder="Full name on account"></label>
+            <label><span>Personal ID</span><input name="personalId" placeholder="National ID / Passport"></label>
+            <label><span>Branch</span><input name="branch" placeholder="Branch name or code"></label>
+            <label><span>Email</span><input name="email" type="email" placeholder="you@example.com"></label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" id="settings-sendCode" class="btn">Send verification code</button>
+              <input name="code" placeholder="Verification code" style="flex:1;min-width:150px" />
+            </div>
+            <div style="margin-top:12px">
+              <button type="button" id="settings-register" class="btn">Save banking details</button>
+            </div>
+            <p id="settings-msg" style="color:green;margin-top:8px"></p>
+          </form>
+        </div>
+
+        <div class="card" style="padding:12px">
+          <h3 style="margin-top:0">Email Verification</h3>
+          <form id="embedded-verify">
+            <label><span>Email</span><input name="email" type="email" placeholder="you@example.com"></label>
+            <label><span>Verification code</span><input name="code" placeholder="Enter code"></label>
+            <button type="button" id="settings-verify" class="btn">Verify Email</button>
+            <p id="verify-msg" style="color:green;margin-top:8px"></p>
+          </form>
+        </div>
+      </div>
+
       <h2 style="margin-top:48px;color:var(--danger)">Danger Zone</h2>
       <button class="btn btn-danger" onclick="if(confirm('Delete account? This cannot be undone.')) alert('Account deletion pending...')">Delete Account</button>
     </main>
@@ -122,6 +186,114 @@
       e.preventDefault();
       alert('Preferences saved!');
     });
+
+    // Embedded registration handlers (settings page)
+    (function(){
+      const regForm = document.getElementById('embedded-reg');
+      const verifyForm = document.getElementById('embedded-verify');
+
+      // Profile edit/view toggle
+      const profileView = document.getElementById('profile-view');
+      const profileForm = document.getElementById('profile-form');
+      const editBtn = document.getElementById('edit-profile-btn');
+      const cancelBtn = document.getElementById('cancel-profile-btn');
+
+      function loadProfileData(){
+        try{
+          const saved = JSON.parse(localStorage.getItem('profile')||'{}');
+          if(saved.name || saved.email || saved.phone){
+            document.getElementById('profile-name').textContent = saved.name||'John Doe';
+            document.getElementById('profile-email').textContent = saved.email||'john@example.com';
+            document.getElementById('profile-phone').textContent = saved.phone||'+1 234 567 8900';
+            document.getElementById('input-name').value = saved.name||'John Doe';
+            document.getElementById('input-email').value = saved.email||'john@example.com';
+            document.getElementById('input-phone').value = saved.phone||'+1 234 567 8900';
+          }
+        }catch(e){console.warn('Failed to load profile',e)}
+      }
+
+      loadProfileData();
+
+      editBtn.addEventListener('click', () => {
+        profileView.style.display = 'none';
+        profileForm.style.display = 'block';
+      });
+
+      cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        profileView.style.display = 'block';
+        profileForm.style.display = 'none';
+      });
+
+      profileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('input-name').value;
+        const email = document.getElementById('input-email').value;
+        const phone = document.getElementById('input-phone').value;
+        
+        const profileData = {name, email, phone};
+        localStorage.setItem('profile', JSON.stringify(profileData));
+        
+        document.getElementById('profile-name').textContent = name;
+        document.getElementById('profile-email').textContent = email;
+        document.getElementById('profile-phone').textContent = phone;
+        profileView.style.display = 'block';
+        profileForm.style.display = 'none';
+      });
+
+      function loadSaved(){
+        try{
+          const saved = JSON.parse(localStorage.getItem('banking')||'{}');
+          if(saved){
+            regForm.country.value = saved.country||'';
+            regForm.acctNumber.value = saved.acctNumber||'';
+            regForm.acctName.value = saved.acctName||'';
+            regForm.personalId.value = saved.personalId||'';
+            regForm.branch.value = saved.branch||'';
+            regForm.email.value = saved.email||'';
+            verifyForm.email.value = saved.email||'';
+          }
+        }catch(e){console.warn('Failed to load saved banking',e)}
+      }
+
+      loadSaved();
+
+      document.getElementById('settings-sendCode').addEventListener('click', ()=>{
+        document.getElementById('settings-msg').textContent = 'Verification code sent (simulated)';
+        setTimeout(()=>document.getElementById('settings-msg').textContent = '',3000);
+      });
+
+      document.getElementById('settings-register').addEventListener('click', ()=>{
+        const fd = new FormData(regForm);
+        const body = Object.fromEntries(fd.entries());
+        // basic validation
+        if(!body.acctNumber || !body.acctName || !body.email){
+          document.getElementById('settings-msg').textContent = 'Please provide account number, account name and email.';
+          setTimeout(()=>document.getElementById('settings-msg').textContent = '',4000);
+          return;
+        }
+        // persist locally for demo
+        localStorage.setItem('banking', JSON.stringify(body));
+        document.getElementById('settings-msg').textContent = 'Banking details saved locally (simulated)';
+        setTimeout(()=>document.getElementById('settings-msg').textContent = '',3000);
+      });
+
+      document.getElementById('settings-verify').addEventListener('click', ()=>{
+        const fd = new FormData(verifyForm);
+        const body = Object.fromEntries(fd.entries());
+        if(!body.email || !body.code){
+          document.getElementById('verify-msg').textContent = 'Enter email and verification code.';
+          setTimeout(()=>document.getElementById('verify-msg').textContent = '',3000);
+          return;
+        }
+        // simulate verification and mark in local storage
+        const saved = JSON.parse(localStorage.getItem('banking')||'{}');
+        saved.emailVerified = true;
+        localStorage.setItem('banking', JSON.stringify(saved));
+        document.getElementById('verify-msg').textContent = 'Email verified (simulated)';
+        setTimeout(()=>document.getElementById('verify-msg').textContent = '',3000);
+      });
+    })();
   </script>
   <script src="/js/auth.js"></script>
   <script src="/js/portfolio.js"></script>

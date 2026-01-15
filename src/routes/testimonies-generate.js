@@ -10,16 +10,16 @@ const titles = ['CEO', 'Founder', 'Entrepreneur', 'Investor', 'Trader', 'CFO', '
 const companies = ['Tech Startups Inc', 'Capital Ventures', 'Trading Solutions', 'Crypto Funds LLC', 'Digital Assets Co', 'Investment Partners', 'Global Finance Group', 'Enterprise Solutions', 'Innovation Labs', 'Future Finance', 'Digital Wealth', 'Blockchain Corp', 'Smart Trading', 'Asset Management Co', 'Venture Capital Group'];
 
 const testimonyTemplates = [
-  "ELON ULTRA ELONS has completely transformed my crypto trading experience. The platform is intuitive, secure, and offers real-time data that I rely on every single day. I've increased my portfolio by {percent}% since joining.",
-  "I was skeptical at first, but after using ELON ULTRA ELONS for {months} months, I can confidently say it's the best trading platform I've used. The customer support is exceptional.",
-  "Finally found a crypto trading platform I can trust! ELON ULTRA ELONS combines professional-grade tools with an easy-to-use interface. Highly recommended for both beginners and experienced traders.",
-  "The speed of execution on ELON ULTRA ELONS is unmatched. I've saved thousands in fees compared to other exchanges. Best decision I made for my portfolio.",
-  "As a professional trader, I have high standards. ELON ULTRA ELONS exceeded all of them. The real-time market data, fast API, and low fees make it my go-to platform.",
-  "ELON ULTRA ELONS helped me achieve my financial goals faster than I expected. The tools are powerful, the interface is clean, and the security is top-notch.",
-  "I've recommended ELON ULTRA ELONS to all my trading friends. It's refreshing to use a platform that actually cares about user experience and security.",
-  "Trading on ELON ULTRA ELONS feels like using a professional-grade platform, but with beginner-friendly features. Perfect balance!",
-  "The best part? No hidden fees, instant withdrawals, and 24/7 customer support. ELON ULTRA ELONS is a game-changer.",
-  "I started with just $500 and built it to a substantial portfolio. ELON ULTRA ELONS' tools made it possible. Grateful for this platform!",
+  "ELON ULTRA ELONS has been honest and transparent from day one. The service agents walk me through each step and I trust the trading updates completely. My portfolio grew {percent}% in under {months} months.",
+  "Clear communication, no surprises. The support team is professional and helpful, and the trading service is efficient. Exactly what I wanted as an investor.",
+  "I appreciate how transparent the ELON ULTRA ELONS team is. Every trade and fee is explained, and the service agents respond quickly whenever I have questions.",
+  "The platform is efficient and straightforward. What stands out is the professionalism of the service agents—they keep me informed without pressure.",
+  "Honesty and clarity are rare. Here I always know what’s happening with my account, and the agents are courteous and helpful.",
+  "Great experience so far: consistent performance, fast responses, and a service team that genuinely helps. I feel confident relying on this trading service.",
+  "I value transparency above everything. ELON ULTRA ELONS delivers that with efficient execution and supportive agents who keep me updated.",
+  "Professional, helpful, and efficient—this trading service makes it easy to understand results without any confusing jargon.",
+  "I like that the team focuses on clarity. Trades are documented, fees are disclosed, and the agents check in to be sure I’m comfortable.",
+  "The service agents are proactive and respectful. The trading service runs smoothly and communicates honestly about progress.",
 ];
 
 function generateTestimony() {

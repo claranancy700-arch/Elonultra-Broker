@@ -89,7 +89,7 @@ router.get('/me', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const { rows } = await db.query('SELECT id, name, email, COALESCE(balance,0) as balance, created_at FROM users WHERE id=$1', [
+    const { rows } = await db.query('SELECT id, name, email, phone, fullName, COALESCE(balance,0) as balance, created_at FROM users WHERE id=$1', [
       userId,
     ]);
 
@@ -112,6 +112,70 @@ router.get('/me', verifyToken, async (req, res) => {
   } catch (err) {
     console.error('Get user error:', err);
     res.status(500).json({ error: 'Failed to fetch user profile' });
+  }
+});
+
+// PUT: Update user profile
+router.put('/me', verifyToken, async (req, res) => {
+  const userId = req.userId;
+  const { fullName, email, phone } = req.body;
+
+  if (!fullName || !email) {
+    return res.status(400).json({ error: 'Full name and email are required' });
+  }
+
+  try {
+    const result = await db.query(
+      'UPDATE users SET fullName=$1, email=$2, phone=$3 WHERE id=$4 RETURNING id, fullName, email, phone',
+      [fullName, email, phone || null, userId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Email already in use' });
+    }
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+// POST: Change password
+router.post('/change-password', verifyToken, async (req, res) => {
+  const userId = req.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new password are required' });
+  }
+
+  if (!isValidPassword(newPassword)) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters' });
+  }
+
+  try {
+    const { rows } = await db.query('SELECT password_hash FROM users WHERE id=$1', [userId]);
+
+    if (!rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const passwordMatch = await bcryptjs.compare(currentPassword, rows[0].password_hash);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    const hashed = await bcryptjs.hash(newPassword, 10);
+    await db.query('UPDATE users SET password_hash=$1 WHERE id=$2', [hashed, userId]);
+
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Failed to change password' });
   }
 });
 

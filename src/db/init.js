@@ -17,7 +17,13 @@ async function ensureSchema() {
     // User financial + simulator fields
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(20,8) DEFAULT 0`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS portfolio_value NUMERIC(20,8) DEFAULT 0`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fullName VARCHAR(255)`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20)`);
+    // Optional tax identification for users (used to determine loss reporting)
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_id VARCHAR(255)`);
+    // Soft-delete / active flag for admin controls
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
 
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_enabled BOOLEAN DEFAULT FALSE`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_paused BOOLEAN DEFAULT FALSE`);
@@ -90,9 +96,25 @@ async function ensureSchema() {
       )
     `);
 
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_withdrawals_user_id ON withdrawals(user_id)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_withdrawals_status ON withdrawals(status)`);
-    await db.query(`CREATE INDEX IF NOT EXISTS idx_withdrawals_fee_status ON withdrawals(fee_status)`);
+    // Safely add fee_status column if it doesn't exist
+    try {
+      await db.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_status VARCHAR(20) DEFAULT 'required'`);
+    } catch (e) {
+      debug('fee_status column might exist:', e.message);
+    }
+    try {
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_withdrawals_fee_status ON withdrawals(fee_status)`);
+    } catch (e) {
+      debug('fee_status index creation:', e.message);
+    }
+
+    // Ensure balance_snapshot and fee_amount exist (safe ALTER for older DBs)
+    try {
+      await db.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS balance_snapshot NUMERIC(20,8)`);
+    } catch (e) { debug('ALTER TABLE withdrawals balance_snapshot failed:', e.message); }
+    try {
+      await db.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_amount NUMERIC(20,8)`);
+    } catch (e) { debug('ALTER TABLE withdrawals fee_amount failed:', e.message); }
 
     // trades table (simulated trade history)
     await db.query(`
@@ -117,6 +139,38 @@ async function ensureSchema() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_user_id ON trades(user_id)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_created_at ON trades(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_is_simulated ON trades(is_simulated)`);
+
+    // Admin prompts table (prompts issued by admin to individual users or broadcast)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS admin_prompts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        is_read BOOLEAN DEFAULT FALSE,
+        is_active BOOLEAN DEFAULT TRUE
+      )
+    `);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_admin_prompts_user_id ON admin_prompts(user_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_admin_prompts_created_at ON admin_prompts(created_at DESC)`);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS admin_prompt_responses (
+        id SERIAL PRIMARY KEY,
+        prompt_id INTEGER REFERENCES admin_prompts(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        response TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Ensure 'is_active' and 'is_read' exist for admin_prompts (safe ALTER for existing DBs)
+    try {
+      await db.query("ALTER TABLE admin_prompts ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE");
+    } catch (e) { console.warn('ALTER TABLE admin_prompts is_active failed:', e && e.message); }
+    try {
+      await db.query("ALTER TABLE admin_prompts ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE");
+    } catch (e) { console.warn('ALTER TABLE admin_prompts is_read failed:', e && e.message); }
 
     // testimonies table
     await db.query(`

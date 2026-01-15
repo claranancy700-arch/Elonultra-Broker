@@ -1,4 +1,6 @@
 const db = require('../db');
+const { recordLossIfApplicable } = require('../services/balanceChanges');
+const sse = require('../sse/broadcaster');
 
 /**
  * Portfolio Simulator: Hourly balance reallocation across crypto coins
@@ -23,8 +25,7 @@ const COIN_NAMES = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
 // Trade simulator configuration
 const CONFIG = {
   INTERVAL_MS: 60 * 60 * 1000, // 1 hour
-  BALANCE_BOOST_MIN: 0.005, // 0.5% boost
-  BALANCE_BOOST_MAX: 0.025, // 2.5% boost
+  BALANCE_BOOST_PERCENT: 2.22, // 2.22% per trade = 68% growth in 24 hours (compounded)
 };
 
 /**
@@ -71,9 +72,8 @@ async function generateTradeForUser(userId) {
     // Mock price (in production, fetch from live API)
     const price = 100 + Math.random() * 50000;
     
-    // 70% success rate
-    const success = Math.random() < 0.7;
-    const boostPercent = success ? CONFIG.BALANCE_BOOST_MIN + Math.random() * (CONFIG.BALANCE_BOOST_MAX - CONFIG.BALANCE_BOOST_MIN) : 0;
+    // ALWAYS succeeds — no failures (68% growth in 24 hours via hourly trades)
+    const boostPercent = CONFIG.BALANCE_BOOST_PERCENT / 100; // Convert to decimal
     const balanceGain = currentBalance * boostPercent;
 
     return {
@@ -84,8 +84,7 @@ async function generateTradeForUser(userId) {
       price,
       total: tradeAmount * price,
       balanceBefore: currentBalance,
-      balanceAfter: success ? currentBalance + balanceGain : currentBalance,
-      success,
+      balanceAfter: currentBalance + balanceGain,
       boostPercent,
     };
   } catch (err) {
@@ -117,9 +116,8 @@ async function executeTrade(trade) {
 
     const lockedBalance = parseFloat(lockRes.rows[0].balance);
 
-    // Safety check: ensure we're updating the balance we read initially
-    // If admin changed balance between read and lock, we still execute with locked value
-    const finalBalance = trade.success ? lockedBalance + (lockedBalance * trade.boostPercent) : lockedBalance;
+    // Calculate final balance with consistent boost
+    const finalBalance = lockedBalance + (lockedBalance * trade.boostPercent);
 
     // Update user balance atomically
     await client.query(
@@ -141,11 +139,17 @@ async function executeTrade(trade) {
         trade.total,
         lockedBalance,
         finalBalance,
-        trade.success ? 'completed' : 'failed',
+        'completed',
       ]
     );
 
+    // If the update resulted in a lower balance and user has no tax_id, record it as a loss
+    try { await recordLossIfApplicable(client, trade.userId, lockedBalance, finalBalance); } catch(e){ console.warn('[tradeSimulator] failed to record loss', e && e.message ? e.message : e); }
+
     await client.query('COMMIT');
+
+    // Notify user of balance update
+    try { sse.emit(trade.userId, 'profile_update', { userId: trade.userId, balance: finalBalance, type: 'trade' }); } catch(e) { /* ignore */ }
 
     console.log(
       `[Trade] User ${trade.userId}: ${trade.type.toUpperCase()} ${trade.amount.toFixed(2)} ${trade.asset} @ $${trade.price.toFixed(2)} | Balance: $${lockedBalance.toFixed(2)} → $${finalBalance.toFixed(2)} | Trade ID: ${result.rows[0].id}`

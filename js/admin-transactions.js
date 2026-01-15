@@ -47,9 +47,14 @@
         return;
       }
 
-      allTransactions = await res.json();
-      if (!Array.isArray(allTransactions)) {
-        console.warn('fetchTransactions: expected array, got', allTransactions);
+      const data = await res.json();
+      // Handle both direct array and {success, transactions} format
+      if (Array.isArray(data)) {
+        allTransactions = data;
+      } else if (data.transactions && Array.isArray(data.transactions)) {
+        allTransactions = data.transactions;
+      } else {
+        console.warn('fetchTransactions: unexpected response format', data);
         allTransactions = [];
       }
       renderAllTransactionTables();

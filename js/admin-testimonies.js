@@ -1,8 +1,10 @@
+/* global TestimoniesService */
+/* exported showTestimonyForm, editTestimony, deleteTestimony, autoGenerateTestimonies */
 /**
  * Admin Testimonies Manager — Handle testimony CRUD operations
  */
 
-(function(){
+(function(){ 
   let allTestimonies = [];
   let currentEditingId = null;
 

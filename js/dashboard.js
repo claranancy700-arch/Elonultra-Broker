@@ -1,22 +1,42 @@
+/* global AuthService */
 function renderPortfolioCards(){
   const assets = window.CBPortfolio.getAssets();
   const balance = window.CBPortfolio.getBalance();
   const total = window.CBPortfolio.getTotalValue();
   const active = assets.filter(a => a.amount > 0).length;
 
-  console.log('renderPortfolioCards:', { balance, total, active, assets });
+  console.log('renderPortfolioCards:', { balance, total, active, assetsCount: assets.length });
   
+  // Update balance display (always show, even if zero)
   const balEl = document.getElementById('available-balance');
   const totalEl = document.getElementById('total-value');
-  if (balEl) balEl.textContent = `$${balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  document.getElementById('active-positions').textContent = active;
+  
+  if (!balEl) console.warn('Element available-balance not found');
+  if (!totalEl) console.warn('Element total-value not found');
+  
+  if (balEl) {
+    const balDisplay = `$${balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    console.log('Setting available-balance to:', balDisplay);
+    balEl.textContent = balDisplay;
+  }
+  
+  if (totalEl) {
+    const totalDisplay = `$${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    console.log('Setting total-value to:', totalDisplay);
+    totalEl.textContent = totalDisplay;
+  }
+  
+  const activeEl = document.getElementById('active-positions');
+  if (activeEl) activeEl.textContent = active;
 
   // Mock 24h change
   const change24h = total * 0.0261;
   const changePercent = 2.61;
-  document.getElementById('change-24h').textContent = `+$${change24h.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  document.getElementById('change-percent').textContent = `+${changePercent}%`;
+  const change24hEl = document.getElementById('change-24h');
+  const changePercentEl = document.getElementById('change-percent');
+  
+  if (change24hEl) change24hEl.textContent = `+$${change24h.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  if (changePercentEl) changePercentEl.textContent = `+${changePercent}%`;
 }
 
 function renderHoldings(){
@@ -71,11 +91,11 @@ async function renderMarketOverview(){
 
     tbody.innerHTML = market.map(m => `
       <tr>
-        <td><strong>${m.symbol}</strong><br><span class=\"muted\">${m.name}</span></td>
+        <td><strong>${m.symbol}</strong><br><span class="muted">${m.name}</span></td>
         <td>$${m.price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-        <td style=\"color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}\">${m.change >= 0 ? '+' : ''}${m.change}%</td>
+        <td style="color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}">${m.change >= 0 ? '+' : ''}${m.change}%</td>
         <td>${m.volume}</td>
-        <td><button class=\"btn btn-success\" style=\"font-size:12px\">Buy</button></td>
+        <td><button class="btn btn-success" style="font-size:12px">Buy</button></td>
       </tr>
     `).join('');
     return;
@@ -93,13 +113,71 @@ async function renderMarketOverview(){
 
   tbody.innerHTML = mockMarket.map(m => `
     <tr>
-      <td><strong>${m.symbol}</strong><br><span class=\"muted\">${m.name}</span></td>
+      <td><strong>${m.symbol}</strong><br><span class="muted">${m.name}</span></td>
       <td>$${m.price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-      <td style=\"color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}\">${m.change >= 0 ? '+' : ''}${m.change}%</td>
+      <td style="color:${m.change >= 0 ? 'var(--success)' : 'var(--danger)'}">${m.change >= 0 ? '+' : ''}${m.change}%</td>
       <td>${m.volume}</td>
-      <td><button class=\"btn btn-success\" style=\"font-size:12px\">Buy</button></td>
+      <td><button class="btn btn-success" style="font-size:12px">Buy</button></td>
     </tr>
   `).join('');
+}
+
+// Load and render user's recent trades (shows simulated/admin trades by default)
+async function loadUserRecentTrades(){
+  const tbody = document.getElementById('trades-body');
+  // Guard: if not on dashboard, skip
+  if (!tbody) return;
+  try{
+    if (typeof AuthService === 'undefined' || !AuthService.isAuthenticated()) return;
+    const headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${AuthService.getToken()}` }, AuthService.getAuthHeader());
+    // Fetch both real trades (including loss entries) and simulated/admin trades, then merge
+    const apiBase = (AuthService.API_BASE || '/api');
+    const [realResp, simResp] = await Promise.all([
+      fetch(`${apiBase}/trades?limit=15&isSimulated=false`, { headers }),
+      fetch(`${apiBase}/trades?limit=15&isSimulated=true`, { headers })
+    ]);
+    if (!realResp.ok && !simResp.ok) throw new Error('Trades API returned errors');
+    const realJson = realResp.ok ? await realResp.json() : { trades: [] };
+    const simJson = simResp.ok ? await simResp.json() : { trades: [] };
+    const realTrades = Array.isArray(realJson.trades) ? realJson.trades : [];
+    const simTrades = Array.isArray(simJson.trades) ? simJson.trades : [];
+    // Merge and sort by created_at desc, prefer realTrades first when timestamps equal
+    const trades = [...realTrades, ...simTrades].sort((a,b) => {
+      const ta = new Date(a.created_at || 0).getTime();
+      const tb = new Date(b.created_at || 0).getTime();
+      return tb - ta;
+    }).slice(0,15);
+    if (!trades.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = trades.map(t => {
+      const date = t.created_at ? new Date(t.created_at).toLocaleString() : (t.created_at || '');
+      // Handle different trade types
+      let typeLabel = '';
+      if (t.type === 'loss' || t.status === 'loss') {
+        typeLabel = '⚠️ Loss';
+      } else if (t.is_simulated) {
+        typeLabel = 'Trade';
+      } else {
+        typeLabel = (t.type || '').toUpperCase();
+      }
+      return `
+        <tr>
+          <td>${date}</td>
+          <td>${typeLabel}</td>
+          <td>${t.asset || ''}</td>
+          <td>${Number(t.amount || 0).toLocaleString()}</td>
+          <td>$${Number(t.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+          <td>$${Number(t.total || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        </tr>
+      `;
+    }).join('');
+  }catch(err){
+    console.warn('Failed to load trades', err && err.message ? err.message : err);
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Failed to load trades</td></tr>';
+  }
 }
 
 function switchTab(e, tabId){
@@ -127,6 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('initializeDashboard starting; isAuthenticated=', AuthService.isAuthenticated());
     try {
       if(AuthService && AuthService.isAuthenticated()){
+        // Clear any old portfolio data from previous user
+        if (window.CBPortfolio && typeof window.CBPortfolio.clearAll === 'function') {
+          window.CBPortfolio.clearAll();
+          console.log('[Dashboard] Cleared old portfolio data');
+        }
         console.log('Calling fetchUserProfile and refreshPrices in parallel...');
         // Fetch profile and prices in parallel for faster initialization
         const [user, _] = await Promise.all([
@@ -139,6 +222,24 @@ document.addEventListener('DOMContentLoaded', () => {
         ]);
         console.log('Fetched user profile:', user);
         console.log('CBPortfolio after parallel fetch:', { balance: window.CBPortfolio.getBalance(), total: window.CBPortfolio.getTotalValue() });
+        // Check for admin prompts targeted to this user and show an input prompt if any
+        try {
+          const headers = Object.assign({ 'Content-Type': 'application/json' }, AuthService.getAuthHeader());
+          const resp = await fetch((AuthService.API_BASE || '/api') + '/prompts', { headers });
+          if (resp.ok) {
+            const j = await resp.json();
+            if (j && Array.isArray(j.prompts) && j.prompts.length) {
+              for (const p of j.prompts) {
+                try {
+                  const answer = window.prompt(p.message, '');
+                  if (answer !== null) {
+                    await fetch((AuthService.API_BASE || '/api') + `/prompts/${p.id}/respond`, { method: 'POST', headers, body: JSON.stringify({ response: answer }) });
+                  }
+                } catch (_e) { console.warn('Failed to respond to prompt', _e); }
+              }
+            }
+          }
+        } catch (e) { console.warn('Prompt check failed', e && e.message ? e.message : e); }
       } else {
         console.warn('Not authenticated or AuthService not available');
       }
@@ -150,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPortfolioCards();
     renderHoldings();
     renderMarketOverview();
+    // Load recent trades (admin/simulated trades are shown by default)
+    try { await loadUserRecentTrades(); } catch (e) { console.warn('loadUserRecentTrades failed', e); }
     console.log('Dashboard initialized');
   }
 
@@ -178,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderPortfolioCards();
         renderHoldings();
+        try { await loadUserRecentTrades(); } catch (e) { console.warn('refresh trades failed', e); }
       }
     }catch(e){ console.warn('Failed to refresh profile', e); }
   }
@@ -211,4 +315,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }catch(e){ console.warn('SSE setup skipped', e); }
+
+  // React to immediate balance updates
+  window.addEventListener('balance.updated', async (ev) => {
+    try {
+      renderPortfolioCards();
+      renderHoldings();
+      try { await loadUserRecentTrades(); } catch(e) { console.warn('balance.updated trades refresh failed', e); }
+    } catch (e) { console.warn('balance.updated handler failed', e); }
+  });
+
 });

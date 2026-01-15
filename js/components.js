@@ -1,4 +1,4 @@
-;(function(window){
+(function(window){
   function el(tag, attrs, children){
     const e = document.createElement(tag);
     if(attrs){ Object.keys(attrs).forEach(k=>{ if(k==='class') e.className=attrs[k]; else e.setAttribute(k, attrs[k]); }); }

@@ -28,11 +28,6 @@
       </label>
       <button type="submit" class="btn" style="width:100%">Sign In</button>
     </form>
-    <div style="margin-top:12px;padding:12px;border:1px dashed var(--muted);border-radius:6px">
-      <h4 style="margin:6px 0">Admin Access</h4>
-      <label><span>Admin Key</span><input id="admin-key-input" placeholder="paste admin key to open admin console"></label>
-      <div style="margin-top:8px"><button id="open-admin" class="btn btn-secondary">Open Admin Console</button></div>
-    </div>
     <p class="muted">Don't have an account? <a href="signup.html" style="color:var(--accent)">Sign up here</a></p>
     <p class="muted"><a href="#" style="color:var(--accent)">Forgot password?</a></p>
 
@@ -75,30 +70,6 @@
       }
     });
 
-    document.getElementById('open-admin').addEventListener('click', async (e) => {
-      e.preventDefault();
-      const k = document.getElementById('admin-key-input').value.trim();
-      if (!k) return alert('Paste admin key');
-      let apiBase = window.__apiBase || (window.AuthService && window.AuthService.API_BASE);
-      if (!apiBase) {
-        const host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
-        const isLocal = host === 'localhost' || host === '127.0.0.1';
-        apiBase = isLocal ? `http://${host}:5001/api` : '/api';
-      }
-      apiBase = apiBase.replace(/\/$/, '');
-      const verifyUrl = `${apiBase}/admin/verify-key`;
-      try {
-        const res = await fetch(verifyUrl, { headers: { 'x-admin-key': k } });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || 'Invalid admin key');
-        }
-        sessionStorage.setItem('adminKey', k);
-        window.location.href = '/admin.html';
-      } catch (err) {
-        alert(err.message || 'Admin key verification failed');
-      }
-    });
   </script>
 </body>
 </html>

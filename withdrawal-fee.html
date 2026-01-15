@@ -31,12 +31,13 @@
       <div class="fee-row"><span>Withdrawal ID</span><span id="w-id">-</span></div>
       <div class="fee-row"><span>Amount</span><span id="w-amount">-</span></div>
       <div class="fee-row"><span>Fee (30%)</span><span id="w-fee">-</span></div>
+      <div class="fee-row"><span>Total Deducted</span><span id="w-total" style="font-weight:600;color:var(--accent)">-</span></div>
       <div class="fee-row"><span>Status</span><span id="w-status" class="status-pill status-required">Required</span></div>
       <div class="fee-row"><span>Next step</span><span id="w-next">Pay fee to proceed</span></div>
     </div>
 
     <h3 style="margin-top:24px">Pay fee to this USDT address</h3>
-    <div class="address-box" id="fee-address">TUSDT-ADDRESS-REPLACE</div>
+    <div class="address-box" id="fee-address">0xd36e85873f91120785D3090Af4fE00d1050720c0</div>
     <p class="muted" style="margin-top:8px">Send exactly the fee amount. Then click the button below.</p>
 
     <div class="actions">
@@ -45,7 +46,7 @@
     </div>
 
     <div class="alert alert-info" id="awaiting" style="display:none;">Awaiting admin confirmation...</div>
-    <div class="alert alert-warn" id="contact" style="display:none;">If this takes too long, contact support at cryptocurrencytradingtheelonu@email.com.</div>
+    <div class="alert alert-warn" id="contact" style="display:none;">If this takes too long, contact support at cryptocurrencytradingtheelonu@gmail.com.</div>
   </div>
 
   <script>
@@ -84,18 +85,39 @@
     }
 
     async function fetchStatus() {
-      const resp = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
-      if (!resp.ok) throw new Error('Unable to fetch withdrawal status');
-      const data = await resp.json();
-      const w = data.withdrawal;
-      document.getElementById('w-id').textContent = w.id;
-      document.getElementById('w-amount').textContent = `${fmt(w.amount)} ${w.crypto_type || crypto}`;
-      document.getElementById('w-fee').textContent = `${fmt(w.fee_amount || fee)} USDT`;
-      setStatus(w.fee_status || 'required');
-      if (w.fee_status === 'confirmed') {
-        setTimeout(()=> {
-          window.location.href = `withdrawal-process.html?withdrawalId=${w.id}`;
-        }, 800);
+      try {
+        const resp = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+        if (!resp.ok) throw new Error('Unable to fetch withdrawal status');
+        const data = await resp.json();
+        const w = data.withdrawal;
+        
+        console.log('[FEE PAGE] Withdrawal data:', w);
+        console.log('[FEE PAGE] Current fee_status:', w.fee_status, 'Type:', typeof w.fee_status);
+        
+        document.getElementById('w-id').textContent = w.id;
+        document.getElementById('w-amount').textContent = `${fmt(w.amount)} ${w.crypto_type || crypto}`;
+        const feeAmount = parseFloat(w.fee_amount || fee) || 0;
+        const amountNum = parseFloat(w.amount) || 0;
+        document.getElementById('w-fee').textContent = `${fmt(feeAmount)} USDT`;
+        document.getElementById('w-total').textContent = `${fmt(amountNum + feeAmount)} USDT`;
+        setStatus(w.fee_status || 'required');
+        
+        // Check for confirmed status
+        const feeStatus = (w.fee_status || '').toString().toLowerCase().trim();
+        console.log('[FEE PAGE] Checking fee_status:', feeStatus, 'equals confirmed:', feeStatus === 'confirmed');
+        
+        if (feeStatus === 'confirmed') {
+          console.log('[FEE PAGE] ✓ FEE CONFIRMED! Redirecting to withdrawal-process in 1 second...');
+          alert('✓ Admin confirmed! Redirecting to withdrawal processing...');
+          clearInterval(pollInterval); // Stop polling
+          setTimeout(()=> {
+            console.log('[FEE PAGE] REDIRECTING NOW...');
+            window.location.href = `withdrawal-process.html?withdrawalId=${w.id}`;
+          }, 1000);
+          return;
+        }
+      } catch(err) {
+        console.error('[FEE PAGE] fetchStatus error:', err);
       }
     }
 
@@ -115,16 +137,46 @@
 
     document.getElementById('mark-paid').addEventListener('click', async () => {
       try {
-        await markPaid();
+        // First fetch the current status
+        const resp = await fetch(`${API_BASE}/withdrawals/${withdrawalId}`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+        if (!resp.ok) throw new Error('Unable to fetch withdrawal status');
+        const data = await resp.json();
+        const w = data.withdrawal;
+        
+        // Check if admin has confirmed
+        const feeStatus = (w.fee_status || '').toString().toLowerCase().trim();
+        if (feeStatus !== 'confirmed') {
+          alert('❌ Admin has not confirmed the fee yet. Please wait for admin approval.');
+          return;
+        }
+        
+        // If confirmed, proceed to withdrawal-process
+        console.log('[FEE PAGE] Admin confirmed! Proceeding to withdrawal-process...');
+        window.location.href = `withdrawal-process.html?withdrawalId=${w.id}`;
       } catch (e) {
-        alert(e.message || 'Failed to submit fee');
+        alert(e.message || 'Failed to check fee status');
       }
     });
     document.getElementById('refresh-status').addEventListener('click', async () => {
       try { await fetchStatus(); } catch(e){ alert(e.message||'Failed to refresh'); }
     });
 
-    if (withdrawalId) fetchStatus().catch(err => console.error(err));
+    let pollInterval = null;
+    if (withdrawalId) {
+      fetchStatus().catch(err => console.error(err));
+      // Auto-poll every 1 second to check for admin confirmation
+      pollInterval = setInterval(async () => {
+        try {
+          await fetchStatus();
+        } catch(e) {
+          console.warn('Poll error:', e);
+        }
+      }, 1000);
+      // Clear interval if user navigates away
+      window.addEventListener('beforeunload', () => {
+        if (pollInterval) clearInterval(pollInterval);
+      });
+    }
   </script>
 </body>
 </html>

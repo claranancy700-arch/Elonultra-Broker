@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const sse = require('../sse/broadcaster');
+const { recordLossIfApplicable } = require('../services/balanceChanges');
 
 // Admin credit endpoint — protected by an ADMIN_API_KEY header (x-admin-key)
 // POST /api/admin/credit
@@ -153,14 +154,21 @@ router.post('/users/:id/set-balance', async (req, res) => {
     const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
+      // Read current balance under lock
+      const cur = await client.query('SELECT COALESCE(balance,0) as balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
+      const oldBalance = cur.rows.length ? parseFloat(cur.rows[0].balance) : 0;
+
       await client.query('UPDATE users SET balance = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
-      await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt, 'USD', 'completed', 'admin-set-balance']);
+
+      // If balance decreased, record trading loss if applicable
+      try { await recordLossIfApplicable(client, userId, oldBalance, amt); } catch (e) { console.warn('[PRO-admin] failed to record loss', e && e.message ? e.message : e); }
+
+      await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt - oldBalance, 'USD', 'completed', 'admin-set-balance']);
       try { await client.query('INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)', [provided, 'set-balance', JSON.stringify({ userId, amount: amt })]); } catch(ea){ console.warn('Failed to write audit', ea.message||ea); }
       await client.query('COMMIT');
       try { sse.emit(userId, 'profile_update', { userId, type: 'set-balance', balance: amt }); } catch(e){/*ignore*/}
       return res.json({ success: true, userId, balance: amt });
     } catch (err) {
-      await client.query('ROLLBACK');
       await client.query('ROLLBACK');
       console.error('Set balance failed:', err.message || err);
       return res.status(500).json({ error: err.message || 'failed to set balance' });

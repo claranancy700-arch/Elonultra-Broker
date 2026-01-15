@@ -1,3 +1,4 @@
+/* global TestimoniesService */
 /**
  * Floating Testimonies Widget — Shows rotating testimonies on any page
  * Usage: Add <script src="/js/floating-testimonies.js"></script> to any page

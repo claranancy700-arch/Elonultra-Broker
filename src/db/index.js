@@ -82,6 +82,7 @@ async function ensureSchema() {
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_status TEXT NOT NULL DEFAULT 'required';`);
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_confirmed_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_confirmed_by TEXT;`);
+  await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`);
 }
 
 module.exports = {

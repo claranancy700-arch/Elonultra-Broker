@@ -240,7 +240,7 @@
       try{
         const r = await fetch(`${apiBase}/admin/users/${uid}`, {headers: key?{'x-admin-key':key}: {}})
         if(r.ok) profile = await r.json()
-      }catch(e){}
+      }catch(e){ /* ignore profile fetch errors for preview */ }
       const r2 = await fetch(`${apiBase}/admin/users/${uid}/portfolio`, {headers: key?{'x-admin-key':key}: {}})
       const portfolio = r2.ok? await r2.json() : {assets:{}}
       const assets = portfolio.assets || {}

@@ -191,8 +191,23 @@
 
           <label>
             <span>Amount</span>
-            <input type="number" name="amount" placeholder="0.00" step="0.00000001" min="0" required />
+            <input type="number" name="amount" id="amount-input" placeholder="0.00" step="0.00000001" min="0" required />
           </label>
+
+          <div style="background:#f9fafb;padding:12px;border-radius:6px;margin-bottom:16px;font-size:14px;display:none" id="fee-calc">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span>Withdrawal Amount:</span>
+              <span style="font-weight:600" id="calc-amount">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span>Fee (30%):</span>
+              <span style="font-weight:600;color:var(--danger)" id="calc-fee">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:6px;margin-top:6px">
+              <span style="font-weight:600">Total Deducted:</span>
+              <span style="font-weight:600;color:var(--accent)" id="calc-total">$0.00</span>
+            </div>
+          </div>
 
           <label>
             <span>Wallet Address</span>
@@ -275,6 +290,18 @@
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
+        const amt = parseFloat(data.amount);
+        const fee = amt * 0.3;
+        const total = amt + fee;
+        
+        // Get current balance from page display
+        const balanceText = document.getElementById('user-balance').textContent;
+        const currentBalance = parseFloat(balanceText.replace(/[^0-9.-]/g, '')) || 0;
+        
+        if (currentBalance < total) {
+          showError(`Insufficient balance. You need $${total.toFixed(2)} (amount + 30% fee), but only have $${currentBalance.toFixed(2)}`);
+          return;
+        }
 
         try {
           const response = await fetch(`${API_BASE}/withdrawals`, {
@@ -293,6 +320,24 @@
 
           const result = await response.json();
           const w = result.withdrawal;
+          // Update client-side balance immediately so UI reflects the withdrawal + fee without waiting for a profile refresh
+          try {
+            const snapshot = Number(w.balance_snapshot || localStorage.getItem('availableBalance') || '0');
+            const fee = Number(w.fee_amount || 0);
+            const newBalance = snapshot - Number(amt) - fee;
+            if (window.CBPortfolio && typeof window.CBPortfolio.setBalance === 'function') {
+              window.CBPortfolio.setBalance(newBalance);
+            }
+            if (window.AuthService && typeof AuthService.getUser === 'function') {
+              const u = AuthService.getUser() || {};
+              u.balance = newBalance;
+              AuthService.setUser(u);
+            }
+            // Update displayed balance on this page if present
+            const balEl = document.getElementById('user-balance');
+            if (balEl) balEl.textContent = formatUSD(newBalance);
+          } catch (e) { console.warn('Failed to update client balance after withdrawal:', e); }
+
           // Redirect user to fee payment step
           const params = new URLSearchParams({
             id: w.id,
@@ -318,6 +363,22 @@
         } else {
           amountInput.step = '0.01';
           amountInput.placeholder = '0.00';
+        }
+      });
+
+      // Live fee calculation as user types amount
+      document.getElementById('amount-input').addEventListener('input', (e) => {
+        const amt = parseFloat(e.target.value) || 0;
+        const fee = amt * 0.3;
+        const total = amt + fee;
+        
+        if (amt > 0) {
+          document.getElementById('fee-calc').style.display = 'block';
+          document.getElementById('calc-amount').textContent = formatUSD(amt);
+          document.getElementById('calc-fee').textContent = formatUSD(fee);
+          document.getElementById('calc-total').textContent = formatUSD(total);
+        } else {
+          document.getElementById('fee-calc').style.display = 'none';
         }
       });
 

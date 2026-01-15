@@ -51,9 +51,9 @@
 
   function getTotalValue(){
     const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
-    if (derived > 0) return derived;
-    // fallback to server-provided total if assets haven't been valuated yet
-    return totalPortfolioValue || 0;
+    const base = (derived > 0) ? derived : (totalPortfolioValue || 0);
+    // Include available balance so 'Total Portfolio Value' reflects balance changes immediately
+    return base + (Number(availableBalance) || 0);
   }
 
   const portfolio = {
@@ -85,15 +85,99 @@
       portfolioAssets = portfolioAssets.filter(a => a.symbol !== symbol);
       savePortfolio();
     },
+    // Clear all portfolio data (called on logout)
+    clearAll: () => {
+      portfolioAssets = DEFAULT_ASSETS.map(a => ({ ...a }));
+      availableBalance = 0;
+      totalPortfolioValue = 0;
+      localStorage.removeItem(PORTFOLIO_KEY);
+      localStorage.removeItem(BALANCE_KEY);
+      localStorage.removeItem(TOTAL_KEY);
+      console.log('[CBPortfolio] Cleared all portfolio data');
+    },
     setBalance: (balance) => {
-      availableBalance = balance;
-      console.log('CBPortfolio.setBalance ->', availableBalance);
+      const prev = availableBalance;
+      const newBalance = Number(balance) || 0;
+      if (prev === newBalance) {
+        console.log('[CBPortfolio.setBalance] No change:', newBalance);
+        return; // Skip if no change
+      }
+      availableBalance = newBalance;
+      console.log('[CBPortfolio.setBalance]', prev, '→', newBalance);
       saveBalance();
-    }
-    ,
+      // When balance is set to 0, also reset portfolio to ensure fresh calculation
+      if (newBalance === 0) {
+        console.log('[CBPortfolio.setBalance] Balance is zero, resetting portfolio assets');
+        portfolioAssets = DEFAULT_ASSETS.map(a => ({ ...a }));
+        totalPortfolioValue = 0;
+        savePortfolio();
+        saveTotal();
+      }
+      // Dispatch event SYNCHRONOUSLY so UI listeners react immediately
+      try {
+        window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: newBalance } }));
+      } catch (e) { console.warn('Failed to dispatch balance.updated event', e); }
+    },
     setTotalValue: (val) => {
       totalPortfolioValue = Number(val) || 0;
       saveTotal();
+    },
+
+    // Fetch latest balance from server and update immediately
+    async syncBalance() {
+      try {
+        if (typeof AuthService === 'undefined' || !AuthService.isAuthenticated()) return;
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, AuthService.getAuthHeader());
+        const resp = await fetch((AuthService.API_BASE || '/api') + '/auth/me', { headers });
+        if (!resp.ok) return;
+        const j = await resp.json();
+        const serverBal = typeof j.user?.balance !== 'undefined' ? Number(j.user.balance) : null;
+        if (serverBal !== null) {
+          console.log('[Portfolio.syncBalance] Server balance:', serverBal, 'Local balance:', availableBalance);
+          if (serverBal !== availableBalance) {
+            console.log('[Portfolio.syncBalance] Balance changed:', availableBalance, '→', serverBal);
+            const prev = availableBalance;
+            availableBalance = serverBal;
+            saveBalance();
+            // IMPORTANT: Dispatch event FIRST so UI listeners can react
+            window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: availableBalance } }));
+            // Then refresh prices asynchronously (don't wait for it)
+            if (typeof portfolio.refreshPrices === 'function') {
+              portfolio.refreshPrices().catch(e => console.warn('refreshPrices failed', e));
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('CBPortfolio.syncBalance error', err);
+      }
+    },
+
+    startBalanceWatcher(intervalMs = 2000) {
+      // SSE listener
+      try {
+        if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
+          const me = AuthService.getUser();
+          const userId = me && me.id ? me.id : null;
+          if (userId) {
+            const sseUrl = `${AuthService.API_BASE.replace(/\/api$/,'')}/api/updates/stream?userId=${userId}`;
+            try {
+              const evt = new EventSource(sseUrl);
+              evt.addEventListener('profile_update', async (ev) => {
+                try { 
+                  console.log('[Portfolio] SSE profile_update received');
+                  await portfolio.syncBalance(); 
+                } catch (e) { console.warn('SSE syncBalance failed', e); }
+              });
+              evt.onerror = () => { /* ignore - browser handles reconnect */ };
+            } catch (e) { /* ignore */ }
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      // periodic poll (faster - 2 seconds instead of 5)
+      setInterval(() => { 
+        portfolio.syncBalance().catch(e => console.warn('Poll syncBalance failed', e));
+      }, intervalMs);
     },
     // Fetch market prices and recalculate asset values & allocations
     refreshPrices: async () => {
@@ -152,6 +236,13 @@
     }
   };
 
-  loadFromStorage();
+  // Only load from storage if user is already authenticated (not on fresh page load)
+  // This prevents loading old user data when a new user logs in
+  if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
+    loadFromStorage();
+  }
+  
   window.CBPortfolio = portfolio;
+  // Start background balance watcher (SSE + periodic poll)
+  try { if (window.CBPortfolio && typeof window.CBPortfolio.startBalanceWatcher === 'function') window.CBPortfolio.startBalanceWatcher(); } catch(e) { console.warn('Failed to start balance watcher', e); }
 })(window);

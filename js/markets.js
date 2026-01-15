@@ -164,7 +164,9 @@ function useMockData(){
     { symbol: 'DAI', name: 'Dai', price: 1.01, change: 0.05, high: 1.02, low: 0.99, volume: '$380M', cap: '$5.2B' },
     { symbol: 'FRAX', name: 'Frax', price: 0.998, change: -0.05, high: 1.01, low: 0.98, volume: '$85M', cap: '$980M' },
   ];
-}function renderMarketTable(){
+}/* global AuthService */
+
+function renderMarketTable(){
   const tbody = document.getElementById('market-tbody');
   if (!tbody) return; // page may use a different market table (dashboard uses 'market-body')
   if (marketData.length === 0) {
