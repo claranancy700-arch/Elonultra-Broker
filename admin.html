@@ -637,8 +637,22 @@
       if(tab) tab.classList.add('active');
 
       // Load data for specific tabs
-      if (tabId === 'deposits-admin' && typeof loadAdminDeposits === 'function') {
-        loadAdminDeposits();
+      if (tabId === 'deposits-admin') {
+        if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
+          window.ADMIN_TX.fetchTransactions();
+        }
+      } else if (tabId === 'withdrawals-admin') {
+        if (typeof loadWithdrawals === 'function') {
+          loadWithdrawals();
+        }
+      } else if (tabId === 'growth-trades-admin') {
+        if (typeof loadGrowthTrades === 'function') {
+          loadGrowthTrades();
+        }
+      } else if (tabId === 'all-transactions') {
+        if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
+          window.ADMIN_TX.fetchTransactions();
+        }
       }
     }
 

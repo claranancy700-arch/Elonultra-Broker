@@ -867,6 +867,11 @@ async function disablePrompt(promptId) {
 // Expose globally so buttons can call it
 window.disablePrompt = disablePrompt;
 
+// Expose transaction management functions globally
+window.loadWithdrawals = loadWithdrawals;
+window.loadGrowthTrades = loadGrowthTrades;
+window.triggerGrowthNow = triggerGrowthNow;
+
 // Load and display withdrawals with fee status
 async function loadWithdrawals() {
   const key = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
@@ -952,7 +957,7 @@ window.confirmWithdrawalFee = confirmWithdrawalFee;
 // Load deposits for admin deposits tab
 async function loadAdminDeposits() {
   const key = adminKeyInput.value.trim();
-  const tbody = document.getElementById('admin-deposits-tbody');
+  const tbody = document.getElementById('deposits-admin-tbody');
   if (!tbody) return;
 
   if (!key) {
@@ -961,7 +966,7 @@ async function loadAdminDeposits() {
   }
 
   try {
-    const data = await getJSON('/admin/deposits', {
+    const data = await getJSON('/api/admin/deposits', {
       headers: { 'x-admin-key': key }
     });
 
