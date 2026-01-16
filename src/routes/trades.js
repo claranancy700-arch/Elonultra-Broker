@@ -3,6 +3,11 @@ const router = express.Router();
 const db = require('../db');
 const { verifyAdmin, verifyToken } = require('../middleware/auth');
 
+// Read ADMIN_KEY dynamically (checks both ADMIN_KEY and ADMIN_API_KEY for compatibility)
+function getAdminKey() {
+  return process.env.ADMIN_KEY || process.env.ADMIN_API_KEY || null;
+}
+
 /**
  * GET /api/trades - Fetch trade history (admin or authenticated user)
  * Admin: can see all trades with optional userId filter
@@ -16,9 +21,9 @@ const { verifyAdmin, verifyToken } = require('../middleware/auth');
 router.get('/', (req, res, next) => {
   // Check if admin key is present
   const adminKey = req.headers['x-admin-key'];
-  const ADMIN_KEY = process.env.ADMIN_API_KEY || 'admin_key_12345';
+  const ADMIN_KEY = getAdminKey();
   
-  if (adminKey && adminKey === ADMIN_KEY) {
+  if (adminKey && ADMIN_KEY && adminKey === ADMIN_KEY) {
     // Admin request
     return handleAdminTrades(req, res);
   }

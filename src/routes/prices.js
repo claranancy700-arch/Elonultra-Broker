@@ -132,23 +132,28 @@ router.get('/', async (req, res) => {
     // Fetch from CoinGecko
     isFetching = true;
     fetchPromise = (async () => {
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${uniqueIds.join(',')}&vs_currencies=usd`;
-      console.log('[Fetch] Requesting CoinGecko:', url);
+      try {
+        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${uniqueIds.join(',')}&vs_currencies=usd`;
+        console.log('[Fetch] Requesting CoinGecko:', url);
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        console.warn('[Fetch FAIL] CoinGecko returned status:', response.status);
-        throw new Error(`CoinGecko API error: ${response.status}`);
+        const response = await fetch(url, { timeout: 15000 });
+        if (!response.ok) {
+          console.warn('[Fetch FAIL] CoinGecko returned status:', response.status);
+          throw new Error(`CoinGecko API error: ${response.status}`);
+        }
+
+        const prices = await response.json();
+        console.log('[Fetch SUCCESS] CoinGecko returned prices');
+        
+        // Cache the result
+        priceCache.data = prices;
+        priceCache.expiresAt = now + CACHE_TTL;
+        
+        return prices;
+      } catch (err) {
+        console.error('[Fetch PROMISE ERROR]', err.message);
+        throw err;
       }
-
-      const prices = await response.json();
-      console.log('[Fetch SUCCESS] CoinGecko returned prices');
-      
-      // Cache the result
-      priceCache.data = prices;
-      priceCache.expiresAt = now + CACHE_TTL;
-      
-      return prices;
     })();
 
     try {
