@@ -486,15 +486,36 @@ function loadDepositAddressInputs(){
   });
 }
 
-function saveDepositAddresses(){
+async function saveDepositAddresses(){
+  const key = adminKeyInput.value.trim();
+  if(!key) return alert('Admin key required');
+  
   const payload = {};
   depositAddressInputs.forEach(input => {
     const sym = input.getAttribute('data-deposit-symbol');
     const val = input.value.trim();
     if (val) payload[sym] = val;
   });
-  localStorage.setItem('customDepositAddresses', JSON.stringify(payload));
-  alert('Deposit addresses updated.');
+  
+  try {
+    const res = await fetch(baseApi + '/deposit/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+      body: JSON.stringify({ addresses: payload })
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      return alert('Failed to save addresses: ' + (err.error || 'Unknown error'));
+    }
+    
+    // Also save to localStorage for backup
+    localStorage.setItem('customDepositAddresses', JSON.stringify(payload));
+    alert('Deposit addresses updated and synced to server.');
+  } catch (err) {
+    console.error('Save deposit addresses error:', err);
+    alert('Error saving deposit addresses: ' + err.message);
+  }
 }
 
 if (saveDepositAddressesBtn) saveDepositAddressesBtn.addEventListener('click', () => {

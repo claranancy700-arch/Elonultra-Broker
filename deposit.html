@@ -153,10 +153,6 @@
       USDC: '0xMockUSDCCryptoAddress0000000000000000'
     };
 
-    function getCustomDepositAddresses(){
-      try{ return JSON.parse(localStorage.getItem('customDepositAddresses')) || {}; }catch(_){ return {}; }
-    }
-
     copyBtn.addEventListener('click', () => {
       const addr = depositAddressEl.textContent.trim();
       if (!addr) return;
@@ -166,9 +162,30 @@
 
     async function fetchAndShowAddress(currency) {
       try {
-        const overrides = getCustomDepositAddresses();
         const symbol = currency.toUpperCase();
-        const mockAddr = overrides[symbol] || MOCK_ADDRESSES[symbol] || '0xMOCKADDRESS0000000000000000000000000000';
+        
+        // Try to fetch from backend first
+        try {
+          const res = await fetch(apiBase + '/deposit/address?currency=' + symbol);
+          if (res.ok) {
+            const data = await res.json();
+            depositAddressEl.textContent = data.address;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(data.address)}`;
+            addressBox.style.display = 'block';
+            return;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch address from backend:', err);
+        }
+        
+        // Fallback to mock addresses if backend fails
+        const MOCK_ADDRESSES = {
+          BTC: 'bc1qmockaddressforbtc00000000000000',
+          ETH: '0xMockEthereumAddressForDeposit0000000000000000',
+          USDT: 'TMockTetherAddressUSDT000000000000000',
+          USDC: '0xMockUSDCCryptoAddress0000000000000000'
+        };
+        const mockAddr = MOCK_ADDRESSES[symbol] || '0xMOCKADDRESS0000000000000000000000000000';
         depositAddressEl.textContent = mockAddr;
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(mockAddr)}`;
         addressBox.style.display = 'block';
