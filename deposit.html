@@ -80,7 +80,7 @@
       window.location.href = '/login.html';
     }
 
-    const apiBase = (location.hostname === 'localhost' ? `http://${location.hostname}:5001` : '');
+    const apiBase = (location.hostname === 'localhost' ? `http://${location.hostname}:5001/api` : '/api');
 
     const methodSelect = document.getElementById('method-select');
     const cryptoSection = document.getElementById('crypto-section');

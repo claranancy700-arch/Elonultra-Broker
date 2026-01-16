@@ -1,7 +1,11 @@
 // Admin Transaction Management for editable tables
 (function() {
-  // For admin tools, always talk directly to the Express API on localhost:5001
-  const apiBase = 'http://localhost:5001/api';
+  // For admin tools, use the dynamic API base (fallback to localhost for dev)
+  const apiBase = (typeof window !== 'undefined' && window.__apiBase) 
+    ? window.__apiBase 
+    : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) 
+      ? 'http://localhost:5001/api' 
+      : `${location.origin}/api`);
   
   let allTransactions = [];
   

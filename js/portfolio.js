@@ -198,7 +198,7 @@
         // Call backend API instead of CoinGecko directly (avoids CORS)
         const symbolStr = requestSymbols.join(',');
         // Prefer the centralized window.__apiBase when available (keeps URLs consistent across pages)
-        const apiBase = (window.__apiBase ? (window.__apiBase + '/api') : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001/api` : '/api'));
+        const apiBase = (window.__apiBase ? window.__apiBase : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001/api` : '/api'));
         const url = `${apiBase}/prices?symbols=${symbolStr}`;
         console.log('Fetching prices from backend:', url);
         

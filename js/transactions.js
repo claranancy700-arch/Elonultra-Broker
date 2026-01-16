@@ -1,6 +1,13 @@
 /* global AuthService */
 // transactions.js — client-side deposit/withdraw logic (localStorage-backed)
 
+// Determine API base dynamically
+const API_BASE = (typeof window !== 'undefined' && window.__apiBase) 
+  ? window.__apiBase 
+  : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
+    ? 'http://localhost:5001/api'
+    : '/api');
+
 function loadTransactions(){
 
   const tx = JSON.parse(localStorage.getItem('transactions')||'[]');
@@ -140,7 +147,7 @@ function openDepositForm(){
       const token = getAuthToken();
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch('http://localhost:5001/api/transactions/deposit',{method:'POST',headers,body:JSON.stringify({amount,method})});
+      const res = await fetch(API_BASE + '/transactions/deposit',{method:'POST',headers,body:JSON.stringify({amount,method})});
       if(res.ok){
         // refresh transactions from server
         await fetchAndRenderTransactions();
@@ -179,7 +186,7 @@ function openWithdrawForm(){
       const token = getAuthToken();
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch('http://localhost:5001/api/transactions/withdraw',{method:'POST',headers,body:JSON.stringify({amount,method})});
+      const res = await fetch(API_BASE + '/transactions/withdraw',{method:'POST',headers,body:JSON.stringify({amount,method})});
       if(res.ok){
         await fetchAndRenderTransactions();
         renderBalancesUI();
@@ -246,7 +253,7 @@ async function fetchAndRenderTransactions(){
   try{
     transactionsError = null;
     const headers = { Authorization: `Bearer ${token}` };
-    const res = await fetch('http://localhost:5001/api/transactions', { headers });
+    const res = await fetch(API_BASE + '/transactions', { headers });
     if(!res.ok) {
       transactionsLoaded = true;
       transactionsError = 'Unable to load transactions (HTTP ' + res.status + ')';
