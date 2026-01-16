@@ -635,6 +635,11 @@
       evt.target.classList.add('active');
       const tab = document.getElementById(tabId);
       if(tab) tab.classList.add('active');
+
+      // Load data for specific tabs
+      if (tabId === 'deposits-admin' && typeof loadAdminDeposits === 'function') {
+        loadAdminDeposits();
+      }
     }
 
     // Transaction management functions

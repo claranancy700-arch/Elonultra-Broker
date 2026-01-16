@@ -118,11 +118,11 @@
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${t.date ? new Date(t.date).toLocaleDateString() : '—'}</td>
-        <td>${t.user || '—'}</td>
-        <td>${t.method || '—'}</td>
+        <td>${t.user_id || t.user || '—'}</td>
+        <td>${t.method || t.currency || '—'}</td>
         <td>${fmtMoney(t.amount || 0)}</td>
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
-        <td style="font-size:11px;font-family:monospace">${(t.txid || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
+        <td style="font-size:11px;font-family:monospace">${(t.txid || t.reference || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
           ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}

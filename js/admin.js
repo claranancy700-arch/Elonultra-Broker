@@ -949,6 +949,62 @@ async function confirmWithdrawalFee(withdrawalId, adminKey) {
 window.loadWithdrawals = loadWithdrawals;
 window.confirmWithdrawalFee = confirmWithdrawalFee;
 
+// Load deposits for admin deposits tab
+async function loadAdminDeposits() {
+  const key = adminKeyInput.value.trim();
+  const tbody = document.getElementById('admin-deposits-tbody');
+  if (!tbody) return;
+
+  if (!key) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red">Please enter admin key first</td></tr>';
+    return;
+  }
+
+  try {
+    const data = await getJSON('/admin/deposits', {
+      headers: { 'x-admin-key': key }
+    });
+
+    const html = (data.deposits || []).map(d => {
+      const approveBtn = d.status !== 'completed'
+        ? `<button class="btn btn-small" onclick="approveDeposit(${d.id})">Approve</button>`
+        : '<span style="color:green;font-weight:600">✓ Approved</span>';
+
+      return `<tr>
+        <td>${new Date(d.created_at).toLocaleString()}</td>
+        <td>${d.user_id}</td>
+        <td>${d.currency}</td>
+        <td>$${parseFloat(d.amount).toFixed(2)}</td>
+        <td>${d.status}</td>
+        <td>${d.reference || '-'}</td>
+        <td>${approveBtn}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No deposits</td></tr>';
+  } catch (err) {
+    console.error('Load deposits error:', err);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red">Error: ${err.message}</td></tr>`;
+  }
+}
+
+// Wire tab switching for transactions
+document.querySelectorAll('.transaction-tab').forEach(tab => {
+  tab.addEventListener('click', (e) => {
+    const tabId = e.target.getAttribute('data-tab');
+    document.querySelectorAll('.transaction-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tx-tab-content').forEach(c => c.style.display = 'none');
+    e.target.classList.add('active');
+    const content = document.getElementById(tabId);
+    if (content) content.style.display = 'block';
+
+    // Load data for the tab
+    if (tabId === 'deposits-tx') {
+      loadAdminDeposits();
+    }
+  });
+});
+
 // Set up event listeners
 document.getElementById('refresh-prompts-btn')?.addEventListener('click', loadActivePrompts);
 window.addEventListener('adminKeyLoaded', () => {
