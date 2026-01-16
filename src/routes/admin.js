@@ -593,23 +593,19 @@ router.get('/users/:id/portfolio', async (req, res) => {
       }
     } catch (err) { console.warn('[Admin Portfolio] CoinGecko fetch failed, using fallback prices'); }
 
-    // Build consistent response format (same as user endpoint)
+    // Build response in assets format for PRO admin (simple map of coin: amount)
     const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
     const columns = ['btc_balance', 'eth_balance', 'usdt_balance', 'usdc_balance', 'xrp_balance', 'ada_balance'];
-    const positions = [];
-    let totalValue = 0;
+    const assets = {};
 
     coins.forEach((coin, i) => {
       const amount = parseFloat(portfolio[columns[i]]) || 0;
-      const price = prices[coin];
-      const value = amount * price;
       if (amount > 0) {
-        positions.push({ coin, amount: parseFloat(amount.toFixed(8)), price: parseFloat(price.toFixed(2)), value: parseFloat(value.toFixed(2)) });
-        totalValue += value;
+        assets[coin] = amount;
       }
     });
 
-    return res.json({ success: true, portfolio: { positions, total_value: parseFloat(totalValue.toFixed(2)), user_balance: parseFloat(userRes.rows[0].balance || 0).toFixed(2), updated_at: portfolio.updated_at || new Date().toISOString() } });
+    return res.json({ success: true, assets });
   } catch (err) {
     console.error('Admin get portfolio error:', err.message || err);
     return res.status(500).json({ error: err.message || 'failed to fetch portfolio' });

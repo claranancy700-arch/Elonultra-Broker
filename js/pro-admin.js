@@ -776,6 +776,7 @@
       const k = sessionStorage.getItem('adminKey')
       if(k) adminKeyEl.value = k
       await fetchUsers()
+      await fetchTransactions()
     }
     await refreshPrices()
     render()
