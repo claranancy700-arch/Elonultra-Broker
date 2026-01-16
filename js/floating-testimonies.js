@@ -32,11 +32,6 @@
       overflow: hidden;
       font-family: inherit;
       animation: slideIn 0.3s ease-out;
-      @media (max-width: 768px) {
-        width: calc(100vw - 40px);
-        right: 20px;
-        left: 20px;
-      }
     `;
 
     widget.innerHTML = `
@@ -77,6 +72,17 @@
           }
         }
 
+        @keyframes slideOut {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+        }
+
         .testimony-nav-btn:hover {
           opacity: 0.8;
           transform: scale(1.05);
@@ -84,6 +90,13 @@
 
         .testimony-nav-btn:active {
           transform: scale(0.95);
+        }
+
+        /* Hide testimonies on mobile (<900px) */
+        @media (max-width: 900px) {
+          #floating-testimonies-widget {
+            display: none !important;
+          }
         }
       </style>
     `;

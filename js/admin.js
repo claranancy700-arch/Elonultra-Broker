@@ -196,7 +196,7 @@ if (loadUsersBtn) {
 async function loadUserDetails(id, key){
   try{
     const users = await getJSON('/api/admin/users', { headers: { 'x-admin-key': key } });
-    const u = users && users.users ? users.users.find(x=>String(x.id)===String(id)) : null;
+    const u = Array.isArray(users) ? users.find(x=>String(x.id)===String(id)) : (users && users.users ? users.users.find(x=>String(x.id)===String(id)) : null);
     if (!u) { alert('User not found'); return; }
     if (userDetail) userDetail.innerHTML = `<div><strong>${u.email}</strong><div>ID: ${u.id}</div><div>Balance: ${formatCurrency(u.balance)}</div></div>`;
     // Set admin preview name to the selected user so the header reflects the loaded user (not the admin)
@@ -672,7 +672,9 @@ if (editTotalBtn) {
         const j = await res.json(); if(!res.ok) throw new Error(j.error||'credit failed');
       } else {
         // reduce balance to reflect negative delta by setting balance lower
-        const newBal = (Number((await getJSON('/api/admin/users', { headers:{ 'x-admin-key': key } })).users.find(u=>String(u.id)===String(uid)).balance) + delta).toFixed(2);
+        const usersData = await getJSON('/api/admin/users', { headers:{ 'x-admin-key': key } });
+        const users = Array.isArray(usersData) ? usersData : (usersData.users || []);
+        const newBal = (Number(users.find(u=>String(u.id)===String(uid)).balance) + delta).toFixed(2);
         const res = await fetch(baseApi + `/api/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: Number(newBal) }) });
         const j = await res.json(); if(!res.ok) throw new Error(j.error||'set balance failed');
       }
