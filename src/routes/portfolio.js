@@ -4,6 +4,31 @@ const db = require('../db');
 const { verifyToken } = require('../middleware/auth');
 
 /**
+ * Helper: Fetch live prices from CoinGecko with fallback
+ */
+async function fetchLivePrices() {
+  let prices = { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 };
+  try {
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd';
+    const res = await fetch(url, { timeout: 10000 });
+    if (res.ok) {
+      const data = await res.json();
+      prices = {
+        'BTC': data.bitcoin?.usd || 45000,
+        'ETH': data.ethereum?.usd || 2500,
+        'USDT': data.tether?.usd || 1.0,
+        'USDC': data['usd-coin']?.usd || 1.0,
+        'XRP': data.ripple?.usd || 2.5,
+        'ADA': data.cardano?.usd || 0.8,
+      };
+    }
+  } catch (err) {
+    console.warn('[Portfolio] CoinGecko fetch failed, using fallback prices:', err.message);
+  }
+  return prices;
+}
+
+/**
  * GET /api/portfolio - User's portfolio with live prices
  */
 router.get('/', verifyToken, async (req, res) => {
@@ -23,20 +48,11 @@ router.get('/', verifyToken, async (req, res) => {
 
     const balance = parseFloat(userRes.rows[0].balance) || 0;
     const portfolio = portfolioRes.rows[0] || {};
+    const prices = await fetchLivePrices();
 
     console.log(`[Portfolio API] User ${userId}: balance=${balance}, portfolio exists=${!!portfolioRes.rows.length}`);
 
-    // Mock prices (same as portfolio simulator)
-    const prices = {
-      'BTC': 45000 + (Math.random() * 1000),
-      'ETH': 2500 + (Math.random() * 100),
-      'USDT': 1.0,
-      'USDC': 1.0,
-      'XRP': 2.5 + (Math.random() * 0.1),
-      'ADA': 0.8 + (Math.random() * 0.05),
-    };
-
-    // Build positions array
+    // Build positions array with live prices
     const positions = [];
     let totalValue = 0;
 

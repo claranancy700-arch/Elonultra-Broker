@@ -557,7 +557,7 @@ router.post('/users/:id/set-portfolio', async (req, res) => {
   }
 });
 
-// GET /api/admin/users/:id/portfolio - return portfolio row
+// GET /api/admin/users/:id/portfolio - return portfolio with live prices (consistent with user endpoint)
 router.get('/users/:id/portfolio', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
@@ -568,8 +568,48 @@ router.get('/users/:id/portfolio', async (req, res) => {
     const userId = parseInt(req.params.id, 10);
     if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
 
-    const q = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id=$1', [userId]);
-    return res.json({ success: true, portfolio: q.rows[0] || null });
+    // Get portfolio with live prices (consistent with user endpoint)
+    const userRes = await db.query('SELECT balance FROM users WHERE id = $1', [userId]);
+    if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
+
+    const portfolioRes = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id = $1', [userId]);
+    const portfolio = portfolioRes.rows[0] || {};
+
+    // Fetch live prices from CoinGecko
+    let prices = { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 };
+    try {
+      const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd';
+      const res = await fetch(url, { timeout: 10000 });
+      if (res.ok) {
+        const data = await res.json();
+        prices = {
+          'BTC': data.bitcoin?.usd || 45000,
+          'ETH': data.ethereum?.usd || 2500,
+          'USDT': data.tether?.usd || 1.0,
+          'USDC': data['usd-coin']?.usd || 1.0,
+          'XRP': data.ripple?.usd || 2.5,
+          'ADA': data.cardano?.usd || 0.8,
+        };
+      }
+    } catch (err) { console.warn('[Admin Portfolio] CoinGecko fetch failed, using fallback prices'); }
+
+    // Build consistent response format (same as user endpoint)
+    const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
+    const columns = ['btc_balance', 'eth_balance', 'usdt_balance', 'usdc_balance', 'xrp_balance', 'ada_balance'];
+    const positions = [];
+    let totalValue = 0;
+
+    coins.forEach((coin, i) => {
+      const amount = parseFloat(portfolio[columns[i]]) || 0;
+      const price = prices[coin];
+      const value = amount * price;
+      if (amount > 0) {
+        positions.push({ coin, amount: parseFloat(amount.toFixed(8)), price: parseFloat(price.toFixed(2)), value: parseFloat(value.toFixed(2)) });
+        totalValue += value;
+      }
+    });
+
+    return res.json({ success: true, portfolio: { positions, total_value: parseFloat(totalValue.toFixed(2)), user_balance: parseFloat(userRes.rows[0].balance || 0).toFixed(2), updated_at: portfolio.updated_at || new Date().toISOString() } });
   } catch (err) {
     console.error('Admin get portfolio error:', err.message || err);
     return res.status(500).json({ error: err.message || 'failed to fetch portfolio' });

@@ -38,8 +38,18 @@ router.post('/:id/respond', verifyToken, async (req, res) => {
   if (!response || String(response).trim() === '') return res.status(400).json({ error: 'response required' });
   try {
     console.log('[PROMPT RESPOND] User', userId, 'responding to prompt', promptId, 'with:', response);
-    await db.query('INSERT INTO admin_prompt_responses(prompt_id, user_id, response, created_at) VALUES($1,$2,$3,NOW())', [promptId, userId, response]);
-    console.log('[PROMPT RESPOND] ✓ Response saved for user', userId, 'prompt', promptId);
+    
+    // Insert response and automatically mark prompt as inactive
+    const client = await db.getClient();
+    await client.query('BEGIN');
+    
+    await client.query('INSERT INTO admin_prompt_responses(prompt_id, user_id, response, created_at) VALUES($1,$2,$3,NOW())', [promptId, userId, response]);
+    await client.query('UPDATE admin_prompts SET is_active = FALSE WHERE id = $1', [promptId]);
+    
+    await client.query('COMMIT');
+    client.release();
+    
+    console.log('[PROMPT RESPOND] ✓ Response saved and prompt deactivated for user', userId, 'prompt', promptId);
     return res.json({ success: true });
   } catch (err) {
     console.error('[PROMPT RESPOND] ✗ FAILED for user', userId, 'prompt', promptId, ':', err.message || err);
