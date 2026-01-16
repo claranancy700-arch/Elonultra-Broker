@@ -3,16 +3,21 @@ const router = express.Router();
 const db = require('../db');
 const sse = require('../sse/broadcaster');
 
-// Admin credit endpoint — protected by an ADMIN_API_KEY header (x-admin-key)
+// Admin credit endpoint — protected by an ADMIN_KEY header (x-admin-key)
 // POST /api/admin/credit
 // body: { userId?, email?, amount, currency?, reference? }
 
-const ADMIN_KEY = process.env.ADMIN_API_KEY || null;
+// Read ADMIN_KEY dynamically (checks both ADMIN_KEY and ADMIN_API_KEY for compatibility)
+function getAdminKey() {
+  return process.env.ADMIN_KEY || process.env.ADMIN_API_KEY || null;
+}
+
 const { allocatePortfolioForUser } = require('../services/portfolioAllocator');
 const { recordLossIfApplicable } = require('../services/balanceChanges');
 
 function requireAdminKey(req, res) {
   const provided = req.headers['x-admin-key'];
+  const ADMIN_KEY = getAdminKey();
   if (!ADMIN_KEY) return { ok: false, code: 503, msg: 'Admin API key not configured on server' };
   if (!provided || provided !== ADMIN_KEY) return { ok: false, code: 403, msg: 'Forbidden' };
   return { ok: true };
@@ -20,6 +25,7 @@ function requireAdminKey(req, res) {
 
 router.get('/verify-key', (req, res) => {
   const provided = req.headers['x-admin-key'];
+  const ADMIN_KEY = getAdminKey();
   if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
   if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Invalid admin key' });
   return res.json({ success: true });
@@ -316,6 +322,7 @@ router.post('/deposits/:id/approve', async (req, res) => {
 router.post('/credit', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -392,6 +399,7 @@ router.post('/credit', async (req, res) => {
 // GET /api/admin/users - list users (admin key required)
 // GET /api/admin/debug - Check if admin key is configured (no auth needed for debugging)
 router.get('/debug', (req, res) => {
+  const ADMIN_KEY = getAdminKey();
   res.json({ 
     adminKeySet: !!ADMIN_KEY,
     adminKeyLength: ADMIN_KEY ? ADMIN_KEY.length : 0,
@@ -402,6 +410,7 @@ router.get('/debug', (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     console.log('[Admin] GET /users - Admin key check');
     console.log('[Admin] Provided key:', provided ? `"${provided.substring(0,5)}..."` : 'MISSING');
     console.log('[Admin] Expected key:', ADMIN_KEY ? `"${ADMIN_KEY.substring(0,5)}..."` : 'NOT SET');
@@ -437,6 +446,7 @@ router.get('/users', async (req, res) => {
 router.get('/users/:id/transactions', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -455,6 +465,7 @@ router.get('/users/:id/transactions', async (req, res) => {
 router.post('/users/:id/set-balance', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -500,6 +511,7 @@ router.post('/users/:id/set-balance', async (req, res) => {
 router.post('/users/:id/set-portfolio', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -549,6 +561,7 @@ router.post('/users/:id/set-portfolio', async (req, res) => {
 router.get('/users/:id/portfolio', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -567,6 +580,7 @@ router.get('/users/:id/portfolio', async (req, res) => {
 router.get('/transactions', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
@@ -665,6 +679,7 @@ router.get('/prompts', async (req, res) => {
 router.post('/transactions', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 
