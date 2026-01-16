@@ -34,9 +34,9 @@ const saveDepositAddressesBtn = document.getElementById('save-deposit-addresses'
 const resetDepositAddressesBtn = document.getElementById('reset-deposit-addresses');
 
 const DEFAULT_DEPOSIT_ADDRESSES = {
-  BTC: 'bc1qxrkhmy6vglxn2072ma84zhv3ltxdgcapkhhqua',
+  BTC: 'bc1qmockaddressforbtc00000000000000',
   ETH: '0xMockEthereumAddressForDeposit0000000000000000',
-  USDT: '0xd36e85873f91120785D3090Af4fE00d1050720c0',
+  USDT: 'TMockTetherAddressUSDT000000000000000',
   USDC: '0xMockUSDCCryptoAddress0000000000000000'
 };
 
@@ -486,32 +486,35 @@ function loadDepositAddressInputs(){
   });
 }
 
-async function saveDepositAddresses(){
+function saveDepositAddresses(){
   const key = adminKeyInput.value.trim();
   if(!key) return alert('Admin key required');
-  
+
   const payload = {};
   depositAddressInputs.forEach(input => {
     const sym = input.getAttribute('data-deposit-symbol');
     const val = input.value.trim();
     if (val) payload[sym] = val;
   });
-  
+
   try {
-    const res = await fetch(baseApi + '/deposit/addresses', {
+    fetch(baseApi + '/deposit/addresses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
       body: JSON.stringify({ addresses: payload })
+    }).then(res => {
+      if (!res.ok) {
+        return res.json().then(err => {
+          alert('Failed to save addresses: ' + (err.error || 'Unknown error'));
+        });
+      }
+      // Also save to localStorage for backup
+      localStorage.setItem('customDepositAddresses', JSON.stringify(payload));
+      alert('✓ Deposit addresses synced to server and saved locally.');
+    }).catch(err => {
+      console.error('Save deposit addresses error:', err);
+      alert('Error saving deposit addresses: ' + err.message);
     });
-    
-    if (!res.ok) {
-      const err = await res.json();
-      return alert('Failed to save addresses: ' + (err.error || 'Unknown error'));
-    }
-    
-    // Also save to localStorage for backup
-    localStorage.setItem('customDepositAddresses', JSON.stringify(payload));
-    alert('Deposit addresses updated and synced to server.');
   } catch (err) {
     console.error('Save deposit addresses error:', err);
     alert('Error saving deposit addresses: ' + err.message);
