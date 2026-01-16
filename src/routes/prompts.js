@@ -73,8 +73,15 @@ router.post('/:id/read', verifyToken, async (req, res) => {
 // POST /api/prompts/:id/disable - disable a prompt (admin only)
 router.post('/:id/disable', async (req, res) => {
   const promptId = parseInt(req.params.id, 10);
-  const adminKey = req.headers['x-admin-key'];
-  if (adminKey !== process.env.ADMIN_API_KEY) {
+  const provided = req.headers['x-admin-key'];
+  
+  // Use dynamic key retrieval (checks both ADMIN_KEY and ADMIN_API_KEY)
+  const ADMIN_KEY = process.env.ADMIN_KEY || process.env.ADMIN_API_KEY || null;
+  
+  if (!ADMIN_KEY) {
+    return res.status(503).json({ error: 'Admin API key not configured on server' });
+  }
+  if (!provided || provided !== ADMIN_KEY) {
     return res.status(403).json({ error: 'unauthorized' });
   }
   if (isNaN(promptId)) return res.status(400).json({ error: 'invalid prompt id' });

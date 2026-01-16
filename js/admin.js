@@ -608,7 +608,11 @@ async function enableUser(uid, key) {
 async function deleteUser(uid, key) {
   if (!confirm('Delete (soft) this user? This will mark account inactive.')) return;
   try {
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/delete`, { method: 'POST', headers: { 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/api/admin/users/${uid}/delete`, { 
+      method: 'POST', 
+      headers: { 'Content-Type':'application/json', 'x-admin-key': key },
+      body: JSON.stringify({})
+    });
     const j = await res.json(); if(!res.ok) throw new Error(j.error || 'delete failed');
     alert('User deleted (soft)'); loadUsersBtn.click();
     if (document.getElementById('credit-user-id').value == uid) document.getElementById('user-detail').innerHTML = 'Select a user to view details';
