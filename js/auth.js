@@ -180,6 +180,30 @@ const AuthService = {
     const token = this.getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   },
+
+  // Update user profile on backend
+  async updateProfile(fullName, email, phone) {
+    const token = this.getToken();
+    if (!token) throw new Error('No token found. Please log in.');
+
+    const response = await fetch(`${this.API_BASE}/auth/me`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fullName, email, phone }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to update profile');
+    }
+
+    const data = await response.json();
+    this.setUser(data.user);
+    return data.user;
+  },
 };
 
 // Auto-logout if token is expired (simple check)

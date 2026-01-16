@@ -200,15 +200,18 @@
 
       function loadProfileData(){
         try{
-          const saved = JSON.parse(localStorage.getItem('profile')||'{}');
-          if(saved.name || saved.email || saved.phone){
-            document.getElementById('profile-name').textContent = saved.name||'John Doe';
-            document.getElementById('profile-email').textContent = saved.email||'john@example.com';
-            document.getElementById('profile-phone').textContent = saved.phone||'+1 234 567 8900';
-            document.getElementById('input-name').value = saved.name||'John Doe';
-            document.getElementById('input-email').value = saved.email||'john@example.com';
-            document.getElementById('input-phone').value = saved.phone||'+1 234 567 8900';
-          }
+          // Get user from AuthService (which has the fresh server data)
+          const user = AuthService.getUser() || {};
+          const name = user.fullName || 'John Doe';
+          const email = user.email || 'john@example.com';
+          const phone = user.phone || '+1 234 567 8900';
+          
+          document.getElementById('profile-name').textContent = name;
+          document.getElementById('profile-email').textContent = email;
+          document.getElementById('profile-phone').textContent = phone;
+          document.getElementById('input-name').value = name;
+          document.getElementById('input-email').value = email;
+          document.getElementById('input-phone').value = phone;
         }catch(e){console.warn('Failed to load profile',e)}
       }
 
@@ -231,14 +234,33 @@
         const email = document.getElementById('input-email').value;
         const phone = document.getElementById('input-phone').value;
         
-        const profileData = {name, email, phone};
-        localStorage.setItem('profile', JSON.stringify(profileData));
-        
-        document.getElementById('profile-name').textContent = name;
-        document.getElementById('profile-email').textContent = email;
-        document.getElementById('profile-phone').textContent = phone;
-        profileView.style.display = 'block';
-        profileForm.style.display = 'none';
+        if (!name || !email) {
+          alert('Full name and email are required');
+          return;
+        }
+
+        // Save to backend
+        AuthService.updateProfile(name, email, phone)
+          .then(user => {
+            // Update display
+            document.getElementById('profile-name').textContent = user.fullName || name;
+            document.getElementById('profile-email').textContent = user.email || email;
+            document.getElementById('profile-phone').textContent = user.phone || phone;
+            
+            // Update form inputs
+            document.getElementById('input-name').value = user.fullName || name;
+            document.getElementById('input-email').value = user.email || email;
+            document.getElementById('input-phone').value = user.phone || phone;
+            
+            // Toggle view
+            profileView.style.display = 'block';
+            profileForm.style.display = 'none';
+            
+            alert('✓ Profile updated successfully');
+          })
+          .catch(err => {
+            alert('Failed to update profile: ' + err.message);
+          });
       });
 
       function loadSaved(){
