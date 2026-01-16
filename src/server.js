@@ -40,8 +40,10 @@ try {
   const adminRoutes = require('./routes/admin');
   const updatesRoutes = require('./routes/updates');
   const pricesRoutes = require('./routes/prices');
+  const tradesRoutes = require('./routes/trades');
   const testimoniesRoutes = require('./routes/testimonies');
   const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
+  const promptsRoutes = require('./routes/prompts');
   
   app.use('/api/auth', authRoutes);
   app.use('/api/contact', contactRoutes);
@@ -51,8 +53,10 @@ try {
   app.use('/api/admin', adminRoutes);
   app.use('/api/updates', updatesRoutes);
   app.use('/api/prices', pricesRoutes);
+  app.use('/api/trades', tradesRoutes);
   app.use('/api/testimonies', testimoniesRoutes);
   app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
+  app.use('/api/prompts', promptsRoutes);
   
   console.log('Routes loaded successfully');
 } catch (err) {
