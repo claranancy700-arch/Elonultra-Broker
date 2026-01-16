@@ -6,7 +6,7 @@ const db = require('../db');
 let depositAddresses = {
   BTC: process.env.DEPOSIT_ADDR_BTC || '1FfmbHfnpaZjKFvyi1okTjJJusN455paPH',
   ETH: process.env.DEPOSIT_ADDR_ETH || '0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF',
-  USDT: process.env.DEPOSIT_ADDR_USDT || 'TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7',
+  USDT: process.env.DEPOSIT_ADDR_USDT || '0xd36e85873f91120785D3090Af4fE00d1050720c0',
   USDC: process.env.DEPOSIT_ADDR_USDC || '0xUSDCADDRESSPLACEHOLDER0000000000000',
 };
 

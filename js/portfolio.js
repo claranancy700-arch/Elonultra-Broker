@@ -56,10 +56,17 @@
     return base + (Number(availableBalance) || 0);
   }
 
+  function getAssetOnlyValue(){
+    // Return only the asset value without balance (for admin panel displays)
+    const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+    return (derived > 0) ? derived : (totalPortfolioValue || 0);
+  }
+
   const portfolio = {
     getAssets: () => portfolioAssets,
     getBalance: () => availableBalance,
     getTotalValue: getTotalValue,
+    getAssetOnlyValue: getAssetOnlyValue,
     setAssets: (assets) => {
       // Expect assets as array [{symbol, name, amount, value}]
       if (!Array.isArray(assets)) return;

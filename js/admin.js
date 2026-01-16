@@ -279,8 +279,9 @@ async function loadUserDetails(id, key){
           });
           // IMPORTANT: Clear old portfolio data first
           window.CBPortfolio.setAssets([]);
-          // set balance from users list item (this also resets portfolio if balance is 0)
-          window.CBPortfolio.setBalance(Number(u.balance) || 0);
+          // For admin panel: don't include balance in total value, only show asset value
+          // Set balance to 0 so getTotalValue returns only asset value
+          window.CBPortfolio.setBalance(0);
           // Set new assets AFTER setting balance
           if (assets.length > 0) {
             window.CBPortfolio.setAssets(assets);
