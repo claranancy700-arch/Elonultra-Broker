@@ -727,6 +727,12 @@ router.post('/transactions', async (req, res) => {
     if (!type) return res.status(400).json({ error: 'Missing transaction type' });
     if (!amt || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
+    // Verify user exists
+    const userCheck = await db.query('SELECT id FROM users WHERE id = $1', [userId]);
+    if (!userCheck.rows.length) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     // Optional custom created_at timestamp for admin-created rows
     let createdAt = null;
     if (date) {
@@ -735,7 +741,7 @@ router.post('/transactions', async (req, res) => {
     }
     if (!createdAt) createdAt = new Date();
 
-    const client = await db.pool.connect();
+    const client = await db.getClient();
     try {
       await client.query('BEGIN');
       const result = await client.query(
@@ -747,7 +753,7 @@ router.post('/transactions', async (req, res) => {
     } catch (err) {
       await client.query('ROLLBACK');
       console.error('Create transaction error:', err.message || err);
-      return res.status(500).json({ error: 'failed to create transaction' });
+      return res.status(500).json({ error: 'failed to create transaction', details: err.message });
     } finally {
       client.release();
     }
