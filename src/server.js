@@ -27,7 +27,41 @@ try {
   console.warn('Failed to start background jobs or init:', err.message || err);
 }
 
+// Simple health endpoint (no DB dependency)
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// Routes (loaded with error handling) - MUST BE BEFORE static files
+try {
+  const authRoutes = require('./routes/auth');
+  const contactRoutes = require('./routes/contact');
+  const withdrawalRoutes = require('./routes/withdrawals');
+  const depositRoutes = require('./routes/deposit');
+  const transactionsRoutes = require('./routes/transactions');
+  const adminRoutes = require('./routes/admin');
+  const updatesRoutes = require('./routes/updates');
+  const pricesRoutes = require('./routes/prices');
+  const testimoniesRoutes = require('./routes/testimonies');
+  const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
+  
+  app.use('/api/auth', authRoutes);
+  app.use('/api/contact', contactRoutes);
+  app.use('/api/withdrawals', withdrawalRoutes);
+  app.use('/api/deposit', depositRoutes);
+  app.use('/api/transactions', transactionsRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/updates', updatesRoutes);
+  app.use('/api/prices', pricesRoutes);
+  app.use('/api/testimonies', testimoniesRoutes);
+  app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
+  
+  console.log('Routes loaded successfully');
+} catch (err) {
+  console.error('Warning: Failed to load routes:', err.message);
+  console.log('Health endpoint available at /api/health, other routes may fail if DB is offline');
+}
+
 // Serve frontend static files from project root (so /markets or /markets.html work)
+// MUST BE AFTER API ROUTES so /api/* endpoints take priority
 const webRoot = path.join(__dirname, '..');
 app.use(express.static(webRoot));
 
@@ -64,39 +98,6 @@ app.get('*', (req, res, next) => {
 
   res.status(404).send('Not Found');
 });
-
-// Simple health endpoint (no DB dependency)
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
-// Routes (loaded with error handling)
-try {
-  const authRoutes = require('./routes/auth');
-  const contactRoutes = require('./routes/contact');
-  const withdrawalRoutes = require('./routes/withdrawals');
-  const depositRoutes = require('./routes/deposit');
-  const transactionsRoutes = require('./routes/transactions');
-  const adminRoutes = require('./routes/admin');
-  const updatesRoutes = require('./routes/updates');
-  const pricesRoutes = require('./routes/prices');
-  const testimoniesRoutes = require('./routes/testimonies');
-  const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
-  
-  app.use('/api/auth', authRoutes);
-  app.use('/api/contact', contactRoutes);
-  app.use('/api/withdrawals', withdrawalRoutes);
-  app.use('/api/deposit', depositRoutes);
-  app.use('/api/transactions', transactionsRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/updates', updatesRoutes);
-  app.use('/api/prices', pricesRoutes);
-  app.use('/api/testimonies', testimoniesRoutes);
-  app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
-  
-  console.log('Routes loaded successfully');
-} catch (err) {
-  console.error('Warning: Failed to load routes:', err.message);
-  console.log('Health endpoint available at /api/health, other routes may fail if DB is offline');
-}
 
 const server = app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
