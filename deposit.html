@@ -147,9 +147,9 @@
     currencySelect.addEventListener('change', () => fetchAndShowAddress(currencySelect.value));
 
     const MOCK_ADDRESSES = {
-      BTC: 'bc1qmockaddressforbtc00000000000000',
+      BTC: 'bc1qxrkhmy6vglxn2072ma84zhv3ltxdgcapkhhqua',
       ETH: '0xMockEthereumAddressForDeposit0000000000000000',
-      USDT: 'TMockTetherAddressUSDT000000000000000',
+      USDT: '0xd36e85873f91120785D3090Af4fE00d1050720c0',
       USDC: '0xMockUSDCCryptoAddress0000000000000000'
     };
 
@@ -180,9 +180,9 @@
         
         // Fallback to mock addresses if backend fails
         const MOCK_ADDRESSES = {
-          BTC: 'bc1qmockaddressforbtc00000000000000',
+          BTC: 'bc1qxrkhmy6vglxn2072ma84zhv3ltxdgcapkhhqua',
           ETH: '0xMockEthereumAddressForDeposit0000000000000000',
-          USDT: 'TMockTetherAddressUSDT000000000000000',
+          USDT: '0xd36e85873f91120785D3090Af4fE00d1050720c0',
           USDC: '0xMockUSDCCryptoAddress0000000000000000'
         };
         const mockAddr = MOCK_ADDRESSES[symbol] || '0xMOCKADDRESS0000000000000000000000000000';

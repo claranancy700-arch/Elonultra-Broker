@@ -34,9 +34,9 @@ const saveDepositAddressesBtn = document.getElementById('save-deposit-addresses'
 const resetDepositAddressesBtn = document.getElementById('reset-deposit-addresses');
 
 const DEFAULT_DEPOSIT_ADDRESSES = {
-  BTC: 'bc1qmockaddressforbtc00000000000000',
+  BTC: 'bc1qxrkhmy6vglxn2072ma84zhv3ltxdgcapkhhqua',
   ETH: '0xMockEthereumAddressForDeposit0000000000000000',
-  USDT: 'TMockTetherAddressUSDT000000000000000',
+  USDT: '0xd36e85873f91120785D3090Af4fE00d1050720c0',
   USDC: '0xMockUSDCCryptoAddress0000000000000000'
 };
 
