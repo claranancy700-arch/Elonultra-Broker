@@ -591,7 +591,7 @@ if (editBalanceBtn) {
 async function disableUser(uid, key) {
   if (!confirm('Disable this user?')) return;
   try {
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/disable`, { method: 'POST', headers: { 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/users/${uid}/disable`, { method: 'POST', headers: { 'x-admin-key': key } });
     const j = await res.json(); if(!res.ok) throw new Error(j.error || 'disable failed');
     alert('User disabled'); loadUsersBtn.click();
     if (document.getElementById('credit-user-id').value == uid) loadUserDetails(uid, key);
@@ -599,7 +599,7 @@ async function disableUser(uid, key) {
 }
 async function enableUser(uid, key) {
   try {
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/enable`, { method: 'POST', headers: { 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/users/${uid}/enable`, { method: 'POST', headers: { 'x-admin-key': key } });
     const j = await res.json(); if(!res.ok) throw new Error(j.error || 'enable failed');
     alert('User enabled'); loadUsersBtn.click();
     if (document.getElementById('credit-user-id').value == uid) loadUserDetails(uid, key);
@@ -608,7 +608,7 @@ async function enableUser(uid, key) {
 async function deleteUser(uid, key) {
   if (!confirm('Delete (soft) this user? This will mark account inactive.')) return;
   try {
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/delete`, { 
+    const res = await fetch(baseApi + `/admin/users/${uid}/delete`, { 
       method: 'POST', 
       headers: { 'Content-Type':'application/json', 'x-admin-key': key },
       body: JSON.stringify({})
