@@ -390,19 +390,43 @@ router.post('/credit', async (req, res) => {
 });
 
 // GET /api/admin/users - list users (admin key required)
+// GET /api/admin/debug - Check if admin key is configured (no auth needed for debugging)
+router.get('/debug', (req, res) => {
+  res.json({ 
+    adminKeySet: !!ADMIN_KEY,
+    adminKeyLength: ADMIN_KEY ? ADMIN_KEY.length : 0,
+    adminKeyPreview: ADMIN_KEY ? `${ADMIN_KEY.substring(0,5)}...${ADMIN_KEY.substring(ADMIN_KEY.length-5)}` : 'NOT SET'
+  });
+});
+
 router.get('/users', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
-    console.log('[Admin] GET /users - provided key:', provided ? 'yes' : 'no', 'ADMIN_KEY configured:', !!ADMIN_KEY);
-    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
-    if (!provided || provided !== ADMIN_KEY) {
-      console.log('[Admin] GET /users - key mismatch or missing');
-      return res.status(403).json({ error: 'Forbidden' });
+    console.log('[Admin] GET /users - Admin key check');
+    console.log('[Admin] Provided key:', provided ? `"${provided.substring(0,5)}..."` : 'MISSING');
+    console.log('[Admin] Expected key:', ADMIN_KEY ? `"${ADMIN_KEY.substring(0,5)}..."` : 'NOT SET');
+    
+    if (!ADMIN_KEY) {
+      console.error('[Admin] CRITICAL: ADMIN_KEY not configured in environment');
+      return res.status(503).json({ error: 'Admin API key not configured on server' });
+    }
+    
+    if (!provided) {
+      console.warn('[Admin] No key provided in request');
+      return res.status(403).json({ error: 'Missing x-admin-key header' });
+    }
+    
+    if (provided !== ADMIN_KEY) {
+      console.warn('[Admin] Key mismatch - access denied');
+      return res.status(403).json({ error: 'Invalid admin key' });
     }
 
+    console.log('[Admin] Key valid, fetching users...');
     const q = await db.query('SELECT id, email, COALESCE(balance,0) as balance, COALESCE(is_active,TRUE) AS is_active, created_at FROM users ORDER BY id LIMIT 500');
-    console.log('[Admin] GET /users - returning', q.rows.length, 'users');
-    return res.json({ success: true, users: q.rows });
+    console.log(`[Admin] Returning ${q.rows.length} users`);
+    
+    // Return as direct array for consistency with PRO-admin version
+    return res.json(q.rows);
   } catch (err) {
     console.error('Admin users list error:', err.message || err);
     return res.status(500).json({ error: 'failed to list users' });
