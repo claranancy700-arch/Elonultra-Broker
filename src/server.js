@@ -12,7 +12,10 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// Run DB init and background jobs - but don't block server startup
+// Simple health endpoint (no DB dependency) - register FIRST so it's always available
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// Run DB init and route registration synchronously before serving
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
@@ -69,21 +72,6 @@ app.use(express.json());
   }
 })();
 
-// START THE SERVER IMMEDIATELY - Don't wait for async to finish
-// Routes may still be registering but that's OK - Express queues requests
-const server = app.listen(port, () => {
-  console.log(`✓ Server listening on port ${port}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
-  server.close();
-});
-
-// Simple health endpoint (no DB dependency)
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
 // Serve frontend static files from project root (so /markets or /markets.html work)
 // MUST BE AFTER API ROUTES so /api/* endpoints take priority
 const webRoot = path.join(__dirname, '..');
@@ -103,7 +91,7 @@ app.get('/:page', (req, res, next) => {
 app.get('*', (req, res, next) => {
   const reqPath = req.path.replace(/^\//, '');
   // Do not interfere with API routes
-  if (req.path.startsWith('/api/')) return next();
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });
 
   // Try direct file match: about.html for /about, markets.html for /markets
   const candidate = path.join(webRoot, `${reqPath || 'index'}.html`);
@@ -121,6 +109,17 @@ app.get('*', (req, res, next) => {
   if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
 
   res.status(404).send('Not Found');
+});
+
+// START THE SERVER IMMEDIATELY - Routes register asynchronously in background
+const server = app.listen(port, () => {
+  console.log(`✓ Server listening on port ${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server...');
+  server.close();
 });
 
 module.exports = app;
