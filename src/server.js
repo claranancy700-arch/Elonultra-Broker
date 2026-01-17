@@ -115,12 +115,5 @@ app.get('*', (req, res, next) => {
 
   res.status(404).send('Not Found');
 });
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
-  server.close();
-});
 
 module.exports = app;
