@@ -13,19 +13,21 @@ app.use(cors());
 app.use(express.json());
 
 // Run DB init (create audit/columns) and start background jobs
-try {
-  const { ensureSchema } = require('./db/init');
-  ensureSchema();
-  const { startPriceUpdater } = require('./jobs/priceUpdater');
-  const { startTradeSimulator } = require('./jobs/tradeSimulator');
-  
-  // start daily job (24h)
-  startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
-  // start hourly trade simulator (Monday-Friday)
-  startTradeSimulator();
-} catch (err) {
-  console.warn('Failed to start background jobs or init:', err.message || err);
-}
+(async () => {
+  try {
+    const { ensureSchema } = require('./db/init');
+    await ensureSchema();
+    const { startPriceUpdater } = require('./jobs/priceUpdater');
+    const { startTradeSimulator } = require('./jobs/tradeSimulator');
+    
+    // start daily job (24h)
+    startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
+    // start hourly trade simulator (Monday-Friday)
+    startTradeSimulator();
+  } catch (err) {
+    console.warn('Failed to start background jobs or init:', err.message || err);
+  }
+})();
 
 // Simple health endpoint (no DB dependency)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
