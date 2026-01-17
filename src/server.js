@@ -12,59 +12,57 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// Run DB init (create audit/columns) and start background jobs
+// Run DB init (create audit/columns) and start background jobs - MUST RUN BEFORE ROUTES
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
     await ensureSchema();
-    const { startPriceUpdater } = require('./jobs/priceUpdater');
-    const { startTradeSimulator } = require('./jobs/tradeSimulator');
+    console.log('Database schema initialized');
+    
+    // NOW register routes after DB is ready
+    const authRoutes = require('./routes/auth');
+    const contactRoutes = require('./routes/contact');
+    const withdrawalRoutes = require('./routes/withdrawals');
+    const depositRoutes = require('./routes/deposit');
+    const transactionsRoutes = require('./routes/transactions');
+    const adminRoutes = require('./routes/admin');
+    const updatesRoutes = require('./routes/updates');
+    const pricesRoutes = require('./routes/prices');
+    const tradesRoutes = require('./routes/trades');
+    const testimoniesRoutes = require('./routes/testimonies');
+    const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
+    const promptsRoutes = require('./routes/prompts');
+    
+    app.use('/api/auth', authRoutes);
+    app.use('/api/contact', contactRoutes);
+    app.use('/api/withdrawals', withdrawalRoutes);
+    app.use('/api/deposit', depositRoutes);
+    app.use('/api/transactions', transactionsRoutes);
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/updates', updatesRoutes);
+    app.use('/api/prices', pricesRoutes);
+    app.use('/api/trades', tradesRoutes);
+    app.use('/api/testimonies', testimoniesRoutes);
+    app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
+    app.use('/api/prompts', promptsRoutes);
+    
+    console.log('All routes loaded successfully after DB init');
     
     // start daily job (24h)
+    const { startPriceUpdater } = require('./jobs/priceUpdater');
+    const { startTradeSimulator } = require('./jobs/tradeSimulator');
     startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
     // start hourly trade simulator (Monday-Friday)
     startTradeSimulator();
+    console.log('Background jobs started');
   } catch (err) {
-    console.warn('Failed to start background jobs or init:', err.message || err);
+    console.error('Critical error during initialization:', err.message || err);
+    console.error('Server may not function properly - routes/DB not initialized');
   }
 })();
 
 // Simple health endpoint (no DB dependency)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
-// Routes (loaded with error handling) - MUST BE BEFORE static files
-try {
-  const authRoutes = require('./routes/auth');
-  const contactRoutes = require('./routes/contact');
-  const withdrawalRoutes = require('./routes/withdrawals');
-  const depositRoutes = require('./routes/deposit');
-  const transactionsRoutes = require('./routes/transactions');
-  const adminRoutes = require('./routes/admin');
-  const updatesRoutes = require('./routes/updates');
-  const pricesRoutes = require('./routes/prices');
-  const tradesRoutes = require('./routes/trades');
-  const testimoniesRoutes = require('./routes/testimonies');
-  const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
-  const promptsRoutes = require('./routes/prompts');
-  
-  app.use('/api/auth', authRoutes);
-  app.use('/api/contact', contactRoutes);
-  app.use('/api/withdrawals', withdrawalRoutes);
-  app.use('/api/deposit', depositRoutes);
-  app.use('/api/transactions', transactionsRoutes);
-  app.use('/api/admin', adminRoutes);
-  app.use('/api/updates', updatesRoutes);
-  app.use('/api/prices', pricesRoutes);
-  app.use('/api/trades', tradesRoutes);
-  app.use('/api/testimonies', testimoniesRoutes);
-  app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
-  app.use('/api/prompts', promptsRoutes);
-  
-  console.log('Routes loaded successfully');
-} catch (err) {
-  console.error('Warning: Failed to load routes:', err.message);
-  console.log('Health endpoint available at /api/health, other routes may fail if DB is offline');
-}
 
 // Serve frontend static files from project root (so /markets or /markets.html work)
 // MUST BE AFTER API ROUTES so /api/* endpoints take priority
