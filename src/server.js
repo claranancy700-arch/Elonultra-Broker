@@ -15,7 +15,7 @@ app.use(express.json());
 // Simple health endpoint (no DB dependency) - register FIRST so it's always available
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Run DB init and route registration synchronously before serving
+// Run DB init and route registration - THEN start server
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
@@ -70,56 +70,56 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   } catch (err) {
     console.error('Background jobs error:', err.message || err);
   }
+
+  // Serve frontend static files from project root (so /markets or /markets.html work)
+  // MUST BE AFTER API ROUTES so /api/* endpoints take priority
+  const webRoot = path.join(__dirname, '..');
+  app.use(express.static(webRoot));
+
+  // If a request matches a top-level path like /markets, try to serve markets.html
+  app.get('/:page', (req, res, next) => {
+    const page = req.params.page;
+    // ignore API routes
+    if (page === 'api' || page.startsWith('api')) return next();
+    const file = path.join(webRoot, `${page}.html`);
+    if (fs.existsSync(file)) return res.sendFile(file);
+    next();
+  });
+
+  // Catch-all for nested or arbitrary frontend routes (e.g. /markets, /settings/profile)
+  app.get('*', (req, res, next) => {
+    const reqPath = req.path.replace(/^\//, '');
+    // Do not interfere with API routes
+    if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });
+
+    // Try direct file match: about.html for /about, markets.html for /markets
+    const candidate = path.join(webRoot, `${reqPath || 'index'}.html`);
+    if (fs.existsSync(candidate)) return res.sendFile(candidate);
+
+    // If path includes subpaths, try the last segment (e.g. /settings/profile -> settings.html)
+    const lastSeg = reqPath.split('/').filter(Boolean).slice(-1)[0];
+    if (lastSeg) {
+      const fallback = path.join(webRoot, `${lastSeg}.html`);
+      if (fs.existsSync(fallback)) return res.sendFile(fallback);
+    }
+
+    // Fallback to index.html to let frontend handle routing, or send 404
+    const indexFile = path.join(webRoot, 'index.html');
+    if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
+
+    res.status(404).send('Not Found');
+  });
+
+  // START THE SERVER - after routes are registered
+  const server = app.listen(port, () => {
+    console.log(`✓ Server listening on port ${port}`);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, closing server...');
+    server.close();
+  });
 })();
-
-// Serve frontend static files from project root (so /markets or /markets.html work)
-// MUST BE AFTER API ROUTES so /api/* endpoints take priority
-const webRoot = path.join(__dirname, '..');
-app.use(express.static(webRoot));
-
-// If a request matches a top-level path like /markets, try to serve markets.html
-app.get('/:page', (req, res, next) => {
-  const page = req.params.page;
-  // ignore API routes
-  if (page === 'api' || page.startsWith('api')) return next();
-  const file = path.join(webRoot, `${page}.html`);
-  if (fs.existsSync(file)) return res.sendFile(file);
-  next();
-});
-
-// Catch-all for nested or arbitrary frontend routes (e.g. /markets, /settings/profile)
-app.get('*', (req, res, next) => {
-  const reqPath = req.path.replace(/^\//, '');
-  // Do not interfere with API routes
-  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });
-
-  // Try direct file match: about.html for /about, markets.html for /markets
-  const candidate = path.join(webRoot, `${reqPath || 'index'}.html`);
-  if (fs.existsSync(candidate)) return res.sendFile(candidate);
-
-  // If path includes subpaths, try the last segment (e.g. /settings/profile -> settings.html)
-  const lastSeg = reqPath.split('/').filter(Boolean).slice(-1)[0];
-  if (lastSeg) {
-    const fallback = path.join(webRoot, `${lastSeg}.html`);
-    if (fs.existsSync(fallback)) return res.sendFile(fallback);
-  }
-
-  // Fallback to index.html to let frontend handle routing, or send 404
-  const indexFile = path.join(webRoot, 'index.html');
-  if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
-
-  res.status(404).send('Not Found');
-});
-
-// START THE SERVER IMMEDIATELY - Routes register asynchronously in background
-const server = app.listen(port, () => {
-  console.log(`✓ Server listening on port ${port}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, closing server...');
-  server.close();
-});
 
 module.exports = app;
