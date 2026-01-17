@@ -13,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Run DB init (create audit/columns) and start background jobs - MUST RUN BEFORE ROUTES
+// THIS MUST COMPLETE BEFORE SERVER STARTS LISTENING
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
@@ -55,9 +56,21 @@ app.use(express.json());
     // start hourly trade simulator (Monday-Friday)
     startTradeSimulator();
     console.log('Background jobs started');
+    
+    // NOW START THE SERVER - after everything is initialized
+    const server = app.listen(port, () => {
+      console.log(`✓ Server listening on port ${port} with all routes and DB ready`);
+    });
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM received, closing server...');
+      server.close();
+    });
   } catch (err) {
     console.error('Critical error during initialization:', err.message || err);
     console.error('Server may not function properly - routes/DB not initialized');
+    process.exit(1);
   }
 })();
 
@@ -102,9 +115,6 @@ app.get('*', (req, res, next) => {
 
   res.status(404).send('Not Found');
 });
-
-const server = app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
 });
 
 // Graceful shutdown
