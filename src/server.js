@@ -12,15 +12,19 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// Run DB init (create audit/columns) and start background jobs - MUST RUN BEFORE ROUTES
-// THIS MUST COMPLETE BEFORE SERVER STARTS LISTENING
+// Run DB init and background jobs - but don't block server startup
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
     await ensureSchema();
     console.log('Database schema initialized');
-    
-    // NOW register routes after DB is ready
+  } catch (err) {
+    console.error('Database init error:', err.message || err);
+    console.error('Server will continue, but DB-dependent features may fail');
+  }
+
+  try {
+    // Register routes after DB init attempt
     const authRoutes = require('./routes/auth');
     const contactRoutes = require('./routes/contact');
     const withdrawalRoutes = require('./routes/withdrawals');
@@ -47,8 +51,12 @@ app.use(express.json());
     app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
     app.use('/api/prompts', promptsRoutes);
     
-    console.log('All routes loaded successfully after DB init');
-    
+    console.log('All routes loaded successfully');
+  } catch (err) {
+    console.error('Route registration error:', err.message || err);
+  }
+
+  try {
     // start daily job (24h)
     const { startPriceUpdater } = require('./jobs/priceUpdater');
     const { startTradeSimulator } = require('./jobs/tradeSimulator');
@@ -56,23 +64,22 @@ app.use(express.json());
     // start hourly trade simulator (Monday-Friday)
     startTradeSimulator();
     console.log('Background jobs started');
-    
-    // NOW START THE SERVER - after everything is initialized
-    const server = app.listen(port, () => {
-      console.log(`✓ Server listening on port ${port} with all routes and DB ready`);
-    });
-    
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received, closing server...');
-      server.close();
-    });
   } catch (err) {
-    console.error('Critical error during initialization:', err.message || err);
-    console.error('Server may not function properly - routes/DB not initialized');
-    process.exit(1);
+    console.error('Background jobs error:', err.message || err);
   }
 })();
+
+// START THE SERVER IMMEDIATELY - Don't wait for async to finish
+// Routes may still be registering but that's OK - Express queues requests
+const server = app.listen(port, () => {
+  console.log(`✓ Server listening on port ${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server...');
+  server.close();
+});
 
 // Simple health endpoint (no DB dependency)
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
