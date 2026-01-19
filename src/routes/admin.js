@@ -269,6 +269,25 @@ router.get('/deposits', async (req, res) => {
   return res.json({ success: true, deposits: rows });
 });
 
+// GET /api/admin/users/:id/deposits - Get deposits for a specific user
+router.get('/users/:id/deposits', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const userId = parseInt(req.params.id, 10);
+  if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
+
+  try {
+    const { rows } = await db.query(
+      'SELECT id, user_id, amount, currency, status, reference, created_at FROM transactions WHERE user_id=$1 AND type=\'deposit\' ORDER BY created_at DESC LIMIT 200',
+      [userId]
+    );
+    return res.json({ success: true, deposits: rows });
+  } catch (err) {
+    console.error('Fetch user deposits error:', err.message || err);
+    return res.status(500).json({ error: 'Failed to fetch deposits' });
+  }
+});
+
 router.post('/deposits/:id/approve', async (req, res) => {
   const guard = requireAdminKey(req, res);
   if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
