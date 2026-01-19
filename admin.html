@@ -630,8 +630,8 @@
 
       // Load data for specific tabs
       if (tabId === 'deposits-admin') {
-        if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
-          window.ADMIN_TX.fetchTransactions();
+        if (typeof loadAdminDeposits === 'function') {
+          loadAdminDeposits();
         }
       } else if (tabId === 'withdrawals-admin') {
         if (typeof loadWithdrawals === 'function') {

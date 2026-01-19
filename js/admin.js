@@ -1021,7 +1021,17 @@ async function loadAdminDeposits() {
   }
 
   try {
-    const data = await getJSON('/api/admin/deposits', {
+    // Get the selected user ID to filter deposits
+    const selectedUserId = currentUserSelect?.value;
+    
+    // If a user is selected, fetch deposits for that specific user
+    // Otherwise fetch all deposits
+    let endpoint = '/api/admin/deposits';
+    if (selectedUserId) {
+      endpoint = `/api/admin/users/${selectedUserId}/deposits`;
+    }
+    
+    const data = await getJSON(endpoint, {
       headers: { 'x-admin-key': key }
     });
 
