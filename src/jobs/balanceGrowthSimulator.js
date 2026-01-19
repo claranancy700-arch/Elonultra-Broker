@@ -133,6 +133,13 @@ async function processUserBalance(userId, currentBalance) {
       [newBalance, userId]
     );
 
+    // Log transaction for audit trail
+    await client.query(
+      `INSERT INTO transactions (user_id, type, amount, currency, status, reference)
+       VALUES ($1, 'simulator', $2, 'USD', 'completed', $3)`,
+      [userId, newBalance - freshBalance, `simulator: ${asset} ${tradeType} ${randomBoost.toFixed(2)}%`]
+    );
+
     // If balance decreased, record trading loss if applicable
     try { await recordLossIfApplicable(client, userId, freshBalance, newBalance); } catch (e) { console.warn('[balanceGrowth] failed to record loss', e && e.message ? e.message : e); }
 
