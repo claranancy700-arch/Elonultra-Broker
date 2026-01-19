@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config();
 
@@ -109,6 +110,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
     res.status(404).send('Not Found');
   });
+
+  // Apply centralized error handler middleware (MUST be last middleware)
+  app.use(errorHandler);
 
   // START THE SERVER - after routes are registered
   const server = app.listen(port, () => {
