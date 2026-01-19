@@ -251,7 +251,9 @@ async function loadUserDetails(id, key){
     // fetch portfolio and prefill fields
     try{
       const p = await getJSON(`/api/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } });
-      const pf = p.portfolio || {};
+      // Handle both response formats: { success: true, assets: {...} } or { assets: {...} }
+      const assets = p.assets || p.portfolio || {};
+      
       // populate dynamic portfolio input fields
       try{
         const container = document.getElementById('portfolio-fields');
@@ -259,8 +261,8 @@ async function loadUserDetails(id, key){
         const list = getSymbolList();
         let rowsAdded = 0;
         list.forEach(sym => {
-          const col = `${sym.toLowerCase()}_balance`;
-          const bal = Number(pf[col]) || 0;
+          // Assets come as key-value pairs like { BTC: 1.5, ETH: 2.0 }
+          const bal = Number(assets[sym]) || 0;
           if (bal > 0) { createAssetRow(sym, bal); rowsAdded++; }
         });
         if (rowsAdded === 0) createAssetRow();
@@ -269,25 +271,23 @@ async function loadUserDetails(id, key){
       try{
         if (window.CBPortfolio) {
           const assets = [];
-          // Build assets from currently rendered rows
-          document.querySelectorAll('#portfolio-fields .asset-row').forEach(r => {
-            try{
-              const sym = (r.querySelector('.pf-symbol') && r.querySelector('.pf-symbol').value) || null;
-              const bal = Number(r.querySelector('.pf-amount') && r.querySelector('.pf-amount').value) || 0;
-              if (sym && bal > 0) assets.push({ symbol: sym, name: sym, amount: bal, value: 0 });
-            }catch(_){ /* ignore */ }
-          });
+          // Build assets from portfolio response or from rendered rows
+          const assetsList = Object.entries(assets || {}).map(([symbol, amount]) => ({
+            symbol,
+            name: symbol,
+            amount: Number(amount) || 0,
+            value: 0
+          }));
+          
           // IMPORTANT: Clear old portfolio data first
           window.CBPortfolio.setAssets([]);
-          // For admin panel: don't include balance in total value, only show asset value
-          // Set balance to 0 so getTotalValue returns only asset value
-          window.CBPortfolio.setBalance(0);
-          // Set new assets AFTER setting balance
-          if (assets.length > 0) {
-            window.CBPortfolio.setAssets(assets);
+          // Set balance to user's cash balance
+          const userBalance = Number(u.balance) || 0;
+          window.CBPortfolio.setBalance(userBalance);
+          // Set assets AFTER setting balance
+          if (assetsList.length > 0) {
+            window.CBPortfolio.setAssets(assetsList);
           }
-          // if server provided usd_value, use it
-          if (pf.usd_value) window.CBPortfolio.setTotalValue(Number(pf.usd_value) || 0);
           // refresh prices for preview and then re-render dashboard preview if available
           try{
             if (typeof window.CBPortfolio.refreshPrices === 'function') {

@@ -275,9 +275,12 @@
           }
           document.getElementById('user-name').textContent = profile?.name || profile?.email || 'N/A';
           document.getElementById('user-email').textContent = profile?.email || '—';
-          const balanceFromProfile = typeof profile?.balance === 'number' ? profile.balance : null;
-          const fallbackBalance = parseFloat(localStorage.getItem('availableBalance') || localStorage.getItem('balance') || '0');
-          const effectiveBalance = balanceFromProfile != null ? balanceFromProfile : fallbackBalance;
+          
+          // Get balance from server profile (preferred) or localStorage (fallback)
+          const serverBalance = typeof profile?.balance === 'number' ? profile.balance : null;
+          const localBalance = parseFloat(localStorage.getItem('availableBalance') || localStorage.getItem('balance') || '0');
+          const effectiveBalance = serverBalance != null ? serverBalance : localBalance;
+          
           document.getElementById('user-balance').textContent = formatUSD(effectiveBalance);
         } catch (err) {
           console.error(err);

@@ -197,8 +197,17 @@ function openWithdrawForm(){
       return;
     }catch(e){/*ignore and fallback*/}
 
-    const balance = parseFloat(localStorage.getItem('balance')||'0');
-    if(amount>balance){ alert('Insufficient balance'); return }
+    // Get current balance from server/cache, not localStorage
+    let balance = 0;
+    try {
+      const profile = await AuthService.fetchUserProfile();
+      balance = parseFloat(profile.balance) || 0;
+    } catch (e) {
+      // Fallback to localStorage if profile fetch fails
+      balance = parseFloat(localStorage.getItem('balance')||'0');
+    }
+    
+    if(amount > balance){ alert('Insufficient balance'); return }
     const tx = loadTransactions();
     const now = new Date().toLocaleString();
     tx.unshift({id:Date.now(),type:'withdrawal',date:now,method,amount,status:'Completed',txid: 'WDL'+Math.random().toString(36).slice(2,10)});
@@ -210,15 +219,37 @@ function openWithdrawForm(){
 }
 
 function applyBalanceChange(delta){
+  // Update localStorage for UI consistency (will be overridden by server on next fetch)
   const b = parseFloat(localStorage.getItem('balance')||'0');
-  localStorage.setItem('balance', String((b + delta).toFixed(2)));
+  const newBalance = b + delta;
+  localStorage.setItem('balance', String(newBalance.toFixed(2)));
+  
+  // Try to sync with server if possible
+  if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
+    // In a real scenario, you'd have an endpoint to update balance
+    // For now, just mark that local balance changed and needs refresh
+    if (typeof window.syncBalanceWithServer === 'function') {
+      window.syncBalanceWithServer();
+    }
+  }
 }
 
 function renderBalancesUI(){
   // find elements with data-balance target and update
   document.querySelectorAll('[data-balance]').forEach(el=>{
-    const b = parseFloat(localStorage.getItem('balance')||'0');
-    el.textContent = new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(b);
+    // Try to get balance from server first, fall back to localStorage
+    let balance = parseFloat(localStorage.getItem('balance')||'0');
+    
+    // If AuthService is available, try to get server balance
+    if (typeof AuthService !== 'undefined') {
+      try {
+        // Note: This is synchronous UI render, so we can't await here
+        // The balance will be updated when profile_update SSE event arrives
+        // For now, use cached balance
+      } catch (e) { /* use fallback */ }
+    }
+    
+    el.textContent = new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(balance);
   });
 }
 

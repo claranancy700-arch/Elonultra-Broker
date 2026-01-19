@@ -568,10 +568,11 @@ router.get('/users/:id/portfolio', async (req, res) => {
     const userId = parseInt(req.params.id, 10);
     if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
 
-    // Get portfolio with live prices (consistent with user endpoint)
+    // Get user balance and portfolio with live prices
     const userRes = await db.query('SELECT balance FROM users WHERE id = $1', [userId]);
     if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
 
+    const userBalance = parseFloat(userRes.rows[0].balance) || 0;
     const portfolioRes = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id = $1', [userId]);
     const portfolio = portfolioRes.rows[0] || {};
 
@@ -593,19 +594,29 @@ router.get('/users/:id/portfolio', async (req, res) => {
       }
     } catch (err) { console.warn('[Admin Portfolio] CoinGecko fetch failed, using fallback prices'); }
 
-    // Build response in assets format for PRO admin (simple map of coin: amount)
+    // Build response in assets format for PRO admin (map of coin: amount)
     const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
     const columns = ['btc_balance', 'eth_balance', 'usdt_balance', 'usdc_balance', 'xrp_balance', 'ada_balance'];
     const assets = {};
+    let assetsValue = 0;
 
     coins.forEach((coin, i) => {
       const amount = parseFloat(portfolio[columns[i]]) || 0;
       if (amount > 0) {
         assets[coin] = amount;
+        assetsValue += amount * prices[coin];
       }
     });
 
-    return res.json({ success: true, assets });
+    const totalPortfolioValue = userBalance + assetsValue;
+
+    return res.json({ 
+      success: true, 
+      assets,
+      balance: userBalance,
+      assetsValue: parseFloat(assetsValue.toFixed(2)),
+      totalValue: parseFloat(totalPortfolioValue.toFixed(2))
+    });
   } catch (err) {
     console.error('Admin get portfolio error:', err.message || err);
     return res.status(500).json({ error: err.message || 'failed to fetch portfolio' });
