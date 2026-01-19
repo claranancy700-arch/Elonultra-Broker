@@ -77,13 +77,6 @@
 
   <div class="page-container">
     <div class="app-wrapper">
-      <aside class="sidebar">
-        <a href="/dashboard.html" class="sidebar-link">📊 Dashboard</a>
-        <a href="/markets.html" class="sidebar-link">📈 Markets</a>
-        <a href="/transactions.html" class="sidebar-link">💳 Transactions</a>
-        <a href="/settings.html" class="sidebar-link">⚙️ Settings</a>
-        <a href="/help.html" class="sidebar-link">❓ Help & Docs</a>
-      </aside>
 
       <main class="main-content">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -630,8 +623,8 @@
 
       // Load data for specific tabs
       if (tabId === 'deposits-admin') {
-        if (typeof loadAdminDeposits === 'function') {
-          loadAdminDeposits();
+        if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
+          window.ADMIN_TX.fetchTransactions();
         }
       } else if (tabId === 'withdrawals-admin') {
         if (typeof loadWithdrawals === 'function') {
