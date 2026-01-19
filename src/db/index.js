@@ -83,6 +83,42 @@ async function ensureSchema() {
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_confirmed_at TIMESTAMPTZ;`);
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS fee_confirmed_by TEXT;`);
   await pool.query(`ALTER TABLE withdrawals ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`);
+
+  // Admin config (for storing admin settings like deposit addresses)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_config (
+      id SERIAL PRIMARY KEY,
+      config_key VARCHAR(255) UNIQUE NOT NULL,
+      config_value TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  // Deposit addresses (secure server-side storage)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS deposit_addresses (
+      id SERIAL PRIMARY KEY,
+      symbol VARCHAR(20) UNIQUE NOT NULL,
+      address TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+
+  // Initialize default deposit addresses if not exists
+  const defaultAddresses = {
+    BTC: 'bc1qmockaddressforbtc00000000000000',
+    ETH: '0xMockEthereumAddressForDeposit0000000000000000',
+    USDT: 'TMockTetherAddressUSDT000000000000000',
+    USDC: '0xMockUSDCCryptoAddress0000000000000000'
+  };
+  for (const [symbol, address] of Object.entries(defaultAddresses)) {
+    await pool.query(
+      `INSERT INTO deposit_addresses (symbol, address) VALUES ($1, $2) ON CONFLICT (symbol) DO NOTHING`,
+      [symbol, address]
+    );
+  }
 }
 
 module.exports = {

@@ -477,17 +477,40 @@ if (portfolioForm) portfolioForm.addEventListener('submit', async (e) => {
   }catch(err){ alert('Set portfolio failed: '+err.message); }
 });
 
-function loadDepositAddressInputs(){
+async function loadDepositAddressInputs(){
   if(!depositAddressInputs || !depositAddressInputs.length) return;
-  let stored = {};
-  try{ stored = JSON.parse(localStorage.getItem('customDepositAddresses')) || {}; }catch(_){ stored = {}; }
-  depositAddressInputs.forEach(input => {
-    const sym = input.getAttribute('data-deposit-symbol');
-    input.value = stored[sym] || DEFAULT_DEPOSIT_ADDRESSES[sym] || '';
-  });
+  const key = (adminKeyInput && adminKeyInput.value || '').trim();
+  if (!key) {
+    // Fallback to defaults if no admin key
+    depositAddressInputs.forEach(input => {
+      const sym = input.getAttribute('data-deposit-symbol');
+      input.value = DEFAULT_DEPOSIT_ADDRESSES[sym] || '';
+    });
+    return;
+  }
+  try {
+    // Fetch from server
+    const res = await fetch(baseApi + '/admin/config/deposit-addresses', {
+      headers: { 'x-admin-key': key }
+    });
+    if (!res.ok) throw new Error('Failed to fetch addresses');
+    const data = await res.json();
+    const addresses = data.data?.addresses || {};
+    depositAddressInputs.forEach(input => {
+      const sym = input.getAttribute('data-deposit-symbol');
+      input.value = addresses[sym] || DEFAULT_DEPOSIT_ADDRESSES[sym] || '';
+    });
+  } catch (err) {
+    console.warn('Failed to load deposit addresses from server:', err);
+    // Fallback to defaults
+    depositAddressInputs.forEach(input => {
+      const sym = input.getAttribute('data-deposit-symbol');
+      input.value = DEFAULT_DEPOSIT_ADDRESSES[sym] || '';
+    });
+  }
 }
 
-function saveDepositAddresses(){
+async function saveDepositAddresses(){
   const key = adminKeyInput.value.trim();
   if(!key) return alert('Admin key required');
 
@@ -499,40 +522,47 @@ function saveDepositAddresses(){
   });
 
   try {
-    fetch(baseApi + '/deposit/addresses', {
+    const res = await fetch(baseApi + '/admin/config/deposit-addresses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
       body: JSON.stringify({ addresses: payload })
-    }).then(res => {
-      if (!res.ok) {
-        return res.json().then(err => {
-          alert('Failed to save addresses: ' + (err.error || 'Unknown error'));
-        });
-      }
-      // Also save to localStorage for backup
-      localStorage.setItem('customDepositAddresses', JSON.stringify(payload));
-      alert('✓ Deposit addresses synced to server and saved locally.');
-    }).catch(err => {
-      console.error('Save deposit addresses error:', err);
-      alert('Error saving deposit addresses: ' + err.message);
     });
+    if (!res.ok) {
+      const err = await res.json();
+      return alert('Failed to save addresses: ' + (err.error || 'Unknown error'));
+    }
+    alert('✓ Deposit addresses updated successfully on server.');
   } catch (err) {
     console.error('Save deposit addresses error:', err);
     alert('Error saving deposit addresses: ' + err.message);
   }
 }
 
-if (saveDepositAddressesBtn) saveDepositAddressesBtn.addEventListener('click', () => {
-  saveDepositAddresses();
+if (saveDepositAddressesBtn) saveDepositAddressesBtn.addEventListener('click', async () => {
+  await saveDepositAddresses();
 });
 
-if (resetDepositAddressesBtn) resetDepositAddressesBtn.addEventListener('click', () => {
-  localStorage.removeItem('customDepositAddresses');
-  loadDepositAddressInputs();
-  alert('Deposit addresses reset to defaults.');
+if (resetDepositAddressesBtn) resetDepositAddressesBtn.addEventListener('click', async () => {
+  if (!confirm('Reset all deposit addresses to defaults?')) return;
+  const key = adminKeyInput.value.trim();
+  if(!key) return alert('Admin key required');
+  
+  try {
+    const res = await fetch(baseApi + '/admin/config/deposit-addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+      body: JSON.stringify({ addresses: DEFAULT_DEPOSIT_ADDRESSES })
+    });
+    if (!res.ok) throw new Error('Failed to reset');
+    await loadDepositAddressInputs();
+    alert('✓ Deposit addresses reset to defaults.');
+  } catch (err) {
+    alert('Reset failed: ' + err.message);
+  }
 });
 
-loadDepositAddressInputs();
+// Load deposit addresses asynchronously
+(async () => { await loadDepositAddressInputs(); })().catch(e => console.warn('Failed to load deposit addresses', e));
 
 async function approveDeposit(txId){
   const key = adminKeyInput.value.trim();
