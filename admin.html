@@ -753,7 +753,12 @@
       })
       .then(() => {
         alert('Transaction saved');
-        refreshAllTransactions();
+        // Refresh appropriate list based on type
+        if (presetType === 'deposit' && typeof loadAdminDeposits === 'function') {
+          loadAdminDeposits();
+        } else {
+          refreshAllTransactions();
+        }
       })
       .catch(err => {
         alert('Unable to save transaction: ' + (err && err.message ? err.message : err));

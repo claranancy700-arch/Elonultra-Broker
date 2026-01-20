@@ -573,6 +573,8 @@ async function approveDeposit(txId){
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'approve failed');
     alert('Deposit approved');
+    // Reload deposits list after approval
+    loadAdminDeposits();
     if (uid) loadUserDetails(uid, key);
     if (loadUsersBtn) loadUsersBtn.click();
   }catch(e){ alert('Approve failed: '+(e.message||e)); }
