@@ -56,7 +56,16 @@ function renderDeposits(){
     tb.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">${msg}</td></tr>`;
     return;
   }
-  tb.innerHTML = tx.map(t=>`<tr><td>${t.date||''}</td><td>${t.method||'-'}</td><td>${formatCurrency(Number(t.amount)||0)}</td><td>${t.status||'-'}</td><td>${t.txid||'-'}</td></tr>`).join('');
+  tb.innerHTML = tx.map(t=>{
+    const statusColor = t.status === 'pending' ? 'color:#ff9800' : (t.status === 'completed' ? 'color:#4CAF50' : 'color:#f44336');
+    return `<tr>
+      <td>${t.date||''}</td>
+      <td>${t.method||'-'}</td>
+      <td>${formatCurrency(Number(t.amount)||0)}</td>
+      <td style="${statusColor};font-weight:600">${t.status||'-'}</td>
+      <td>${t.txid||'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
 function renderWithdrawals(){

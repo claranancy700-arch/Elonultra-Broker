@@ -721,22 +721,26 @@
       const type = presetType || prompt('Type (deposit/withdrawal/trade):', 'deposit') || 'deposit';
       const status = prompt('Status (pending/completed/failed):', 'pending') || 'pending';
       const method = prompt('Method/asset (e.g. Bank, BTC, USDT):', 'USD') || 'USD';
-      const dateInput = prompt('Date/time (YYYY-MM-DD HH:MM, leave blank for now):', '');
+      const dateInput = prompt('Date/time (YYYY-MM-DD HH:MM, leave blank for current time):', '');
 
       const payload = {
         user: userId,
         type,
         amount,
         status,
-        method,
-        date: dateInput || undefined
+        method
       };
+
+      // Only include date if provided
+      if (dateInput && dateInput.trim()) {
+        payload.date = dateInput;
+      }
+
       const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
-      const url = existingId ? `${apiBase}/admin/transactions/${existingId}` : `${apiBase}/admin/transactions`;
-      const httpMethod = existingId ? 'PUT' : 'POST';
+      const url = `${apiBase}/admin/transactions`;
 
       fetch(url, {
-        method: httpMethod,
+        method: 'POST',
         headers: {'Content-Type': 'application/json', 'x-admin-key': key},
         body: JSON.stringify(payload)
       })
@@ -752,7 +756,7 @@
         return r.json().catch(() => ({}));
       })
       .then(() => {
-        alert('Transaction saved');
+        alert('Transaction created successfully');
         // Refresh appropriate list based on type
         if (presetType === 'deposit' && typeof loadAdminDeposits === 'function') {
           loadAdminDeposits();

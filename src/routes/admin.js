@@ -331,6 +331,94 @@ router.post('/deposits/:id/approve', async (req, res) => {
   }
 });
 
+// POST /api/admin/deposits/:id/complete - Mark deposit as completed and credit user
+router.post('/deposits/:id/complete', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const txId = parseInt(req.params.id, 10);
+  if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const tx = await client.query('SELECT id, user_id, amount, currency, status FROM transactions WHERE id=$1 AND type=\'deposit\' FOR UPDATE', [txId]);
+    if (!tx.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'deposit not found' });
+    }
+    const row = tx.rows[0];
+
+    // Update transaction status to completed
+    await client.query('UPDATE transactions SET status=\'completed\', updated_at=NOW() WHERE id=$1', [txId]);
+    // Credit user balance
+    await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
+
+    // Check if this is first completed deposit to enable simulator
+    const first = await client.query('SELECT COUNT(*)::int AS cnt FROM transactions WHERE user_id=$1 AND type=\'deposit\' AND status=\'completed\'', [row.user_id]);
+    const isFirst = (first.rows[0].cnt || 0) === 1; // 1 because we just updated it
+    if (isFirst) {
+      await client.query(
+        `UPDATE users
+           SET sim_enabled=TRUE,
+               sim_paused=FALSE,
+               sim_next_run_at = NOW() + interval '5 minutes',
+               sim_started_at = COALESCE(sim_started_at, NOW()),
+               updated_at=NOW()
+         WHERE id=$1`,
+        [row.user_id]
+      );
+      try { await allocatePortfolioForUser(row.user_id, Number(row.amount) || 0, { client }); } catch (e) { console.warn('initial portfolio allocate failed', e.message||e); }
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, completed: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Complete deposit failed:', err.message || err);
+    return res.status(500).json({ error: 'failed to complete deposit' });
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/admin/deposits/:id/fail - Mark deposit as failed
+router.post('/deposits/:id/fail', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const txId = parseInt(req.params.id, 10);
+  if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
+
+  try {
+    const result = await db.query('UPDATE transactions SET status=\'failed\', updated_at=NOW() WHERE id=$1 AND type=\'deposit\' RETURNING id', [txId]);
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'deposit not found' });
+    }
+    return res.json({ success: true, failed: true });
+  } catch (err) {
+    console.error('Fail deposit error:', err.message || err);
+    return res.status(500).json({ error: 'failed to mark deposit as failed' });
+  }
+});
+
+// DELETE /api/admin/deposits/:id - Delete a deposit
+router.delete('/deposits/:id', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const txId = parseInt(req.params.id, 10);
+  if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
+
+  try {
+    const result = await db.query('DELETE FROM transactions WHERE id=$1 AND type=\'deposit\' RETURNING id', [txId]);
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'deposit not found' });
+    }
+    return res.json({ success: true, deleted: true });
+  } catch (err) {
+    console.error('Delete deposit error:', err.message || err);
+    return res.status(500).json({ error: 'failed to delete deposit' });
+  }
+});
+
 router.post('/credit', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
@@ -757,18 +845,20 @@ router.post('/transactions', async (req, res) => {
     }
 
     // Optional custom created_at timestamp for admin-created rows
-    let createdAt = null;
-    if (date) {
+    // If date not provided, automatically use current timestamp
+    let createdAt = new Date();
+    if (date && date.trim()) {
       const d = new Date(date);
-      if (!isNaN(d.getTime())) createdAt = d;
+      if (!isNaN(d.getTime())) {
+        createdAt = d;
+      }
     }
-    if (!createdAt) createdAt = new Date();
 
-    const client = await db.getClient();
+    const client = await db.pool.connect();
     try {
       await client.query('BEGIN');
       const result = await client.query(
-        'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id, created_at',
+        'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,NOW()) RETURNING id, created_at',
         [userId, type, amt, method || 'USD', status || 'pending', `manual-admin-${Date.now()}`, createdAt]
       );
       await client.query('COMMIT');

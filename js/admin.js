@@ -580,6 +580,46 @@ async function approveDeposit(txId){
   }catch(e){ alert('Approve failed: '+(e.message||e)); }
 }
 
+// Complete deposit and credit user
+async function completeDeposit(txId){
+  const key = adminKeyInput.value.trim();
+  if(!key) return alert('Admin key required');
+  try{
+    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/complete`, { method:'POST', headers:{ 'x-admin-key': key } });
+    const j = await res.json();
+    if(!res.ok) throw new Error(j.error||'complete failed');
+    alert('Deposit completed and balance credited');
+    loadAdminDeposits();
+  }catch(e){ alert('Complete failed: '+(e.message||e)); }
+}
+
+// Mark deposit as failed
+async function failDeposit(txId){
+  const key = adminKeyInput.value.trim();
+  if(!key) return alert('Admin key required');
+  try{
+    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/fail`, { method:'POST', headers:{ 'x-admin-key': key } });
+    const j = await res.json();
+    if(!res.ok) throw new Error(j.error||'fail failed');
+    alert('Deposit marked as failed');
+    loadAdminDeposits();
+  }catch(e){ alert('Fail deposit failed: '+(e.message||e)); }
+}
+
+// Delete deposit
+async function deleteDeposit(txId){
+  const key = adminKeyInput.value.trim();
+  if(!key) return alert('Admin key required');
+  if(!confirm('Are you sure you want to delete this deposit?')) return;
+  try{
+    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/delete`, { method:'DELETE', headers:{ 'x-admin-key': key } });
+    const j = await res.json();
+    if(!res.ok) throw new Error(j.error||'delete failed');
+    alert('Deposit deleted');
+    loadAdminDeposits();
+  }catch(e){ alert('Delete failed: '+(e.message||e)); }
+}
+
 // Simulator controls
 const simStatusEl = document.getElementById('sim-status');
 const simNextEl = document.getElementById('sim-next');
@@ -1038,9 +1078,18 @@ async function loadAdminDeposits() {
     });
 
     const html = (data.deposits || []).map(d => {
-      const approveBtn = d.status !== 'completed'
-        ? `<button class="btn btn-small" onclick="approveDeposit(${d.id})">Approve</button>`
-        : '<span style="color:green;font-weight:600">✓ Approved</span>';
+      let actionBtns = '';
+      if (d.status === 'pending') {
+        actionBtns = `
+          <button class="btn btn-small" style="background:#4CAF50" onclick="completeDeposit(${d.id})">Complete</button>
+          <button class="btn btn-small" style="background:#ff9800" onclick="failDeposit(${d.id})">Failed</button>
+          <button class="btn btn-small" style="background:#f44336" onclick="deleteDeposit(${d.id})">Delete</button>
+        `;
+      } else if (d.status === 'completed') {
+        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
+      } else if (d.status === 'failed') {
+        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
+      }
 
       return `<tr>
         <td>${new Date(d.created_at).toLocaleString()}</td>
@@ -1049,7 +1098,7 @@ async function loadAdminDeposits() {
         <td>$${parseFloat(d.amount).toFixed(2)}</td>
         <td>${d.status}</td>
         <td>${d.reference || '-'}</td>
-        <td>${approveBtn}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">${actionBtns}</td>
       </tr>`;
     }).join('');
 

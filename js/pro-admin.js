@@ -421,28 +421,40 @@
     if(!key) return showMessage('Admin key required', 'error')
 
     const tx = {
-      id: txEditId.value || Date.now(),
       user: txEditUser.value,
       type: txEditType.value,
       amount: parseFloat(txEditAmount.value),
       status: txEditStatus.value,
-      date: txEditDate.value,
       method: txEditMethod.value
     }
 
+    // Only include date if it was explicitly set
+    if (txEditDate.value && txEditDate.value.trim()) {
+      tx.date = txEditDate.value;
+    }
+
+    // Validate required fields
+    if (!tx.user || isNaN(tx.amount)) {
+      return showMessage('Please fill in all required fields', 'error')
+    }
+
     try {
-      const res = await fetch(`${apiBase}/admin/transactions${txEditId.value ? '/' + txEditId.value : ''}`, {
-        method: txEditId.value ? 'PUT' : 'POST',
+      const res = await fetch(`${apiBase}/admin/transactions`, {
+        method: 'POST',
         headers: {'Content-Type': 'application/json', 'x-admin-key': key},
         body: JSON.stringify(tx)
       })
-      if(!res.ok) throw new Error('save failed')
-      showMessage('Transaction saved', 'success')
+      const j = await res.json()
+      if(!res.ok) {
+        console.warn('saveTransaction failed:', j)
+        return showMessage(j.error || 'Failed to save transaction', 'error')
+      }
+      showMessage('Transaction created successfully', 'success')
       closeTxForm()
       fetchTransactions()
     } catch(e) {
       console.warn('saveTransaction failed', e)
-      showMessage('Unable to save transaction', 'error')
+      showMessage('Unable to save transaction: ' + (e.message || e), 'error')
     }
   }
 

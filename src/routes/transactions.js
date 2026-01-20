@@ -33,6 +33,34 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/transactions/deposits - return deposits for the authenticated user
+router.get('/deposits', verifyToken, async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    const result = await db.query(
+      `SELECT
+         id,
+         type,
+         amount,
+         currency,
+         status,
+         reference,
+         created_at
+       FROM transactions
+       WHERE user_id = $1 AND type = 'deposit'
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+
+    return res.json({ success: true, deposits: result.rows });
+  } catch (err) {
+    console.error('Deposits fetch error:', err.message || err);
+    return res.json({ success: true, deposits: [] });
+  }
+});
+
 // POST /api/transactions/deposit - create a deposit request (pending until admin approval)
 router.post('/deposit', verifyToken, async (req, res) => {
   const userId = req.userId;
