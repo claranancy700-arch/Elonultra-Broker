@@ -179,4 +179,60 @@ textarea{resize:vertical;min-height:120px}
   /* Ensure table headers remain readable and accessible */
   th { text-align:left; font-weight:600 }
   body.sidebar-open { overflow: hidden; }
+  /* Hide testimonies banner on mobile */
+  .testimonies-banner { display: none; }
+}
+
+/* Testimonies Scrolling Banner */
+.testimonies-banner {
+  width: 100%;
+  background: linear-gradient(90deg, rgba(0, 150, 255, 0.05), rgba(255, 102, 0, 0.05));
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.testimonies-banner-content {
+  display: flex;
+  gap: 32px;
+  animation: scroll-left 60s linear infinite;
+  width: max-content;
+  padding: 0 16px;
+}
+
+.testimonies-banner-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  font-size: 13px;
+  color: var(--text);
+  border: 1px solid rgba(0, 150, 255, 0.2);
+}
+
+.testimonies-banner-item strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.testimonies-banner-item-text {
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }  

@@ -28,12 +28,11 @@ function generateTestimony() {
   const title = titles[Math.floor(Math.random() * titles.length)];
   const company = companies[Math.floor(Math.random() * companies.length)];
   const template = testimonyTemplates[Math.floor(Math.random() * testimonyTemplates.length)];
-  const percent = Math.floor(Math.random() * 150) + 25; // 25-175%
-  const months = Math.floor(Math.random() * 18) + 3; // 3-20 months
   
-  const content = template
-    .replace('{percent}', percent)
-    .replace('{months}', months);
+  // Generate random amounts between $500 and $10,000
+  const amount = `$${(Math.floor(Math.random() * 9500) + 500).toLocaleString()}`;
+  
+  const content = template.replace('{amount}', amount);
 
   const rating = Math.random() > 0.1 ? 5 : (Math.random() > 0.5 ? 4 : 5); // 90% 5-star, 10% 4-star
 
