@@ -133,6 +133,11 @@ textarea{resize:vertical;min-height:120px}
   .hero h1{font-size:36px}
   .hero p{font-size:16px}
   
+  /* Hide header nav on mobile */
+  .site-header .nav{display:none}
+  .site-header .container{justify-content:center}
+  .brand{width:100%;text-align:center}
+  
   /* Show mobile-only elements on mobile */
   .mobile-portfolio-card{display:block;background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);border:1px solid rgba(6,182,212,0.2);padding:16px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden}
   .portfolio-bg-animation{position:absolute;top:0;left:0;width:100%;height:100%;opacity:1;z-index:0}
