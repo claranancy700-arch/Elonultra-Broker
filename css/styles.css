@@ -104,6 +104,11 @@ textarea{resize:vertical;min-height:120px}
 .alert.success{background:#ecfdf5;color:#065f46;border-left-color:var(--success);box-shadow:0 1px 3px rgba(16,185,129,0.1)}
 .alert.error{background:#fef2f2;color:#991b1b;border-left-color:var(--danger);box-shadow:0 1px 3px rgba(239,68,68,0.1)}
 
+/* Mobile-only elements (hidden on desktop) */
+.mobile-portfolio-card{display:none}
+.mobile-action-buttons{display:none}
+.mobile-bottom-nav{display:none}
+
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
@@ -116,17 +121,36 @@ textarea{resize:vertical;min-height:120px}
 @media (max-width:768px){
   /* Use an off-canvas vertical sidebar on small screens */
   .container{max-width:100%;width:100%}
-  .app-wrapper{flex-direction:column}
+  .app-wrapper{flex-direction:column;padding-bottom:80px}
   .sidebar{width:260px;height:calc(100vh - 60px);position:fixed;left:-260px;top:60px;border-right:none;border-bottom:none;padding:12px;transition:left 0.25s ease;z-index:220;box-shadow:0 8px 24px rgba(2,6,23,0.12)}
   body.sidebar-open .sidebar, .sidebar-open .sidebar{left:0}
   .sidebar-link{display:block;padding:10px 14px}
   .main-content{margin-left:0;padding:16px;max-width:100%;width:100%}
-  .cards-grid{grid-template-columns:1fr}
+  .cards-grid{grid-template-columns:1fr;gap:12px;display:none}
   .table-wrapper{overflow-x:auto}
   table{font-size:12px}
   th,td{padding:8px 12px}
   .hero h1{font-size:36px}
   .hero p{font-size:16px}
+  
+  /* Show mobile-only elements on mobile */
+  .mobile-portfolio-card{display:block;background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);border:1px solid rgba(6,182,212,0.2);padding:16px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden}
+  .portfolio-bg-animation{position:absolute;top:0;left:0;width:100%;height:100%;opacity:1;z-index:0}
+  .mobile-portfolio-card > div{position:relative;z-index:10}
+  .mobile-action-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
+  .mobile-bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:60px;background:linear-gradient(180deg, #1e293b 0%, #0f172a 100%);border-top:1px solid rgba(6,182,212,0.2);align-items:center;justify-content:space-around;z-index:1000}
+  
+  /* Mobile action button styles */
+  .action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);border-radius:12px;color:var(--accent-light);cursor:pointer;transition:all 0.3s;font-size:12px;font-weight:500;text-decoration:none}
+  .action-btn:hover{background:rgba(6,182,212,0.25);border-color:var(--accent)}
+  .action-btn svg{stroke:var(--accent-light);transition:all 0.3s}
+  .action-btn:hover svg{stroke:var(--accent)}
+  
+  /* Mobile nav item styles */
+  .nav-item{display:flex;align-items:center;justify-content:center;width:60px;height:60px;color:var(--muted);text-decoration:none;transition:all 0.3s}
+  .nav-item:hover,.nav-item.active{color:var(--accent);background:rgba(6,182,212,0.1)}
+  .nav-item svg{width:24px;height:24px}
+  
   /* Mobile header menu toggle */
   .site-header .menu-toggle { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:6px; background:transparent; border:none; cursor:pointer; margin-right:8px; font-size:20px }
   .site-header .menu-toggle:focus { outline: 3px solid rgba(37,99,235,0.2); outline-offset:2px }
