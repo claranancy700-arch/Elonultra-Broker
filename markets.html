@@ -46,8 +46,12 @@
       <!-- Market Table -->
       <div class="table-wrapper">
         <div class="table-header">
-          <h3>Cryptocurrency Prices</h3>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3>Cryptocurrency Prices</h3>
+            <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('market-table')">See More</button>
+          </div>
         </div>
+        <div id="market-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
         <table id="market-table">
           <thead>
             <tr>
@@ -65,6 +69,7 @@
             <!-- Populated by JS -->
           </tbody>
         </table>
+        </div>
       </div>
 
       <!-- Trending & Watchlist -->
@@ -72,6 +77,13 @@
         <div>
           <h2>Trending Today</h2>
           <div class="table-wrapper">
+            <div class="table-header">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h3>Top Movers</h3>
+                <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('trending-table')">See More</button>
+              </div>
+            </div>
+            <div id="trending-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
             <table>
               <thead>
                 <tr><th>Asset</th><th>Price Change</th></tr>
@@ -80,12 +92,20 @@
                 <!-- Populated by JS -->
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
         <div>
           <h2>Your Watchlist</h2>
           <div class="table-wrapper">
+            <div class="table-header">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <h3>Watchlist</h3>
+                <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('watchlist-table')">See More</button>
+              </div>
+            </div>
+            <div id="watchlist-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
             <table>
               <thead>
                 <tr><th>Asset</th><th>Price</th><th>Action</th></tr>
@@ -94,6 +114,7 @@
                 <tr><td colspan="3" style="text-align:center;color:var(--muted)">No assets in watchlist</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
@@ -131,5 +152,21 @@
   <script src="/js/testimonies.js"></script>
   <script src="/js/floating-testimonies.js"></script>
   <script src="/js/main.js"></script>
+  <script>
+    // Collapse/expand tables
+    function toggleCollapse(tableId) {
+      const wrapper = document.getElementById(tableId + '-wrapper');
+      const button = event.target;
+      const isCollapsed = wrapper.style.maxHeight === '250px';
+      
+      if (isCollapsed) {
+        wrapper.style.maxHeight = '500px';
+        button.textContent = 'Show Less';
+      } else {
+        wrapper.style.maxHeight = '250px';
+        button.textContent = 'See More';
+      }
+    }
+  </script>
 </body>
 </html>

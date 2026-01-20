@@ -166,10 +166,10 @@
         <div class="table-header">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <h3>Your Holdings</h3>
-            <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('holdings-table')">Hide</button>
+            <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('holdings-table')">See More</button>
           </div>
         </div>
-        <div id="holdings-table-wrapper" style="overflow:hidden;max-height:500px;transition:max-height 0.3s ease">
+        <div id="holdings-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
         <table id="holdings-table">
           <thead>
             <tr>
@@ -200,10 +200,10 @@
           <div class="table-header">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <h3>Recent Trades</h3>
-              <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('trades-table')">Hide</button>
+              <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('trades-table')">See More</button>
             </div>
           </div>
-          <div id="trades-table-wrapper" style="overflow:hidden;max-height:500px;transition:max-height 0.3s ease">
+          <div id="trades-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
        <table id="trades-table">
             <thead>
               <tr>
@@ -317,12 +317,14 @@
     function toggleCollapse(tableId) {
       const wrapper = document.getElementById(tableId + '-wrapper');
       const button = event.target;
-      if (wrapper.style.maxHeight === '0px' || wrapper.style.maxHeight === '0') {
+      const isCollapsed = wrapper.style.maxHeight === '250px';
+      
+      if (isCollapsed) {
         wrapper.style.maxHeight = '500px';
-        button.textContent = 'Hide';
+        button.textContent = 'Show Less';
       } else {
-        wrapper.style.maxHeight = '0px';
-        button.textContent = 'Show';
+        wrapper.style.maxHeight = '250px';
+        button.textContent = 'See More';
       }
     }
 
