@@ -119,6 +119,12 @@ textarea{resize:vertical;min-height:120px}
 
 /* Responsive */
 @media (max-width:768px){
+  /* Mobile header adjustments */
+  .site-header .nav{display:none}
+  .site-header .menu-toggle{display:none}
+  .site-header .container{justify-content:center}
+  .brand{width:100%;text-align:center}
+  
   /* Use an off-canvas vertical sidebar on small screens */
   .container{max-width:100%;width:100%}
   .app-wrapper{flex-direction:column;padding-bottom:80px}
