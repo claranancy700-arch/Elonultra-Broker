@@ -341,11 +341,36 @@
     })();
   </script>
   <script src="/js/auth.js"></script>
+  <script>
+    // *** CRITICAL: Protect settings page from unauthorized access ***
+    (function() {
+      if (!AuthService.isAuthenticated()) {
+        console.warn('Settings access denied: User not authenticated');
+        window.location.href = '/login.html';
+        return;
+      }
+      if (!AuthService.validateTokenExpiry()) {
+        console.warn('Settings access denied: Token expired');
+        window.location.href = '/login.html';
+        return;
+      }
+      AuthService.startTokenValidation();
+      console.log('Settings authentication check passed');
+    })();
+  </script>
   <script src="/js/portfolio.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/main.js"></script>
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/testimonies.js"></script>
   <script src="/js/scrolling-banner.js"></script>
+  <script>
+    // Logout function
+    function logout() {
+      AuthService.stopTokenValidation();
+      AuthService.logout();
+      window.location.href = '/login.html';
+    }
+  </script>
 </body>
 </html>

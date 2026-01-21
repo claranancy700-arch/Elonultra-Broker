@@ -237,6 +237,22 @@
 
     <script src="/js/auth.js"></script>
     <script>
+      // *** CRITICAL: Protect withdrawals page from unauthorized access ***
+      (function() {
+        if (!AuthService.isAuthenticated()) {
+          console.warn('Withdrawals access denied: User not authenticated');
+          window.location.href = '/login.html';
+          return;
+        }
+        if (!AuthService.validateTokenExpiry()) {
+          console.warn('Withdrawals access denied: Token expired');
+          window.location.href = '/login.html';
+          return;
+        }
+        AuthService.startTokenValidation();
+        console.log('Withdrawals authentication check passed');
+      })();
+
       // Use explicit API base when developing locally
       const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
         ? `http://${location.hostname}:5001/api`
@@ -245,10 +261,6 @@
       const TOKEN = (window.AuthService && typeof AuthService.getToken === 'function')
         ? AuthService.getToken()
         : (localStorage.getItem('authToken') || localStorage.getItem('token'));
-
-      if (!TOKEN) {
-        window.location.href = 'login.html';
-      }
 
       function formatUSD(n){
         return new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(Number(n)||0);
@@ -399,6 +411,9 @@
       }
 
       function logout() {
+        if (window.AuthService && typeof AuthService.stopTokenValidation === 'function') {
+          AuthService.stopTokenValidation();
+        }
         if (window.AuthService && typeof AuthService.logout === 'function') {
           AuthService.logout();
         } else {

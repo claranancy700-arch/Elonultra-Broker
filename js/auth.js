@@ -204,22 +204,77 @@ const AuthService = {
     this.setUser(data.user);
     return data.user;
   },
-};
+  // Validate token expiry and auto-logout if expired
+  validateTokenExpiry() {
+    if (!this.isAuthenticated()) return false;
+    try {
+      const token = this.getToken();
+      const payload = JSON.parse(atob(token.split('.')[1])); // decode JWT payload
+      const expiresAt = payload.exp * 1000; // convert to ms
+      const now = Date.now();
+      
+      if (now > expiresAt) {
+        console.warn('Token expired, logging out...');
+        this.logout();
+        return false;
+      }
+      
+      // Warn 5 minutes before expiry
+      if (now > expiresAt - 5 * 60 * 1000) {
+        console.warn('Token expiring soon, please refresh');
+      }
+      
+      return true;
+    } catch (err) {
+      console.error('Token validation error:', err);
+      return false;
+    }
+  },
 
-// Auto-logout if token is expired (simple check) - DISABLED
-// Uncomment to re-enable authentication checks
-/*
-if (AuthService.isAuthenticated()) {
-  try {
-    const token = AuthService.getToken();
-    const payload = JSON.parse(atob(token.split('.')[1])); // decode JWT payload
-    const expiresAt = payload.exp * 1000; // convert to ms
-    if (Date.now() > expiresAt) {
-      AuthService.logout();
+  // Start periodic token validation (checks every 30 seconds)
+  startTokenValidation(checkIntervalMs = 30000) {
+    if (this._tokenCheckInterval) {
+      clearInterval(this._tokenCheckInterval);
+    }
+
+    this._tokenCheckInterval = setInterval(() => {
+      if (!this.validateTokenExpiry()) {
+        // Auto-logout on expiry
+        window.location.href = '/login.html';
+        clearInterval(this._tokenCheckInterval);
+      }
+    }, checkIntervalMs);
+
+    // Also validate immediately
+    if (!this.validateTokenExpiry()) {
       window.location.href = '/login.html';
     }
-  } catch (err) {
-    console.warn('Token validation warning:', err);
-  }
+  },
+
+  // Stop token validation
+  stopTokenValidation() {
+    if (this._tokenCheckInterval) {
+      clearInterval(this._tokenCheckInterval);
+      this._tokenCheckInterval = null;
+    }
+  },
+};
+
+// Auto-validate token on page load
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (AuthService.isAuthenticated()) {
+      // Validate immediately
+      if (!AuthService.validateTokenExpiry()) {
+        window.location.href = '/login.html';
+      }
+      // Start periodic validation
+      AuthService.startTokenValidation();
+    }
+  });
+
+  // Stop validation on page unload
+  window.addEventListener('beforeunload', () => {
+    AuthService.stopTokenValidation();
+  });
 }
-*/

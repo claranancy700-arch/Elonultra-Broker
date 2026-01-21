@@ -75,10 +75,27 @@
     <div class="container">&copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading</div>
   </footer>
 
+  <script src="/js/auth.js"></script>
   <script>
+    // *** CRITICAL: Protect deposit page from unauthorized access ***
+    (function() {
+      if (!AuthService.isAuthenticated()) {
+        console.warn('Deposit access denied: User not authenticated');
+        window.location.href = '/login.html';
+        return;
+      }
+      if (!AuthService.validateTokenExpiry()) {
+        console.warn('Deposit access denied: Token expired');
+        window.location.href = '/login.html';
+        return;
+      }
+      AuthService.startTokenValidation();
+      console.log('Deposit authentication check passed');
+    })();
+
     function logout(){
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('token');
+      AuthService.stopTokenValidation();
+      AuthService.logout();
       window.location.href = '/login.html';
     }
 

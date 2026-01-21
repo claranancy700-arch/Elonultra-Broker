@@ -14,9 +14,9 @@ class ThemeSwitcher {
   }
 
   init() {
-    // Load saved theme or default to light
+    // Load saved theme or default to dark
     const savedTheme = this.getSavedTheme();
-    const defaultTheme = this.LIGHT; // Start with light theme as default
+    const defaultTheme = this.DARK; // Start with dark theme as default
     this.setTheme(savedTheme || defaultTheme);
     
     // Create floating switch when DOM is ready
@@ -48,7 +48,7 @@ class ThemeSwitcher {
 
   setTheme(theme) {
     if (theme !== this.LIGHT && theme !== this.DARK) {
-      theme = this.LIGHT;
+      theme = this.DARK;
     }
 
     // Set data-theme attribute on html element

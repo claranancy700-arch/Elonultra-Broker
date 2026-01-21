@@ -310,6 +310,31 @@
   </nav>
 
   <script src="/js/auth.js"></script>
+  <script>
+    // *** CRITICAL: Protect dashboard from unauthorized access ***
+    // Check authentication immediately on page load (before rendering content)
+    (function() {
+      // If not authenticated, redirect to login immediately
+      if (!AuthService.isAuthenticated()) {
+        console.warn('Dashboard access denied: User not authenticated');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Validate token hasn't expired
+      if (!AuthService.validateTokenExpiry()) {
+        console.warn('Dashboard access denied: Token expired');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Start periodic token validation (check every 30 seconds)
+      // Auto-logout if token expires or becomes invalid
+      AuthService.startTokenValidation();
+
+      console.log('Dashboard authentication check passed');
+    })();
+  </script>
   <script src="/js/portfolio.js"></script>
   <script src="/js/markets.js"></script>
   <script src="/js/api.js"></script>
@@ -351,27 +376,34 @@
     observer.observe(document.getElementById('total-value'), { childList: true, subtree: true });
     observer.observe(document.getElementById('available-balance'), { childList: true, subtree: true });
 
-    // Load and display user information
+    // Load and display user information with authentication requirement
     (async () => {
       try {
-        // Authentication check temporarily disabled
-        // AuthService.requireAuth();
-        const user = AuthService.getUser() || { name: 'Guest User', email: 'guest@example.com' };
-        document.getElementById('user-name').textContent = user.name || user.email || 'Guest';
-        
-        // Try to fetch profile if authenticated
-        if (AuthService.isAuthenticated()) {
-          try {
-            const profileUser = await AuthService.fetchUserProfile();
-            document.getElementById('user-name').textContent = profileUser.name || profileUser.email;
-          } catch (err) {
-            console.warn('Failed to fetch profile, using guest mode:', err.message);
-          }
+        // ENFORCE AUTHENTICATION - redirect if not logged in
+        if (!AuthService.isAuthenticated()) {
+          console.warn('User not authenticated, redirecting to login');
+          window.location.href = '/login.html';
+          return;
         }
+
+        // Fetch and display current user profile
+        const profileUser = await AuthService.fetchUserProfile();
+        document.getElementById('user-name').textContent = profileUser.name || profileUser.email || 'User';
       } catch (err) {
-        console.error('Error loading user info:', err.message);
+        console.error('Authentication or profile loading error:', err.message);
+        // If profile fetch fails, user might not be authenticated properly
+        AuthService.logout();
+        window.location.href = '/login.html';
       }
     })();
+
+    // Logout function - clear session and redirect to login
+    function logout() {
+      AuthService.stopTokenValidation();
+      AuthService.logout();
+      console.log('User logged out');
+      window.location.href = '/login.html';
+    }
   </script>
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/testimonies.js"></script>
