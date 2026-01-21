@@ -79,7 +79,7 @@ if (loadUsersBtn) {
     loadUsersBtn.disabled = true;
     try {
       debug('Admin: loading users with key:', key);
-      const j = await getJSON('/api/admin/users', { headers: { 'x-admin-key': key } });
+      const j = await getJSON('/admin/users', { headers: { 'x-admin-key': key } });
       debug('API Response:', j);
       
       // Handle both response formats: { success, users } or direct array
@@ -195,7 +195,7 @@ if (loadUsersBtn) {
 
 async function loadUserDetails(id, key){
   try{
-    const users = await getJSON('/api/admin/users', { headers: { 'x-admin-key': key } });
+    const users = await getJSON('/admin/users', { headers: { 'x-admin-key': key } });
     const u = Array.isArray(users) ? users.find(x=>String(x.id)===String(id)) : (users && users.users ? users.users.find(x=>String(x.id)===String(id)) : null);
     if (!u) { alert('User not found'); return; }
     if (userDetail) userDetail.innerHTML = `<div><strong>${u.email}</strong><div>ID: ${u.id}</div><div>Balance: ${formatCurrency(u.balance)}</div></div>`;
@@ -405,7 +405,7 @@ if (creditForm) {
     const reference = (referenceEl && referenceEl.value) || 'admin-credit';
     if(!uid || !amount || amount<=0) return alert('Invalid input');
     try{
-      const res = await fetch(baseApi + '/api/admin/credit', { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ userId: parseInt(uid), amount, currency, reference }) });
+      const res = await fetch(baseApi + '/admin/credit', { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ userId: parseInt(uid), amount, currency, reference }) });
       const j = await res.json();
       if(!res.ok) throw new Error(j.error||'credit failed');
       alert('Credit successful: txId=' + j.txId);
@@ -569,7 +569,7 @@ async function approveDeposit(txId){
   const uid = document.getElementById('credit-user-id').value;
   if(!key) return alert('Admin key required');
   try{
-    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/approve`, { method:'POST', headers:{ 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/deposits/${txId}/approve`, { method:'POST', headers:{ 'x-admin-key': key } });
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'approve failed');
     alert('Deposit approved');
@@ -585,7 +585,7 @@ async function completeDeposit(txId){
   const key = adminKeyInput.value.trim();
   if(!key) return alert('Admin key required');
   try{
-    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/complete`, { method:'POST', headers:{ 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/deposits/${txId}/complete`, { method:'POST', headers:{ 'x-admin-key': key } });
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'complete failed');
     alert('Deposit completed and balance credited');
@@ -598,7 +598,7 @@ async function failDeposit(txId){
   const key = adminKeyInput.value.trim();
   if(!key) return alert('Admin key required');
   try{
-    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/fail`, { method:'POST', headers:{ 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/deposits/${txId}/fail`, { method:'POST', headers:{ 'x-admin-key': key } });
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'fail failed');
     alert('Deposit marked as failed');
@@ -612,7 +612,7 @@ async function deleteDeposit(txId){
   if(!key) return alert('Admin key required');
   if(!confirm('Are you sure you want to delete this deposit?')) return;
   try{
-    const res = await fetch(baseApi + `/api/admin/deposits/${txId}/delete`, { method:'DELETE', headers:{ 'x-admin-key': key } });
+    const res = await fetch(baseApi + `/admin/deposits/${txId}`, { method:'DELETE', headers:{ 'x-admin-key': key } });
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'delete failed');
     alert('Deposit deleted');
@@ -642,7 +642,7 @@ if (simStartBtn) {
     const uid = document.getElementById('credit-user-id').value;
     if(!uid || !key) return alert('Select user and enter admin key');
     try{
-      await fetch(baseApi + `/api/admin/users/${uid}/simulator/start`, { method:'POST', headers:{ 'Content-Type':'application/json','x-admin-key':key }, body: JSON.stringify({ delayMinutes: 0 }) });
+      await fetch(baseApi + `/admin/users/${uid}/simulator/start`, { method:'POST', headers:{ 'Content-Type':'application/json','x-admin-key':key }, body: JSON.stringify({ delayMinutes: 0 }) });
       await refreshSimulator(uid, key);
       // Refresh full user details to show updated portfolio/balance
       try { await loadUserDetails(uid, key); } catch(e){ debugWarn('Failed to reload user after simulator start', e); }
@@ -655,7 +655,7 @@ if (simPauseBtn) {
     const uid = document.getElementById('credit-user-id').value;
     if(!uid || !key) return alert('Select user and enter admin key');
     try{
-      await fetch(baseApi + `/api/admin/users/${uid}/simulator/pause`, { method:'POST', headers:{ 'Content-Type':'application/json','x-admin-key':key } });
+      await fetch(baseApi + `/admin/users/${uid}/simulator/pause`, { method:'POST', headers:{ 'Content-Type':'application/json','x-admin-key':key } });
       await refreshSimulator(uid, key);
       try { await loadUserDetails(uid, key); } catch(e){ debugWarn('Failed to reload user after simulator pause', e); }
     }catch(e){ alert('Pause failed: '+(e.message||e)); }
@@ -673,7 +673,7 @@ if (editBalanceBtn) {
     const key = adminKeyInput.value.trim();
     if (!key) return alert('Admin key required');
     try {
-      const res = await fetch(baseApi + `/api/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: amt }) });
+      const res = await fetch(baseApi + `/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: amt }) });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || 'set balance failed');
       alert('Balance updated');
@@ -731,7 +731,7 @@ if (sendPromptBtn) {
     if (idsRaw) userIds = idsRaw.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n));
     debug('Sending prompt:', { message, userIds });
     try {
-      const res = await fetch(baseApi + '/api/admin/prompts', { 
+      const res = await fetch(baseApi + '/admin/prompts', { 
         method: 'POST', 
         headers: { 'Content-Type':'application/json', 'x-admin-key': key }, 
         body: JSON.stringify({ userIds, message }) 
@@ -769,14 +769,14 @@ if (editTotalBtn) {
       if (Math.abs(delta) < 0.01) return alert('No change required');
       // Credit USD delta to user balance if positive, or set balance lower if negative
       if (delta > 0) {
-        const res = await fetch(baseApi + '/api/admin/credit', { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ userId: uid, amount: delta, currency: 'USD', reference: 'admin-adjust-portfolio' }) });
+        const res = await fetch(baseApi + '/admin/credit', { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ userId: uid, amount: delta, currency: 'USD', reference: 'admin-adjust-portfolio' }) });
         const j = await res.json(); if(!res.ok) throw new Error(j.error||'credit failed');
       } else {
         // reduce balance to reflect negative delta by setting balance lower
-        const usersData = await getJSON('/api/admin/users', { headers:{ 'x-admin-key': key } });
+        const usersData = await getJSON('/admin/users', { headers:{ 'x-admin-key': key } });
         const users = Array.isArray(usersData) ? usersData : (usersData.users || []);
         const newBal = (Number(users.find(u=>String(u.id)===String(uid)).balance) + delta).toFixed(2);
-        const res = await fetch(baseApi + `/api/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: Number(newBal) }) });
+        const res = await fetch(baseApi + `/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: Number(newBal) }) });
         const j = await res.json(); if(!res.ok) throw new Error(j.error||'set balance failed');
       }
       alert('Portfolio target applied. Recalculating...');
@@ -824,7 +824,7 @@ if (triggerGrowthAllBtn) {
     if (!confirm('⚠️ Trigger balance growth NOW for ALL users? This will immediately run the simulator for all active users.')) return;
 
     try {
-      const res = await fetch(baseApi + '/api/admin/simulator/trigger-all', {
+      const res = await fetch(baseApi + '/admin/simulator/trigger-all', {
         method: 'POST',
         headers: { 'x-admin-key': key }
       });
@@ -879,7 +879,7 @@ window.clearAllTrades = async function() {
   }
 
   try {
-    const res = await fetch(baseApi + '/api/admin/trades/clear-all', {
+    const res = await fetch(baseApi + '/admin/trades/clear-all', {
       method: 'POST',
       headers: { 'x-admin-key': key }
     });
@@ -911,7 +911,7 @@ window.clearAllTrades = async function() {
 async function loadActivePrompts() {
   try {
     const key = adminKeyInput.value || localStorage.getItem('adminKey');
-    const res = await fetch(baseApi + '/api/admin/prompts', {
+    const res = await fetch(baseApi + '/admin/prompts', {
       method: 'GET',
       headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
     });
@@ -947,7 +947,7 @@ async function loadActivePrompts() {
 async function disablePrompt(promptId) {
   try {
     const key = adminKeyInput.value || localStorage.getItem('adminKey');
-    const res = await fetch(baseApi + `/api/prompts/${promptId}/disable`, {
+    const res = await fetch(baseApi + `/admin/prompts/${promptId}/disable`, {
       method: 'POST',
       headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
     });
@@ -982,7 +982,7 @@ async function loadWithdrawals() {
   
   try {
     console.log('[ADMIN] Loading withdrawals with key:', key.substring(0, 5) + '...');
-    const data = await getJSON('/api/admin/withdrawals', { 
+    const data = await getJSON('/admin/withdrawals', { 
       headers: { 'x-admin-key': key } 
     });
     
@@ -1021,7 +1021,7 @@ async function confirmWithdrawalFee(withdrawalId, adminKey) {
   console.log('[ADMIN] Using admin key:', adminKey ? adminKey.substring(0, 5) + '...' : 'EMPTY');
   
   try {
-    const response = await fetch(`${baseApi}/api/admin/withdrawals/${withdrawalId}/confirm-fee`, {
+    const response = await fetch(`${baseApi}/admin/withdrawals/${withdrawalId}/confirm-fee`, {
       method: 'POST',
       headers: {
         'x-admin-key': adminKey,
@@ -1068,9 +1068,9 @@ async function loadAdminDeposits() {
     
     // If a user is selected, fetch deposits for that specific user
     // Otherwise fetch all deposits
-    let endpoint = '/api/admin/deposits';
+    let endpoint = '/admin/deposits';
     if (selectedUserId) {
-      endpoint = `/api/admin/users/${selectedUserId}/deposits`;
+      endpoint = `/admin/users/${selectedUserId}/deposits`;
     }
     
     const data = await getJSON(endpoint, {
@@ -1108,6 +1108,79 @@ async function loadAdminDeposits() {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red">Error: ${err.message}</td></tr>`;
   }
 }
+
+// Complete deposit (approve)
+async function completeDeposit(depositId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('Complete this deposit? User balance will be credited.')) return;
+  
+  try {
+    const res = await fetch(baseApi + `/admin/deposits/${depositId}/approve`, {
+      method: 'POST',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'approval failed');
+    alert('✅ Deposit completed successfully!');
+    await loadAdminDeposits();
+    // Also refresh user details if user is selected
+    const selectedUserId = currentUserSelect?.value;
+    if (selectedUserId) loadUserDetails(selectedUserId, key);
+  } catch (err) {
+    console.error('Complete deposit error:', err);
+    alert('❌ Failed to complete deposit: ' + err.message);
+  }
+}
+
+// Mark deposit as failed
+async function failDeposit(depositId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('Mark this deposit as failed?')) return;
+  
+  try {
+    const res = await fetch(baseApi + `/admin/deposits/${depositId}/fail`, {
+      method: 'POST',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'fail deposit failed');
+    alert('✅ Deposit marked as failed');
+    await loadAdminDeposits();
+  } catch (err) {
+    console.error('Fail deposit error:', err);
+    alert('❌ Failed to mark deposit as failed: ' + err.message);
+  }
+}
+
+// Delete deposit
+async function deleteDeposit(depositId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('⚠️ DELETE this deposit permanently? This cannot be undone.')) return;
+  
+  try {
+    const res = await fetch(baseApi + `/admin/deposits/${depositId}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'delete failed');
+    alert('✅ Deposit deleted');
+    await loadAdminDeposits();
+  } catch (err) {
+    console.error('Delete deposit error:', err);
+    alert('❌ Failed to delete deposit: ' + err.message);
+  }
+}
+
+// Expose deposit functions globally
+window.completeDeposit = completeDeposit;
+window.failDeposit = failDeposit;
+window.deleteDeposit = deleteDeposit;
 
 // Wire tab switching for transactions
 document.querySelectorAll('.transaction-tab').forEach(tab => {

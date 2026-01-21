@@ -16,8 +16,17 @@ class ThemeSwitcher {
   init() {
     // Load saved theme or default to light
     const savedTheme = this.getSavedTheme();
-    const defaultTheme = this.LIGHT; // Start with light theme as requested
+    const defaultTheme = this.LIGHT; // Start with light theme as default
     this.setTheme(savedTheme || defaultTheme);
+    
+    // Create floating switch when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => this.createFloatingSwitch(), 100);
+      });
+    } else {
+      setTimeout(() => this.createFloatingSwitch(), 100);
+    }
   }
 
   getSavedTheme() {
@@ -76,6 +85,67 @@ class ThemeSwitcher {
       }
       btn.onclick = () => this.toggleTheme();
     });
+
+    // Update floating switch checkbox state
+    const checkbox = document.getElementById('theme-switch-checkbox');
+    if (checkbox) {
+      checkbox.checked = theme === this.DARK;
+    }
+
+    // Update label active states
+    const lightLabel = document.querySelector('.theme-label-light');
+    const darkLabel = document.querySelector('.theme-label-dark');
+    if (lightLabel && darkLabel) {
+      if (theme === this.LIGHT) {
+        lightLabel.classList.add('active');
+        darkLabel.classList.remove('active');
+      } else {
+        lightLabel.classList.remove('active');
+        darkLabel.classList.add('active');
+      }
+    }
+  }
+
+  createFloatingSwitch() {
+    // Check if switch already exists
+    if (document.getElementById('floating-theme-switch')) {
+      console.log('Theme switch already exists');
+      return;
+    }
+
+    console.log('Creating floating theme switch');
+
+    // Create floating switch container
+    const container = document.createElement('div');
+    container.id = 'floating-theme-switch';
+    container.className = 'floating-theme-switch';
+    container.innerHTML = `
+      <div class="theme-switch-wrapper">
+        <span class="theme-switch-label theme-label-light">☀️</span>
+        <label class="theme-switch">
+          <input type="checkbox" id="theme-switch-checkbox">
+          <span class="theme-switch-slider"></span>
+        </label>
+        <span class="theme-switch-label theme-label-dark">🌙</span>
+      </div>
+    `;
+
+    document.body.appendChild(container);
+    console.log('Theme switch added to DOM');
+
+    // Add event listener
+    const checkbox = document.getElementById('theme-switch-checkbox');
+    if (checkbox) {
+      const currentTheme = this.getCurrentTheme();
+      checkbox.checked = currentTheme === this.DARK;
+      checkbox.addEventListener('change', (e) => {
+        this.setTheme(e.target.checked ? this.DARK : this.LIGHT);
+      });
+      console.log('Theme switch initialized, current theme:', currentTheme);
+    }
+
+    // Update label active states immediately
+    this.updateToggleButton(this.getCurrentTheme());
   }
 }
 

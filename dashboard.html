@@ -354,12 +354,22 @@
     // Load and display user information
     (async () => {
       try {
-        AuthService.requireAuth();
-        const user = await AuthService.fetchUserProfile();
-        document.getElementById('user-name').textContent = user.name || user.email;
+        // Authentication check temporarily disabled
+        // AuthService.requireAuth();
+        const user = AuthService.getUser() || { name: 'Guest User', email: 'guest@example.com' };
+        document.getElementById('user-name').textContent = user.name || user.email || 'Guest';
+        
+        // Try to fetch profile if authenticated
+        if (AuthService.isAuthenticated()) {
+          try {
+            const profileUser = await AuthService.fetchUserProfile();
+            document.getElementById('user-name').textContent = profileUser.name || profileUser.email;
+          } catch (err) {
+            console.warn('Failed to fetch profile, using guest mode:', err.message);
+          }
+        }
       } catch (err) {
-        console.error('Authentication failed:', err.message);
-        window.location.href = '/login.html';
+        console.error('Error loading user info:', err.message);
       }
     })();
   </script>

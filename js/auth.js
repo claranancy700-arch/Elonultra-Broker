@@ -206,7 +206,9 @@ const AuthService = {
   },
 };
 
-// Auto-logout if token is expired (simple check)
+// Auto-logout if token is expired (simple check) - DISABLED
+// Uncomment to re-enable authentication checks
+/*
 if (AuthService.isAuthenticated()) {
   try {
     const token = AuthService.getToken();
@@ -220,3 +222,4 @@ if (AuthService.isAuthenticated()) {
     console.warn('Token validation warning:', err);
   }
 }
+*/

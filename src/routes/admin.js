@@ -305,7 +305,7 @@ router.post('/deposits/:id/approve', async (req, res) => {
     await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
 
     const first = await client.query('SELECT COUNT(*)::int AS cnt FROM transactions WHERE user_id=$1 AND type=\'deposit\' AND status=\'completed\'', [row.user_id]);
-    const isFirst = (first.rows[0].cnt || 0) === 0;
+    const isFirst = (first.rows[0].cnt || 0) === 1; // 1 because we just updated it
     if (isFirst) {
       await client.query(
         `UPDATE users
@@ -821,6 +821,21 @@ router.get('/prompts', async (req, res) => {
   } catch (err) { console.error('List prompts failed:', err.message || err); return res.status(500).json({ error: 'failed to list prompts' }); }
 });
 
+router.post('/prompts/:id/disable', async (req, res) => {
+  const guard = requireAdminKey(req, res); if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const promptId = parseInt(req.params.id, 10);
+  if (isNaN(promptId)) return res.status(400).json({ error: 'invalid prompt id' });
+  try {
+    const result = await db.query('UPDATE admin_prompts SET is_active = FALSE WHERE id = $1 RETURNING *', [promptId]);
+    if (!result.rows.length) return res.status(404).json({ error: 'prompt not found' });
+    console.log(`[Admin] Disabled prompt: id=${promptId}`);
+    return res.json({ success: true, message: 'Prompt disabled', prompt: result.rows[0] });
+  } catch (err) {
+    console.error('Disable prompt failed:', err.message || err);
+    return res.status(500).json({ error: 'failed to disable prompt', details: err.message });
+  }
+});
+
 
 // POST /api/admin/transactions - create new transaction (manual admin entry)
 router.post('/transactions', async (req, res) => {
@@ -1019,86 +1034,6 @@ router.post('/trades/clear-all', async (req, res) => {
     await client.query('ROLLBACK');
     console.error('Clear trades error:', err.message || err);
     return res.status(500).json({ error: 'failed to clear trades', details: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/admin/deposits/:txId/approve - Approve a pending deposit
-router.post('/deposits/:txId/approve', async (req, res) => {
-  const guard = requireAdminKey(req, res);
-  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
-
-  const txId = parseInt(req.params.txId, 10);
-  if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
-
-  const client = await db.getClient();
-  try {
-    await client.query('BEGIN');
-
-    // Get the pending deposit transaction
-    const txRes = await client.query(
-      'SELECT id, user_id, type, amount, status, reference FROM transactions WHERE id = $1 FOR UPDATE',
-      [txId]
-    );
-
-    if (!txRes.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'transaction not found' });
-    }
-
-    const tx = txRes.rows[0];
-    if (tx.type !== 'deposit' || tx.status !== 'pending') {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'only pending deposits can be approved' });
-    }
-
-    const userId = tx.user_id;
-    const depositAmount = parseFloat(tx.amount);
-
-    // Update transaction status to completed
-    await client.query(
-      'UPDATE transactions SET status = $1, reference = $2 WHERE id = $3',
-      ['completed', 'deposit', txId]
-    );
-
-    // Get current user balance
-    const userRes = await client.query(
-      'SELECT COALESCE(balance, 0) as balance FROM users WHERE id = $1 FOR UPDATE',
-      [userId]
-    );
-
-    if (!userRes.rows.length) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'user not found' });
-    }
-
-    const oldBalance = parseFloat(userRes.rows[0].balance);
-    const newBalance = oldBalance + depositAmount;
-
-    // Update user balance
-    await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
-      [newBalance, userId]
-    );
-
-    await client.query('COMMIT');
-
-    // Notify user of balance update
-    try { sse.emit(userId, 'profile_update', { userId, type: 'deposit_approved', balance: newBalance, amount: depositAmount }); } catch(e){/*ignore*/}
-
-    console.log(`[Admin] Approved deposit: txId=${txId}, userId=${userId}, amount=${depositAmount}, newBalance=${newBalance}`);
-
-    return res.json({
-      success: true,
-      message: `Deposit approved: $${depositAmount.toFixed(2)} credited to user ${userId}`,
-      transaction: { id: txId, type: tx.type, amount: depositAmount, status: 'completed' },
-      user: { id: userId, newBalance }
-    });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Approve deposit failed:', err.message || err);
-    return res.status(500).json({ error: 'failed to approve deposit', details: err.message });
   } finally {
     client.release();
   }
