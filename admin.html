@@ -558,9 +558,9 @@
       var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
       var isLocal = host === 'localhost' || host === '127.0.0.1';
       if (!window.__apiBase) {
-        // On localhost: full URL with :5001
-        // On Render: just the origin (https://domain.com)
-        window.__apiBase = isLocal ? 'http://localhost:5001' : location.origin;
+        // On localhost: full URL with :5001 AND /api
+        // On Render: just the origin with /api (https://domain.com/api)
+        window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
       }
     })();
   </script>

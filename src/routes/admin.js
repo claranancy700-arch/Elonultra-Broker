@@ -509,6 +509,13 @@ router.get('/debug', (req, res) => {
 
 router.get('/users', async (req, res) => {
   try {
+    console.log('========================================');
+    console.log('✓ ROUTE MATCHED: /api/admin/users');
+    console.log('  Method:', req.method);
+    console.log('  Full URL:', req.originalUrl);
+    console.log('  Headers received:', JSON.stringify(req.headers, null, 2));
+    console.log('========================================');
+    
     const provided = req.headers['x-admin-key'];
     const ADMIN_KEY = getAdminKey();
     console.log('[Admin] GET /users - Admin key check');

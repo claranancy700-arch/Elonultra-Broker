@@ -1,6 +1,6 @@
 (function(window){
   // Central API base for pages; other scripts should read `window.__apiBase`
-  window.__apiBase = window.__apiBase || ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001` : '');
+  window.__apiBase = window.__apiBase || ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001/api` : '/api');
   const DEFAULT_API = '/api';
   const STORAGE_KEY = 'authToken';
 

@@ -5,11 +5,13 @@
   "description": "Static frontend for ELON ULTRA ELONS",
   "scripts": {
     "dev": "live-server --port=3000 --open=./index.html",
-    "start": "live-server",
-    "format": "prettier --write \"**/*.{html,css,js,md,json}\"",
-    "lint": "eslint \"js/**/*.js\" --fix",
+    "start": "node src/server.js",
     "server": "node src/server.js",
-    "server:dev": "nodemon src/server.js"
+    "server:dev": "nodemon src/server.js",
+    "frontend": "live-server --port=3000",
+    "frontend:dev": "live-server --port=3000 --open=./index.html",
+    "format": "prettier --write \"**/*.{html,css,js,md,json}\"",
+    "lint": "eslint \"js/**/*.js\" --fix"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

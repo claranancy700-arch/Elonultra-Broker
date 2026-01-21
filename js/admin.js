@@ -9,7 +9,12 @@
     const full = url.startsWith('http') ? url : baseApi + url;
   // Ensure headers object exists and accept json
   opts.headers = Object.assign({ Accept: 'application/json' }, opts.headers || {});
+  console.log('[getJSON] Full URL:', full);
+  console.log('[getJSON] Headers:', opts.headers);
   const res = await fetch(full, opts);
+  console.log('[getJSON] Response status:', res.status, 'OK:', res.ok);
+  console.log('[getJSON] Response headers:', res.headers.get('content-type'));
+  
   if (!res.ok) {
     let body = null;
     try { body = await res.json(); } catch (e) { body = await res.text().catch(()=>null); }
@@ -17,7 +22,16 @@
     throw new Error(msg);
   }
 
-  return res.json();
+  const text = await res.text();
+  console.log('[getJSON] Response body (first 300 chars):', text.substring(0, 300));
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('[getJSON] JSON parse error:', e.message);
+    console.error('[getJSON] Response was:', text.substring(0, 500));
+    throw new Error(`JSON parse error: ${e.message}. Response: ${text.substring(0, 200)}`);
+  }
 }
 
 const usersTbody = document.getElementById('users-tbody');

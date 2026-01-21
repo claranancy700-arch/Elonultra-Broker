@@ -91,11 +91,15 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
   // Catch-all for nested or arbitrary frontend routes (e.g. /markets, /settings/profile)
   app.get('*', (req, res, next) => {
+    console.log('[CATCH-ALL] Request to:', req.path, '| Will check if API...');
     const reqPath = req.path.replace(/^\//, '');
     // Do not interfere with API routes
-    if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });
+    if (req.path.startsWith('/api/')) {
+      console.log('[CATCH-ALL] Blocking API route - returning 404 JSON');
+      return res.status(404).json({ error: 'API route not found' });
+    }
 
-    // Try direct file match: about.html for /about, markets.html for /markets
+    console.log('[CATCH-ALL] Serving frontend for path:', reqPath);
     const candidate = path.join(webRoot, `${reqPath || 'index'}.html`);
     if (fs.existsSync(candidate)) return res.sendFile(candidate);
 
