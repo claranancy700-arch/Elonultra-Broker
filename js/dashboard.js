@@ -1,5 +1,11 @@
 /* global AuthService */
 function renderPortfolioCards(){
+  // Guard against missing CBPortfolio
+  if (!window.CBPortfolio) {
+    console.warn('CBPortfolio not loaded');
+    return;
+  }
+  
   const assets = window.CBPortfolio.getAssets();
   const balance = window.CBPortfolio.getBalance();
   const total = window.CBPortfolio.getTotalValue();
@@ -40,12 +46,18 @@ function renderPortfolioCards(){
 }
 
 function renderHoldings(){
+  // Guard against missing CBPortfolio
+  if (!window.CBPortfolio) {
+    console.warn('CBPortfolio not loaded');
+    return;
+  }
+  
   const assets = window.CBPortfolio.getAssets();
   const total = window.CBPortfolio.getTotalValue();
   const tbody = document.getElementById('holdings-body');
   
-  if(assets.filter(a => a.amount > 0).length === 0){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">No holdings yet. Start trading!</td></tr>';
+  if(!tbody) {
+    console.warn('holdings-body element not found');
     return;
   }
 

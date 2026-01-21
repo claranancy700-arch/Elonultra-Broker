@@ -44,20 +44,8 @@
       </div>
     `;
 
-    // Reset animation when it ends to create seamless loop
-    const content = bannerEl.querySelector('.testimonies-banner-content');
-    if (content) {
-      // Calculate the natural width of one set of testimonies
-      const singleSetWidth = content.offsetWidth / 2;
-      
-      content.addEventListener('animationiteration', () => {
-        // Reset position for seamless looping
-        content.style.animation = 'none';
-        setTimeout(() => {
-          content.style.animation = 'scroll-left 60s linear infinite';
-        }, 10);
-      });
-    }
+    // Testimonies banner animation is handled entirely by CSS
+    // The scroll-left animation runs continuously without JS intervention
 
   } catch (err) {
     console.warn('Failed to load testimonies banner:', err);
