@@ -918,6 +918,7 @@ router.post('/transactions', async (req, res) => {
 router.get('/withdrawals', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
     if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
     if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
 

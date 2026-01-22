@@ -13,7 +13,7 @@
 
   let testimonies = [];
   let currentIndex = 0;
-  const ROTATE_INTERVAL = 6000; // Rotate every 6 seconds
+  const ROTATE_INTERVAL = 2000; // Rotate every 2 seconds
 
   // Create floating widget HTML
   const createWidget = () => {

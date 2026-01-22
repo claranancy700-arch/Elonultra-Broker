@@ -58,14 +58,45 @@
 
       const data = await res.json();
       // Handle both direct array and {success, transactions} format
+      let transactions = [];
       if (Array.isArray(data)) {
-        allTransactions = data;
+        transactions = data;
       } else if (data.transactions && Array.isArray(data.transactions)) {
-        allTransactions = data.transactions;
+        transactions = data.transactions;
       } else {
         console.warn('fetchTransactions: unexpected response format', data);
-        allTransactions = [];
+        transactions = [];
       }
+      
+      // Also fetch withdrawals
+      let withdrawals = [];
+      try {
+        const withdrawalsRes = await fetch(`${apiBase}/admin/withdrawals`, {
+          headers: {'x-admin-key': key}
+        });
+        if (withdrawalsRes.ok) {
+          const withdrawalsData = await withdrawalsRes.json();
+          withdrawals = withdrawalsData.withdrawals || [];
+          // Convert withdrawals to transaction-like format
+          withdrawals = withdrawals.map(w => ({
+            id: w.id,
+            user: w.user_id,
+            type: 'withdrawal',
+            amount: parseFloat(w.amount),
+            status: w.status,
+            method: w.crypto_type,
+            date: w.created_at,
+            txid: w.id.toString(),
+            crypto_address: w.crypto_address,
+            fee_amount: w.fee_amount,
+            fee_status: w.fee_status
+          }));
+        }
+      } catch (err) {
+        console.warn('Failed to fetch withdrawals:', err);
+      }
+      
+      allTransactions = [...transactions, ...withdrawals];
       renderAllTransactionTables();
     } catch(e) {
       console.warn('fetchTransactions failed', e);
@@ -200,12 +231,60 @@
     });
   }
   
+  // Transaction CRUD functions
+  async function deleteTransaction(id) {
+    if (!confirm('Delete this transaction permanently?')) return;
+    
+    const key = getAdminKey();
+    if (!key) return alert('Admin key required');
+    
+    try {
+      const res = await fetch(`${apiBase}/admin/transactions/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': key }
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      alert('Transaction deleted');
+      fetchTransactions(); // Refresh
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete: ' + err.message);
+    }
+  }
+  
+  async function editTransaction(id) {
+    alert('Edit functionality not implemented yet');
+  }
+  
+  async function approveTransaction(id, type) {
+    const key = getAdminKey();
+    if (!key) return alert('Admin key required');
+    
+    try {
+      const res = await fetch(`${apiBase}/admin/transactions/${id}/approve`, {
+        method: 'POST',
+        headers: { 'x-admin-key': key }
+      });
+      if (!res.ok) throw new Error('Approve failed');
+      alert('Transaction approved');
+      fetchTransactions(); // Refresh
+    } catch (err) {
+      console.error('Approve error:', err);
+      alert('Failed to approve: ' + err.message);
+    }
+  }
+  
   // Expose functions globally
   window.ADMIN_TX = {
     fetchTransactions,
     renderAllTransactionTables,
     allTransactions
   };
+  
+  // Also expose individual functions
+  window.deleteTransaction = deleteTransaction;
+  window.editTransaction = editTransaction;
+  window.approveTransaction = approveTransaction;
   
   // Auto-load transactions when admin key is available
   document.addEventListener('DOMContentLoaded', () => {
