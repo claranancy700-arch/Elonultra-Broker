@@ -221,7 +221,7 @@ async function loadUserDetails(id, key){
 
     await refreshSimulator(u.id, key);
 
-    const tr = await getJSON(`/api/admin/users/${u.id}/transactions`, { headers: { 'x-admin-key': key } });
+    const tr = await getJSON(`/admin/users/${u.id}/transactions`, { headers: { 'x-admin-key': key } });
     if (transactionsTbody) transactionsTbody.innerHTML = tr.transactions.map(t=>{
       const action = (t.type === 'deposit' && t.status !== 'completed')
         ? `<button class="btn btn-small" data-approve="${t.id}">Approve</button>`
@@ -236,7 +236,7 @@ async function loadUserDetails(id, key){
 
     // Load recent trades for this user
     try {
-      const trades = await getJSON(`/api/trades?limit=10`, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}`, 'x-admin-key': key } });
+      const trades = await getJSON(`/trades?limit=10`, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}`, 'x-admin-key': key } });
       const recentTradesTbody = document.getElementById('recent-trades-user');
       if (recentTradesTbody && trades.trades && trades.trades.length > 0) {
         // Filter trades for current user
@@ -264,7 +264,7 @@ async function loadUserDetails(id, key){
 
     // fetch portfolio and prefill fields
     try{
-      const p = await getJSON(`/api/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } });
+      const p = await getJSON(`/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } });
       // Handle both response formats: { success: true, assets: {...} } or { assets: {...} }
       const assets = p.assets || p.portfolio || {};
       
@@ -330,7 +330,7 @@ async function loadGrowthTrades() {
 
   try {
     // Get growth trades
-    const tradesRes = await getJSON(`/api/admin/users/${userId}/growth-trades?limit=100`, {
+    const tradesRes = await getJSON(`/admin/users/${userId}/growth-trades?limit=100`, {
       headers: { 'x-admin-key': key }
     });
 
@@ -362,7 +362,7 @@ async function loadGrowthTrades() {
     }
 
     // Get growth stats
-    const statsRes = await getJSON(`/api/admin/users/${userId}/growth-stats`, {
+    const statsRes = await getJSON(`/admin/users/${userId}/growth-stats`, {
       headers: { 'x-admin-key': key }
     });
 
@@ -390,7 +390,7 @@ async function triggerGrowthNow() {
   if (!confirm('Trigger balance growth now for this user?')) return;
 
   try {
-    await getJSON(`/api/admin/users/${userId}/simulator/trigger-growth`, {
+    await getJSON(`/admin/users/${userId}/simulator/trigger-growth`, {
       method: 'POST',
       headers: { 'x-admin-key': key }
     });
@@ -448,7 +448,7 @@ if (setBalanceBtn) setBalanceBtn.addEventListener('click', async () => {
   try{
     const body = { amount, reason: 'admin: manual balance update' };
     if (taxId) body.tax_id = taxId;
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/balance/update`, { 
+    const res = await fetch(baseApi + `/admin/users/${uid}/balance/update`, { 
       method: 'POST', 
       headers: { 'Content-Type':'application/json', 'x-admin-key': key }, 
       body: JSON.stringify(body) 
@@ -483,7 +483,7 @@ if (portfolioForm) portfolioForm.addEventListener('submit', async (e) => {
     }catch(e){ /* ignore malformed row */ }
   });
   try{
-    const res = await fetch(baseApi + `/api/admin/users/${uid}/set-portfolio`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ assets }) });
+    const res = await fetch(baseApi + `/admin/users/${uid}/set-portfolio`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ assets }) });
     const j = await res.json();
     if(!res.ok) throw new Error(j.error||'set portfolio failed');
     alert('Portfolio set');
@@ -594,45 +594,7 @@ async function approveDeposit(txId){
   }catch(e){ alert('Approve failed: '+(e.message||e)); }
 }
 
-// Complete deposit and credit user
-async function completeDeposit(txId){
-  const key = adminKeyInput.value.trim();
-  if(!key) return alert('Admin key required');
-  try{
-    const res = await fetch(baseApi + `/admin/deposits/${txId}/complete`, { method:'POST', headers:{ 'x-admin-key': key } });
-    const j = await res.json();
-    if(!res.ok) throw new Error(j.error||'complete failed');
-    alert('Deposit completed and balance credited');
-    loadAdminDeposits();
-  }catch(e){ alert('Complete failed: '+(e.message||e)); }
-}
 
-// Mark deposit as failed
-async function failDeposit(txId){
-  const key = adminKeyInput.value.trim();
-  if(!key) return alert('Admin key required');
-  try{
-    const res = await fetch(baseApi + `/admin/deposits/${txId}/fail`, { method:'POST', headers:{ 'x-admin-key': key } });
-    const j = await res.json();
-    if(!res.ok) throw new Error(j.error||'fail failed');
-    alert('Deposit marked as failed');
-    loadAdminDeposits();
-  }catch(e){ alert('Fail deposit failed: '+(e.message||e)); }
-}
-
-// Delete deposit
-async function deleteDeposit(txId){
-  const key = adminKeyInput.value.trim();
-  if(!key) return alert('Admin key required');
-  if(!confirm('Are you sure you want to delete this deposit?')) return;
-  try{
-    const res = await fetch(baseApi + `/admin/deposits/${txId}`, { method:'DELETE', headers:{ 'x-admin-key': key } });
-    const j = await res.json();
-    if(!res.ok) throw new Error(j.error||'delete failed');
-    alert('Deposit deleted');
-    loadAdminDeposits();
-  }catch(e){ alert('Delete failed: '+(e.message||e)); }
-}
 
 // Simulator controls
 const simStatusEl = document.getElementById('sim-status');
@@ -643,7 +605,7 @@ const simPauseBtn = document.getElementById('sim-pause');
 async function refreshSimulator(uid, key){
   if(!uid || !key || !simStatusEl) return;
   try{
-    const res = await getJSON(`/api/admin/users/${uid}/simulator`, { headers: { 'x-admin-key': key } });
+    const res = await getJSON(`/admin/users/${uid}/simulator`, { headers: { 'x-admin-key': key } });
     const s = res.simulator || {};
     simStatusEl.textContent = s.sim_enabled ? (s.sim_paused ? 'Paused' : 'Enabled') : 'Disabled';
     simNextEl.textContent = s.sim_next_run_at ? new Date(s.sim_next_run_at).toLocaleString() : '—';
@@ -717,7 +679,7 @@ async function enableUser(uid, key) {
   } catch (e) { alert('Enable failed: ' + (e.message||e)); }
 }
 async function deleteUser(uid, key) {
-  if (!confirm('Delete (soft) this user? This will mark account inactive.')) return;
+  if (!confirm('Deactivate this user account? This will mark the account as inactive but preserve all data.')) return;
   try {
     const res = await fetch(baseApi + `/admin/users/${uid}/delete`, { 
       method: 'POST', 
@@ -725,7 +687,7 @@ async function deleteUser(uid, key) {
       body: JSON.stringify({})
     });
     const j = await res.json(); if(!res.ok) throw new Error(j.error || 'delete failed');
-    alert('User deleted (soft)'); loadUsersBtn.click();
+    alert('User account deactivated'); loadUsersBtn.click();
     if (document.getElementById('credit-user-id').value == uid) document.getElementById('user-detail').innerHTML = 'Select a user to view details';
   } catch (e) { alert('Delete failed: ' + (e.message||e)); }
 }
@@ -776,7 +738,7 @@ if (editTotalBtn) {
     try {
       // We don't have a direct endpoint to set usd_value; set a synthetic USDT holding to reach target
       // Fetch current portfolio to compute delta
-      const p = await getJSON(`/api/admin/users/${uid}/portfolio`, { headers: { 'x-admin-key': key } });
+      const p = await getJSON(`/admin/users/${uid}/portfolio`, { headers: { 'x-admin-key': key } });
       const pf = p.portfolio || {};
       const current = Number(pf.usd_value) || 0;
       const delta = amt - current;
@@ -813,7 +775,7 @@ if (triggerGrowthBtn) {
     if (!confirm('Trigger balance growth now for this user?')) return;
 
     try {
-      await getJSON(`/api/admin/users/${userId}/simulator/trigger-growth`, {
+      await getJSON(`/admin/users/${userId}/simulator/trigger-growth`, {
         method: 'POST',
         headers: { 'x-admin-key': key }
       });
@@ -867,7 +829,7 @@ if (resetUserBtn) {
     if (!confirm('⚠️ RESET USER DATA? This will clear all trades and reset portfolio for this user. Continue?')) return;
 
     try {
-      const res = await fetch(baseApi + `/api/admin/users/${userId}/reset`, {
+      const res = await fetch(baseApi + `/admin/users/${userId}/reset`, {
         method: 'POST',
         headers: { 'x-admin-key': key }
       });
