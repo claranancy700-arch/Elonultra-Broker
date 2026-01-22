@@ -8,7 +8,7 @@
   let allTestimonies = [];
   let currentEditingId = null;
 
-  const baseApi = window.__apiBase ? (window.__apiBase + '/api') : '/api';
+  const baseApi = window.__apiBase || '/api';
 
 async function loadAllTestimonies() {
   try {
@@ -183,10 +183,30 @@ document.getElementById('testimony-form')?.addEventListener('submit', async (e) 
   }
 });
 
-// Load testimonies on page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadAllTestimonies);
-} else {
-  loadAllTestimonies();
+function openTestimoniesModal() {
+  const modal = document.getElementById('testimonies-modal');
+  const list = document.getElementById('testimonies-modal-list');
+  if (!modal || !list) return;
+
+  list.innerHTML = allTestimonies.map(t => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--card-bg);margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div style="flex:1">
+          <strong style="display:block;color:var(--accent)">${t.client_name}</strong>
+          ${t.title ? `<small style="color:var(--muted)">${t.title}</small>` : ''}
+        </div>
+        ${t.rating ? `<div style="color:#ffc107">${'⭐'.repeat(t.rating)}</div>` : ''}
+      </div>
+      ${t.client_image ? `<img src="${t.client_image}" alt="${t.client_name}" style="width:100%;height:120px;object-fit:cover;border-radius:4px;margin-bottom:8px">` : ''}
+      <p style="margin:8px 0;font-size:14px;color:var(--text);line-height:1.5">${t.content}</p>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        ${t.is_featured ? '<span style="font-size:11px;background:#ffc107;color:black;padding:2px 8px;border-radius:3px">Featured</span>' : ''}
+        <button onclick="editTestimony(${t.id})" class="btn btn-small" style="flex:1">Edit</button>
+        <button onclick="deleteTestimony(${t.id})" class="btn btn-small btn-danger" style="flex:1">Delete</button>
+      </div>
+    </div>
+  `).join('');
+
+  modal.classList.add('active');
 }
 })();

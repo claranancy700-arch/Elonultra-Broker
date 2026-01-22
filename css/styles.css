@@ -150,6 +150,30 @@ textarea{resize:vertical;min-height:120px}
   .hero h1{font-size:36px}
   .hero p{font-size:16px}
   
+  /* Allow horizontal scrolling within specific table wrappers on mobile */
+  #holdings-table-wrapper,
+  #trades-table-wrapper,
+  #market-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+  
+  /* Mobile styles for deposit page */
+  #qr-img {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  #address-box {
+    text-align: center;
+  }
+  
+  #deposit-address {
+    font-family: monospace;
+    font-size: 12px;
+    word-break: break-all;
+  }
+  
   /* Hide header nav on mobile */
   .site-header .nav{display:none}
   .site-header .container{justify-content:center}

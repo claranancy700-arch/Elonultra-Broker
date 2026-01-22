@@ -66,7 +66,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     // start daily job (24h)
     const { startPriceUpdater } = require('./jobs/priceUpdater');
     const { startTradeSimulator } = require('./jobs/tradeSimulator');
+    const { startTestimoniesGenerator } = require('./jobs/testimoniesGenerator');
     startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
+    startTestimoniesGenerator({ intervalMs: 24 * 60 * 60 * 1000 });
     // start hourly trade simulator (Monday-Friday)
     startTradeSimulator();
     console.log('Background jobs started');

@@ -683,22 +683,39 @@
       .catch(() => alert('Unable to delete transaction'));
     }
 
-    function approveTransaction(txId) {
+    function approveTransaction(txId, type) {
       const key = sessionStorage.getItem('adminKey');
       if (!key) return alert('Admin key required');
       
       const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api');
-      fetch(`${apiBase}/admin/transactions/${txId}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json', 'x-admin-key': key},
-        body: JSON.stringify({status: 'completed'})
-      })
-      .then(r => r.ok ? Promise.resolve() : Promise.reject())
-      .then(() => {
-        alert('Transaction approved');
-        refreshAllTransactions();
-      })
-      .catch(() => alert('Unable to approve transaction'));
+      
+      if (type === 'deposit') {
+        // For deposits, use the approve endpoint which credits balance
+        fetch(`${apiBase}/admin/deposits/${txId}/approve`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'x-admin-key': key},
+          body: JSON.stringify({})
+        })
+        .then(r => r.ok ? Promise.resolve() : Promise.reject())
+        .then(() => {
+          alert('Deposit approved');
+          refreshAllTransactions();
+        })
+        .catch(() => alert('Unable to approve deposit'));
+      } else {
+        // For other transactions, just update status
+        fetch(`${apiBase}/admin/transactions/${txId}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json', 'x-admin-key': key},
+          body: JSON.stringify({status: 'completed'})
+        })
+        .then(r => r.ok ? Promise.resolve() : Promise.reject())
+        .then(() => {
+          alert('Transaction approved');
+          refreshAllTransactions();
+        })
+        .catch(() => alert('Unable to approve transaction'));
+      }
     }
 
     // Simple prompt-based transaction editor used by add/edit buttons

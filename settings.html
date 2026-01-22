@@ -72,9 +72,9 @@
         <div>
           <h2 style="margin-top:0">Security</h2>
           <form class="form" id="security-form">
-            <label><span>Current Password</span><input type="password" placeholder="•••••••"></label>
-            <label><span>New Password</span><input type="password" placeholder="•••••••"></label>
-            <label><span>Confirm Password</span><input type="password" placeholder="•••••••"></label>
+            <label><span>Current Password</span><input type="password" placeholder="•••••••" autocomplete="current-password"></label>
+            <label><span>New Password</span><input type="password" placeholder="•••••••" autocomplete="new-password"></label>
+            <label><span>Confirm Password</span><input type="password" placeholder="•••••••" autocomplete="new-password"></label>
             <button type="submit" class="btn">Update Password</button>
           </form>
         </div>
@@ -221,10 +221,17 @@
       const editBtn = document.getElementById('edit-profile-btn');
       const cancelBtn = document.getElementById('cancel-profile-btn');
 
-      function loadProfileData(){
+      async function loadProfileData(){
         try{
-          // Get user from AuthService (which has the fresh server data)
-          const user = AuthService.getUser() || {};
+          // Check if AuthService is available
+          if (typeof AuthService === 'undefined') {
+            console.warn('AuthService not loaded yet, retrying...');
+            setTimeout(loadProfileData, 100);
+            return;
+          }
+          
+          // Fetch fresh user data from server
+          const user = await AuthService.fetchUserProfile();
           const name = user.fullName || 'John Doe';
           const email = user.email || 'john@example.com';
           const phone = user.phone || '+1 234 567 8900';
@@ -235,7 +242,25 @@
           document.getElementById('input-name').value = name;
           document.getElementById('input-email').value = email;
           document.getElementById('input-phone').value = phone;
-        }catch(e){console.warn('Failed to load profile',e)}
+        }catch(e){
+          console.warn('Failed to load profile, using local data', e);
+          // Fallback to local data if server fetch fails
+          try {
+            const user = AuthService.getUser() || {};
+            const name = user.fullName || 'John Doe';
+            const email = user.email || 'john@example.com';
+            const phone = user.phone || '+1 234 567 8900';
+            
+            document.getElementById('profile-name').textContent = name;
+            document.getElementById('profile-email').textContent = email;
+            document.getElementById('profile-phone').textContent = phone;
+            document.getElementById('input-name').value = name;
+            document.getElementById('input-email').value = email;
+            document.getElementById('input-phone').value = phone;
+          } catch(e2) {
+            console.warn('Failed to load local profile data', e2);
+          }
+        }
       }
 
       loadProfileData();

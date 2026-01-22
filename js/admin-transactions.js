@@ -125,7 +125,7 @@
         <td style="font-size:11px;font-family:monospace">${(t.txid || t.reference || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
+          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
           <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
@@ -156,7 +156,7 @@
         <td style="font-size:11px;font-family:monospace">${(t.txid || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
+          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
           <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;

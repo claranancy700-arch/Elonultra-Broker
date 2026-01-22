@@ -304,6 +304,10 @@ router.post('/deposits/:id/approve', async (req, res) => {
     await client.query('UPDATE transactions SET status=\'completed\', reference=\'deposit\', updated_at=NOW() WHERE id=$1', [txId]);
     await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
 
+    // Get updated balance for portfolio allocation
+    const balanceRes = await client.query('SELECT balance FROM users WHERE id=$1', [row.user_id]);
+    const newBalance = Number(balanceRes.rows[0].balance) || 0;
+
     const first = await client.query('SELECT COUNT(*)::int AS cnt FROM transactions WHERE user_id=$1 AND type=\'deposit\' AND status=\'completed\'', [row.user_id]);
     const isFirst = (first.rows[0].cnt || 0) === 1; // 1 because we just updated it
     if (isFirst) {
@@ -317,8 +321,10 @@ router.post('/deposits/:id/approve', async (req, res) => {
          WHERE id=$1`,
         [row.user_id]
       );
-      try { await allocatePortfolioForUser(row.user_id, Number(row.amount) || 0, { client }); } catch (e) { console.warn('initial portfolio allocate failed', e.message||e); }
     }
+
+    // Allocate portfolio based on total balance (not just deposit amount)
+    try { await allocatePortfolioForUser(row.user_id, newBalance, { client }); } catch (e) { console.warn('portfolio allocate failed', e.message||e); }
 
     await client.query('COMMIT');
     return res.json({ success: true, firstDeposit: isFirst });
@@ -462,6 +468,11 @@ router.post('/credit', async (req, res) => {
       const cryptoColumns = { BTC: 'btc_balance', ETH: 'eth_balance', USDT: 'usdt_balance', USDC: 'usdc_balance' };
       if (curr === 'USD') {
         await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
+        
+        // Get updated balance and reallocate portfolio
+        const balanceRes = await client.query('SELECT balance FROM users WHERE id=$1', [uid]);
+        const newBalance = Number(balanceRes.rows[0].balance) || 0;
+        try { await allocatePortfolioForUser(uid, newBalance, { client }); } catch (e) { console.warn('portfolio allocate failed', e.message||e); }
       } else if (cryptoColumns[curr]) {
         const col = cryptoColumns[curr];
         // Upsert into portfolio (create row if missing)
@@ -592,6 +603,9 @@ router.post('/users/:id/set-balance', async (req, res) => {
 
     await client.query('UPDATE users SET balance = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
     await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt, 'USD', 'completed', 'admin-set-balance']);
+
+    // Reallocate portfolio based on new balance
+    try { await allocatePortfolioForUser(userId, amt, { client }); } catch (e) { console.warn('portfolio allocate failed', e.message||e); }
 
     // Record loss entry if applicable (user has no tax_id and balance decreased)
     try { await recordLossIfApplicable(client, userId, oldBalance, amt); } catch(e){ console.warn('Failed to record loss on set-balance', e && e.message ? e.message : e); }
