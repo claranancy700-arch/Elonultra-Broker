@@ -19,8 +19,12 @@
   }
 
   try {
-    // Fetch testimonies
-    const testimonies = await TestimoniesService.fetchAll();
+    // Fetch testimonies with caching
+    let testimonies = JSON.parse(localStorage.getItem('testimonies_cache') || '[]');
+    if (!testimonies || testimonies.length === 0) {
+      testimonies = await TestimoniesService.fetchAll();
+      localStorage.setItem('testimonies_cache', JSON.stringify(testimonies));
+    }
     if (!testimonies || testimonies.length === 0) {
       bannerEl.style.display = 'none';
       return;
@@ -33,7 +37,7 @@
     const contentHTML = allItems.map(t => `
       <div class="testimonies-banner-item">
         <strong>${t.client_name}</strong>
-        <span class="testimonies-banner-item-text">"${t.content.substring(0, 100)}${t.content.length > 100 ? '...' : ''}"</span>
+        <span class="testimonies-banner-item-text">"${t.content}"</span>
         ${t.rating ? `<span style="color: #ffc107;">${'⭐'.repeat(t.rating)}</span>` : ''}
       </div>
     `).join('');

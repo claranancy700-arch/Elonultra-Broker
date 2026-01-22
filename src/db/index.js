@@ -3,15 +3,130 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000, // Timeout after 5 seconds
-});
+let pool;
+let usingSQLite = false;
+let sqliteDb = null;
 
-// Log connection errors
-pool.on('error', (err) => {
-  console.error('Unexpected pool error:', err);
-});
+async function initializeDatabase() {
+  try {
+    // Try PostgreSQL first
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      connectionTimeoutMillis: 5000,
+    });
+
+    // Test the connection with a simple query
+    await pool.query('SELECT 1');
+    console.log('Using PostgreSQL database');
+  } catch (err) {
+    console.log('PostgreSQL connection failed, falling back to SQLite:', err.message);
+    usingSQLite = true;
+    
+    const sqlite3 = require('sqlite3').verbose();
+    const path = require('path');
+    const dbPath = path.join(__dirname, '../../elon_test.db');
+    
+    sqliteDb = new sqlite3.Database(dbPath);
+    
+    // Initialize SQLite tables
+    await new Promise((resolve, reject) => {
+      sqliteDb.serialize(() => {
+        sqliteDb.run('PRAGMA foreign_keys = ON');
+        
+        // Create tables compatible with PostgreSQL schema
+        sqliteDb.run(`CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          balance REAL DEFAULT 0,
+          portfolio_value REAL DEFAULT 0,
+          fullName TEXT,
+          phone TEXT,
+          tax_id TEXT,
+          is_active INTEGER DEFAULT 1,
+          deleted_at TEXT,
+          sim_enabled INTEGER DEFAULT 0,
+          sim_paused INTEGER DEFAULT 0,
+          sim_next_run_at TEXT,
+          sim_last_run_at TEXT,
+          sim_started_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        sqliteDb.run(`CREATE TABLE IF NOT EXISTS transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          currency TEXT DEFAULT 'USD',
+          status TEXT DEFAULT 'completed',
+          reference TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`);
+        
+        sqliteDb.run(`CREATE TABLE IF NOT EXISTS testimonies (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          client_name TEXT NOT NULL,
+          client_image TEXT,
+          title TEXT,
+          rating INTEGER,
+          content TEXT NOT NULL,
+          is_featured INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )`, () => {
+          console.log('SQLite database initialized');
+          resolve();
+        });
+      });
+    });
+  }
+}
+
+// Initialize on module load
+initializeDatabase().catch(err => console.error('Database initialization error:', err));
+
+function sqliteQuery(text, params = []) {
+  return new Promise((resolve, reject) => {
+    if (text.trim().toUpperCase().startsWith('SELECT')) {
+      sqliteDb.all(text, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve({ rows: rows || [], rowCount: rows ? rows.length : 0 });
+      });
+    } else {
+      sqliteDb.run(text, params, function(err) {
+        if (err) reject(err);
+        else resolve({ rowCount: this.changes, rows: [] });
+      });
+    }
+  });
+}
+
+async function query(text, params) {
+  if (usingSQLite) {
+    return sqliteQuery(text, params);
+  } else {
+    return pool.query(text, params);
+  }
+}
+
+async function getClient() {
+  if (usingSQLite) {
+    return sqliteDb;
+  } else {
+    return pool.connect();
+  }
+}
+
+// Log connection errors for PostgreSQL
+if (!usingSQLite) {
+  pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL pool error:', err);
+  });
+}
 /**
  * ensureSchema
  * Idempotently creates core tables and required columns, including withdrawal fee fields

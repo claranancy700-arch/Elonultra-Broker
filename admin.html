@@ -625,7 +625,8 @@
       // Load data for specific tabs
       if (tabId === 'deposits-admin') {
         if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
-          window.ADMIN_TX.fetchTransactions();
+          const selectedUserId = document.getElementById('current-user-select')?.value;
+          window.ADMIN_TX.fetchTransactions(selectedUserId || null);
         }
       } else if (tabId === 'withdrawals-admin') {
         if (typeof loadWithdrawals === 'function') {
@@ -637,7 +638,8 @@
         }
       } else if (tabId === 'all-transactions') {
         if (typeof window.ADMIN_TX !== 'undefined' && typeof window.ADMIN_TX.fetchTransactions === 'function') {
-          window.ADMIN_TX.fetchTransactions();
+          const selectedUserId = document.getElementById('current-user-select')?.value;
+          window.ADMIN_TX.fetchTransactions(selectedUserId || null);
         }
       }
     }
@@ -645,7 +647,8 @@
     // Transaction management functions
     function refreshAllTransactions() {
       if (window.ADMIN_TX && typeof window.ADMIN_TX.fetchTransactions === 'function') {
-        window.ADMIN_TX.fetchTransactions();
+        const selectedUserId = document.getElementById('current-user-select')?.value;
+        window.ADMIN_TX.fetchTransactions(selectedUserId || null);
       } else {
         console.log('Refresh transactions: function not available yet');
       }

@@ -27,7 +27,7 @@
     return sessionStorage.getItem('adminKey') || document.getElementById('admin-key')?.value || '';
   }
   
-  async function fetchTransactions() {
+  async function fetchTransactions(userId = null) {
     const key = getAdminKey();
     if (!key) {
       console.warn('Admin key not set');
@@ -35,7 +35,12 @@
     }
     
     try {
-      const res = await fetch(`${apiBase}/admin/transactions`, {
+      let url = `${apiBase}/admin/transactions`;
+      if (userId) {
+        url = `${apiBase}/admin/users/${userId}/transactions`;
+      }
+      
+      const res = await fetch(url, {
         headers: {'x-admin-key': key}
       });
       
@@ -95,7 +100,7 @@
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -126,7 +131,7 @@
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
           ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -157,7 +162,7 @@
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
           ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -188,7 +193,7 @@
         <td>${fmtMoney((t.amount || 0) * (t.price || 0))}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          <button onclick="deleteTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -206,7 +211,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     const adminKey = getAdminKey();
     if (adminKey) {
-      fetchTransactions();
+      // Check if there's a selected user
+      const selectedUserId = document.getElementById('current-user-select')?.value;
+      fetchTransactions(selectedUserId || null);
     }
     
     // Watch for admin key changes
@@ -215,7 +222,19 @@
       adminKeyInput.addEventListener('change', () => {
         if (adminKeyInput.value) {
           sessionStorage.setItem('adminKey', adminKeyInput.value);
-          fetchTransactions();
+          const selectedUserId = document.getElementById('current-user-select')?.value;
+          fetchTransactions(selectedUserId || null);
+        }
+      });
+    }
+    
+    // Watch for user selection changes
+    const userSelect = document.getElementById('current-user-select');
+    if (userSelect) {
+      userSelect.addEventListener('change', () => {
+        const selectedUserId = userSelect.value;
+        if (getAdminKey()) {
+          fetchTransactions(selectedUserId || null);
         }
       });
     }

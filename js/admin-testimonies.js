@@ -24,6 +24,11 @@ function renderTestimoniesList() {
   const container = document.getElementById('testimonies-list');
   if (!allTestimonies || allTestimonies.length === 0) {
     container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted)">No testimonies yet. Add your first one!</p>';
+    // Update mobile button count
+    const mobileBtn = document.querySelector('.testimonies-mobile-view button');
+    if (mobileBtn) {
+      mobileBtn.innerHTML = '👁️ View Testimonies (0)';
+    }
     return;
   }
 
@@ -45,6 +50,12 @@ function renderTestimoniesList() {
       </div>
     </div>
   `).join('');
+
+  // Update mobile button count
+  const mobileBtn = document.querySelector('.testimonies-mobile-view button');
+  if (mobileBtn) {
+    mobileBtn.innerHTML = `👁️ View Testimonies (${allTestimonies.length})`;
+  }
 }
 
 function showTestimonyForm() {
@@ -207,6 +218,19 @@ function openTestimoniesModal() {
     </div>
   `).join('');
 
+  // Update mobile button count
+  const mobileBtn = document.querySelector('.testimonies-mobile-view button');
+  if (mobileBtn) {
+    mobileBtn.innerHTML = `👁️ View Testimonies (${allTestimonies.length})`;
+  }
+
   modal.classList.add('active');
+}
+
+// Load testimonies on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadAllTestimonies);
+} else {
+  loadAllTestimonies();
 }
 })();

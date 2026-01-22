@@ -40,7 +40,7 @@ function generateTestimony() {
 
   const content = template.replace("{amount}", amount);
 
-  const rating = Math.random() > 0.1 ? 5 : (Math.random() > 0.5 ? 4 : 5);
+  const rating = Math.floor(Math.random() * 3) + 3; // Random rating between 3-5 stars
 
   return {
     client_name: firstName + " " + lastName,
@@ -66,7 +66,8 @@ async function generateTestimonies(count = 3) {
     console.log(`[Testimonies Auto-Generate] Generated and saved ${count} testimonies`);
     return savedTestimonies;
   } catch (err) {
-    console.error('Auto-generation error:', err);
+    console.error('Auto-generation error:', err.message);
+    console.log('Testimonies auto-generation skipped due to database issues');
     return [];
   }
 }
