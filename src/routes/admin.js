@@ -978,6 +978,37 @@ router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
   }
 });
 
+// POST /api/admin/withdrawals/:id/approve - Approve a withdrawal (set status to completed)
+router.post('/withdrawals/:id/approve', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const wid = parseInt(req.params.id, 10);
+    if (isNaN(wid)) return res.status(400).json({ error: 'invalid withdrawal id' });
+
+    // Update status to completed
+    const updateResult = await db.query(
+      `UPDATE withdrawals
+       SET status = 'completed', updated_at = NOW()
+       WHERE id = $1 AND status != 'completed' RETURNING id`,
+      [wid]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({ error: 'withdrawal not found or already completed' });
+    }
+
+    console.log('[APPROVE WITHDRAWAL] ✓ Approved:', wid);
+    return res.json({ success: true, approved: true });
+  } catch (err) {
+    console.error('[APPROVE WITHDRAWAL] Error:', err.message || err);
+    return res.status(500).json({ error: 'failed to approve withdrawal' });
+  }
+});
+
 // PUT /api/admin/transactions/:id - update transaction fields
 router.put('/transactions/:id', async (req, res) => {
   try {
