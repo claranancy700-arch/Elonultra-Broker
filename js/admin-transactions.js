@@ -160,9 +160,9 @@
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
         <td style="font-size:11px;font-family:monospace">${(t.txid || t.reference || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
         <td>
-          <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="editTransaction('${t.id || idx}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>` : ''}
+          <button onclick="deleteTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -191,9 +191,9 @@
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
         <td style="font-size:11px;font-family:monospace">${(t.txid || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
         <td>
-          <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="editTransaction('${t.id || idx}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id}', '${t.type}')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>` : ''}
+          <button onclick="deleteTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -256,17 +256,50 @@
     alert('Edit functionality not implemented yet');
   }
   
+  async function confirmFee(id) {
+    const key = getAdminKey();
+    if (!key) return alert('Admin key required');
+    
+    try {
+      const res = await fetch(`${apiBase}/admin/withdrawals/${id}/confirm-fee`, {
+        method: 'POST',
+        headers: { 'x-admin-key': key }
+      });
+      if (!res.ok) throw new Error('Confirm fee failed');
+      alert('Fee confirmed');
+      fetchTransactions(); // Refresh
+    } catch (err) {
+      console.error('Confirm fee error:', err);
+      alert('Failed to confirm fee: ' + err.message);
+    }
+  }
+  
   async function approveTransaction(id, type) {
     const key = getAdminKey();
     if (!key) return alert('Admin key required');
     
     try {
-      const res = await fetch(`${apiBase}/admin/transactions/${id}/approve`, {
-        method: 'POST',
-        headers: { 'x-admin-key': key }
-      });
-      if (!res.ok) throw new Error('Approve failed');
-      alert('Transaction approved');
+      if (type === 'withdrawal') {
+        // For withdrawals, first confirm fee, then approve
+        await fetch(`${apiBase}/admin/withdrawals/${id}/confirm-fee`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        const res = await fetch(`${apiBase}/admin/withdrawals/${id}/approve`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        if (!res.ok) throw new Error('Approve withdrawal failed');
+        alert('Withdrawal approved (fee confirmed and completed)');
+      } else {
+        // For deposits
+        const res = await fetch(`${apiBase}/admin/transactions/${id}/approve`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        if (!res.ok) throw new Error('Approve failed');
+        alert('Deposit approved');
+      }
       fetchTransactions(); // Refresh
     } catch (err) {
       console.error('Approve error:', err);
