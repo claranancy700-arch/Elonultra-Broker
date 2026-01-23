@@ -978,6 +978,45 @@ router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
   }
 });
 
+// POST /api/admin/withdrawals/:id/approve - approve withdrawal (complete and confirm fee)
+router.post('/withdrawals/:id/approve', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const { id } = req.params;
+    const approvedBy = req.body.approvedBy || 'admin';
+    
+    console.log('[APPROVE WITHDRAWAL] Processing withdrawal:', id, 'approvedBy:', approvedBy);
+    
+    const result = await db.query(
+      `UPDATE withdrawals
+         SET fee_status='confirmed',
+             status='completed',
+             fee_confirmed_at=NOW(),
+             fee_confirmed_by=$2,
+             completed_at=NOW(),
+             completed_by=$2
+       WHERE id=$1
+       RETURNING id, fee_status, status`,
+      [id, approvedBy]
+    );
+    
+    if (!result.rows.length) {
+      console.warn('[APPROVE WITHDRAWAL] Withdrawal not found:', id);
+      return res.status(404).json({ error: 'Withdrawal not found' });
+    }
+    
+    console.log('[APPROVE WITHDRAWAL] ✓ Updated:', result.rows[0]);
+    return res.json({ success: true, withdrawal: result.rows[0] });
+  } catch (err) {
+    console.error('[APPROVE WITHDRAWAL] Error:', err.message || err);
+    return res.status(500).json({ error: 'failed to approve withdrawal', details: err.message });
+  }
+});
+
 // PUT /api/admin/transactions/:id - update transaction fields
 router.put('/transactions/:id', async (req, res) => {
   try {

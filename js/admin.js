@@ -1110,6 +1110,28 @@ async function completeDeposit(depositId) {
   }
 }
 
+// Complete withdrawal
+async function completeWithdrawal(withdrawalId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('Complete this withdrawal? This will approve the withdrawal and confirm the fee.')) return;
+  
+  try {
+    const res = await fetch(baseApi + `/admin/withdrawals/${withdrawalId}/approve`, {
+      method: 'POST',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approvedBy: 'admin' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'approval failed');
+    alert('✅ Withdrawal completed successfully!');
+    await loadAdminWithdrawals();
+  } catch (err) {
+    console.error('Complete withdrawal error:', err);
+    alert('❌ Failed to complete withdrawal: ' + err.message);
+  }
+}
+
 // Mark deposit as failed
 async function failDeposit(depositId) {
   const key = adminKeyInput.value.trim();
@@ -1157,6 +1179,7 @@ async function deleteDeposit(depositId) {
 window.completeDeposit = completeDeposit;
 window.failDeposit = failDeposit;
 window.deleteDeposit = deleteDeposit;
+window.completeWithdrawal = completeWithdrawal;
 
 // Wire tab switching for transactions
 document.querySelectorAll('.transaction-tab').forEach(tab => {
