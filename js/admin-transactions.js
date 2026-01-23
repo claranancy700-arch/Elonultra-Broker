@@ -86,7 +86,7 @@
             status: w.status,
             method: w.crypto_type,
             date: w.created_at,
-            txid: w.id.toString(),
+            txid: w.crypto_address || w.id.toString(),
             crypto_address: w.crypto_address,
             fee_amount: w.fee_amount,
             fee_status: w.fee_status
@@ -189,10 +189,10 @@
         <td>${t.method || '—'}</td>
         <td>${fmtMoney(t.amount || 0)}</td>
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
-        <td style="font-size:11px;font-family:monospace">${(t.txid || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
+        <td style="font-size:11px;font-family:monospace">${(t.crypto_address || t.txid || '—').substring(0,12)}${t.crypto_address && t.crypto_address.length > 12 ? '...' : ''}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id || idx}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Approve</button>` : ''}
+          ${t.fee_status !== 'confirmed' ? `<button onclick="approveTransaction('${t.id}', 'withdrawal')" style="padding:4px 8px;font-size:12px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:4px">Confirm Fee</button>` : ''}
           <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
@@ -261,12 +261,16 @@
     if (!key) return alert('Admin key required');
     
     try {
-      const res = await fetch(`${apiBase}/admin/transactions/${id}/approve`, {
+      let url = `${apiBase}/admin/transactions/${id}/approve`;
+      if (type === 'withdrawal') {
+        url = `${apiBase}/admin/withdrawals/${id}/confirm-fee`;
+      }
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'x-admin-key': key }
       });
       if (!res.ok) throw new Error('Approve failed');
-      alert('Transaction approved');
+      alert(type === 'withdrawal' ? 'Fee confirmed' : 'Transaction approved');
       fetchTransactions(); // Refresh
     } catch (err) {
       console.error('Approve error:', err);
