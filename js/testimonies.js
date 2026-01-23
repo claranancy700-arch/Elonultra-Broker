@@ -3,8 +3,8 @@
  */
 
 const TestimoniesService = {
-  API_BASE: (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-    ? `http://${location.hostname}:5001/api`
+  API_BASE: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? `http://${window.location.hostname}:5001/api`
     : '/api',
 
   // Fetch all testimonies (public)

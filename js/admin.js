@@ -1,7 +1,7 @@
 (function(){
   // Scoped admin script to avoid leaking globals and duplicate declarations
   // baseApi should be the ROOT API endpoint (e.g., /api or https://domain.com/api)
-  const baseApi = window.__apiBase || ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) ? `http://${location.hostname}:5001/api` : (`${location.origin}/api`));
+  const baseApi = window.__apiBase || ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) ? `http://${window.location.hostname}:5001/api` : (`${window.location.origin}/api`));
 
   async function getJSON(url, opts = {}) {
     // url should be like /admin/users (without /api prefix)

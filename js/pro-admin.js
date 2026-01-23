@@ -1,5 +1,5 @@
 (function(){
-  const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api')
+  const apiBase = window.__apiBase || (window.location.hostname === 'localhost' ? 'http://localhost:5001/api' : '/api')
   const SYMBOL_MAP = window.SYMBOL_MAP || {}
   const MARKET_SYMBOLS = window.MARKET_SYMBOLS || Object.keys(SYMBOL_MAP).length > 0 ? Object.keys(SYMBOL_MAP) : ['BTC', 'ETH', 'SOL', 'ADA', 'DOGE', 'LINK', 'POLKADOT', 'USDT', 'USDC', 'BNB', 'XRP', 'CARDANO']
 

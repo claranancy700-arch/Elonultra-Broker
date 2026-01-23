@@ -59,12 +59,16 @@
       .nav.active a { padding:12px 24px; margin-left:0; border-left:3px solid transparent; }
       .nav.active a:hover { background:#f3f4f6; border-left-color:var(--accent); }
       .mobile-menu-toggle { display:block; }
+      .cards-grid { display:grid !important; grid-template-columns:1fr; gap:12px; }
     }
     
     @media (max-width:640px) {
       .page-container { padding:12px; }
       .testimonies-grid-modal { grid-template-columns:1fr; }
       .testimonies-modal-content { padding:16px; }
+      .table-wrapper { font-size:12px; }
+      .table-wrapper th, .table-wrapper td { padding:6px 8px; }
+      .cards-grid { grid-template-columns:1fr !important; }
     }
   </style>
 </head>

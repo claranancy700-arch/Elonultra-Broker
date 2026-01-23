@@ -3,9 +3,9 @@
   // For admin tools, use the dynamic API base (fallback to localhost for dev)
   const apiBase = (typeof window !== 'undefined' && window.__apiBase) 
     ? window.__apiBase 
-    : ((typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) 
+    : ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) 
       ? 'http://localhost:5001/api' 
-      : `${location.origin}/api`);
+      : `${window.location.origin}/api`);
   
   let allTransactions = [];
   

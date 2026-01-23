@@ -225,15 +225,17 @@ textarea{resize:vertical;min-height:120px}
   align-items: center;
   margin-bottom: 16px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .testimonies-banner-content {
   display: flex;
-  gap: 16px;
-  animation: scroll-left 60s linear infinite;
+  gap: 24px;
+  animation: scroll-left 30s linear infinite;
   width: max-content;
   padding: 0 12px;
   align-items: center;
+  will-change: transform;
 }
 
 .testimonies-banner-item {
@@ -241,15 +243,15 @@ textarea{resize:vertical;min-height:120px}
   flex-direction: column;
   gap: 2px;
   flex-shrink: 0;
-  padding: 8px 14px;
+  padding: 12px 18px;
   background: rgba(251, 191, 36, 0.2);
   border-radius: 6px;
   backdrop-filter: blur(8px);
   font-size: 13px;
   color: #e0e7ff;
   border: 1.5px solid rgba(251, 191, 36, 0.6);
-  min-width: 300px;
-  max-width: 400px;
+  min-width: 280px;
+  max-width: 380px;
 }
 
 .testimonies-banner-item strong {
@@ -275,20 +277,20 @@ textarea{resize:vertical;min-height:120px}
 @media (max-width: 768px) {
   .testimonies-banner {
     padding: 6px 0;
-    min-height: 36px;
+    min-height: 32px;
     margin-bottom: 12px;
   }
   
   .testimonies-banner-content {
-    gap: 12px;
+    gap: 18px;
     padding: 0 8px;
-    animation: scroll-left 50s linear infinite;
+    animation: scroll-left 20s linear infinite;
   }
   
   .testimonies-banner-item {
-    padding: 7px 12px;
+    padding: 10px 14px;
     font-size: 12px;
-    min-width: 250px;
+    min-width: 240px;
     max-width: 300px;
     border-radius: 5px;
   }

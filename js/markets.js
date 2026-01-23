@@ -63,8 +63,8 @@ try{
 
 async function fetchMarketData(){
   try {
-    const apiBase = (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
-      ? `http://${location.hostname}:5001/api`
+    const apiBase = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+      ? `http://${window.location.hostname}:5001/api`
       : '/api';
     const url = `${apiBase}/prices?symbols=${MARKET_SYMBOLS.join(',')}`;
     console.log('Fetching market data:', url);
