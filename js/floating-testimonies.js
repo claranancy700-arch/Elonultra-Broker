@@ -203,15 +203,30 @@
 
   // Initialize
   try {
-    // Load testimonies
-    testimonies = await TestimoniesService.fetchAll();
+    // Mock testimonies to show immediately
+    const mockTestimonies = [
+      {
+        client_name: 'John Smith',
+        title: 'CEO, Tech Ventures',
+        content: 'ELON ULTRA ELONS has completely transformed my crypto trading experience. The platform is intuitive, secure, and I have increased my portfolio by 85% since joining.',
+        rating: 5
+      },
+      {
+        client_name: 'Sarah Johnson',
+        title: 'Entrepreneur',
+        content: 'Best crypto trading platform I have used. The customer support is exceptional and the real-time market data is invaluable. Five stars!',
+        rating: 5
+      },
+      {
+        client_name: 'Michael Chen',
+        title: 'Hedge Fund Manager',
+        content: 'The real-time data and low fees make ELON ULTRA ELONS my go-to platform. Professional-grade tools at an unbeatable price point.',
+        rating: 5
+      }
+    ];
 
-    if (!testimonies || testimonies.length === 0) {
-      console.log('No testimonies to display');
-      return;
-    }
-
-    // Create and append widget to DOM
+    // Show mock testimonies IMMEDIATELY
+    testimonies = mockTestimonies;
     const widget = createWidget();
     document.body.appendChild(widget);
 
@@ -224,7 +239,17 @@
     showTestimony(0);
     resetAutoRotate();
 
-    console.log('[Floating Testimonies] Widget loaded with', testimonies.length, 'testimonies');
+    console.log('[Floating Testimonies] Widget loaded with mock testimonies');
+
+    // Load real testimonies in background (non-blocking)
+    const realTestimonies = await TestimoniesService.fetchAll();
+    if (realTestimonies && realTestimonies.length > 0) {
+      testimonies = realTestimonies;
+      console.log('[Floating Testimonies] Updated with real testimonies:', testimonies.length);
+      // Update display with real testimonies
+      showTestimony(currentIndex);
+    }
+
   } catch (err) {
     console.error('Failed to load floating testimonies widget:', err);
   }

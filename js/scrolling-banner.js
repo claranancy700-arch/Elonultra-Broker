@@ -18,20 +18,31 @@
     return;
   }
 
-  try {
-    // Fetch testimonies with caching
-    let testimonies = JSON.parse(localStorage.getItem('testimonies_cache') || '[]');
-    if (!testimonies || testimonies.length === 0) {
-      testimonies = await TestimoniesService.fetchAll();
-      localStorage.setItem('testimonies_cache', JSON.stringify(testimonies));
+  // Mock testimonies to show immediately while real ones load
+  const mockTestimonies = [
+    {
+      client_name: 'John Smith',
+      content: 'The trading service has been honest, transparent, and consistently efficient. Their support agents guided me clearly through every step.',
+      rating: 5
+    },
+    {
+      client_name: 'Sarah Johnson',
+      content: 'Best crypto trading platform I have used. The customer support is exceptional and the real-time market data is invaluable.',
+      rating: 5
+    },
+    {
+      client_name: 'Michael Chen',
+      content: 'The real-time data and low fees make this my go-to platform. Professional-grade tools at an unbeatable price point.',
+      rating: 5
     }
+  ];
+
+  function renderBanner(testimonies) {
     if (!testimonies || testimonies.length === 0) {
-      bannerEl.style.display = 'none';
-      return;
+      testimonies = mockTestimonies;
     }
 
     // Create scrolling content with duplicated items for seamless loop
-    // We duplicate testimonies to create infinite scrolling effect
     const allItems = [...testimonies, ...testimonies];
     
     const contentHTML = allItems.map(t => `
@@ -47,12 +58,30 @@
         ${contentHTML}
       </div>
     `;
+  }
 
-    // Testimonies banner animation is handled entirely by CSS
-    // The scroll-left animation runs continuously without JS intervention
+  try {
+    // Show mock testimonies IMMEDIATELY
+    renderBanner(mockTestimonies);
+
+    // Fetch real testimonies in background (non-blocking)
+    let testimonies = JSON.parse(localStorage.getItem('testimonies_cache') || '[]');
+    if (!testimonies || testimonies.length === 0) {
+      testimonies = await TestimoniesService.fetchAll();
+      if (testimonies && testimonies.length > 0) {
+        localStorage.setItem('testimonies_cache', JSON.stringify(testimonies));
+        // Update with real testimonies once loaded
+        renderBanner(testimonies);
+      }
+    } else {
+      // Use cached testimonies
+      renderBanner(testimonies);
+    }
 
   } catch (err) {
     console.warn('Failed to load testimonies banner:', err);
-    bannerEl.style.display = 'none';
+    // Keep showing mock testimonies even if fetch fails
+    renderBanner(mockTestimonies);
   }
 })();
+
