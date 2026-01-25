@@ -37,7 +37,7 @@
     }
   ];
 
-  function renderBanner(testimonies) {
+  function renderBannerContent(testimonies) {
     if (!testimonies || testimonies.length === 0) {
       testimonies = mockTestimonies;
     }
@@ -53,30 +53,45 @@
       </div>
     `).join('');
 
-    bannerEl.innerHTML = `
-      <div class="testimonies-banner-content">
-        ${contentHTML}
-      </div>
-    `;
-
-    // Let CSS handle all animation - no JS interference needed
-    // The scroll-left keyframe animation runs continuously without JS reset
+    return contentHTML;
   }
 
-  try {
-    // Show mock testimonies IMMEDIATELY
-    renderBanner(mockTestimonies);
-
-    // Fetch real testimonies in background
-    const testimonies = await TestimoniesService.fetchAll();
-    if (testimonies && testimonies.length > 0) {
-      renderBanner(testimonies);
+  // Check if banner already has pre-rendered content
+  const contentDiv = bannerEl.querySelector('.testimonies-banner-content');
+  
+  if (contentDiv) {
+    // Banner is already pre-rendered (from HTML), update content WITHOUT resetting animation
+    try {
+      const testimonies = await TestimoniesService.fetchAll();
+      if (testimonies && testimonies.length > 0) {
+        // Update only the innerHTML of existing content div, preserving animation state
+        const newHTML = renderBannerContent(testimonies);
+        contentDiv.innerHTML = newHTML;
+      }
+    } catch (err) {
+      console.warn('Failed to load testimonies banner:', err);
+      // Keep showing existing content
     }
-
-  } catch (err) {
-    console.warn('Failed to load testimonies banner:', err);
-    // Keep showing mock testimonies even if fetch fails
-    renderBanner(mockTestimonies);
+  } else {
+    // No pre-rendered content, create banner from scratch
+    try {
+      const testimonies = await TestimoniesService.fetchAll();
+      const contentHTML = renderBannerContent(testimonies && testimonies.length > 0 ? testimonies : mockTestimonies);
+      
+      bannerEl.innerHTML = `
+        <div class="testimonies-banner-content">
+          ${contentHTML}
+        </div>
+      `;
+    } catch (err) {
+      console.warn('Failed to load testimonies banner:', err);
+      const contentHTML = renderBannerContent(mockTestimonies);
+      bannerEl.innerHTML = `
+        <div class="testimonies-banner-content">
+          ${contentHTML}
+        </div>
+      `;
+    }
   }
 })();
 
