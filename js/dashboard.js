@@ -85,7 +85,7 @@ async function renderMarketOverview(){
 
   // Use global SYMBOL_MAP if present to resolve CoinGecko ids and names, otherwise fall back to small local maps
   const symbolMeta = (typeof window !== 'undefined' && window.SYMBOL_MAP) ? window.SYMBOL_MAP : { BTC: { id: 'bitcoin', name: 'Bitcoin' }, ETH: { id: 'ethereum', name: 'Ethereum' }, ADA: { id: 'cardano', name: 'Cardano' }, SOL: { id: 'solana', name: 'Solana' }, XRP: { id: 'ripple', name: 'Ripple' }, USDT: { id: 'tether', name: 'Tether' }, USDC: { id: 'usd-coin', name: 'USD Coin' }, DOGE: { id: 'dogecoin', name: 'Dogecoin' }, LTC: { id: 'litecoin', name: 'Litecoin' }, BCH: { id: 'bitcoin-cash', name: 'Bitcoin Cash' } };
-  const baseApi = window.__apiBase ? (window.__apiBase + '/api') : '/api';
+  const baseApi = window.__apiBase || '/api';
 
   try {
     const resp = await fetch(`${baseApi}/prices?symbols=${symbols.join(',')}`);
