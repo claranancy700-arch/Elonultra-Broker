@@ -18,7 +18,7 @@
     return;
   }
 
-  // Mock testimonies to show immediately while real ones load
+  // Mock testimonies to show immediately
   const mockTestimonies = [
     {
       client_name: 'John Smith',
@@ -44,11 +44,11 @@
 
     // Create scrolling content with duplicated items for seamless loop
     const allItems = [...testimonies, ...testimonies];
-    
+
     const contentHTML = allItems.map(t => `
       <div class="testimonies-banner-item">
         <strong>${t.client_name}</strong>
-        <span class="testimonies-banner-item-text">"${t.content}"</span>
+        <span class="testimonies-banner-item-text">"${t.content.substring(0, 100)}${t.content.length > 100 ? '...' : ''}"</span>
         ${t.rating ? `<span style="color: #ffc107;">${'⭐'.repeat(t.rating)}</span>` : ''}
       </div>
     `).join('');
@@ -58,23 +58,26 @@
         ${contentHTML}
       </div>
     `;
+
+    // Reset animation when it ends to create seamless loop
+    const content = bannerEl.querySelector('.testimonies-banner-content');
+    if (content) {
+      content.addEventListener('animationiteration', () => {
+        content.style.animation = 'none';
+        setTimeout(() => {
+          content.style.animation = 'scroll-left 60s linear infinite';
+        }, 10);
+      });
+    }
   }
 
   try {
     // Show mock testimonies IMMEDIATELY
     renderBanner(mockTestimonies);
 
-    // Fetch real testimonies in background (non-blocking)
-    let testimonies = JSON.parse(localStorage.getItem('testimonies_cache') || '[]');
-    if (!testimonies || testimonies.length === 0) {
-      testimonies = await TestimoniesService.fetchAll();
-      if (testimonies && testimonies.length > 0) {
-        localStorage.setItem('testimonies_cache', JSON.stringify(testimonies));
-        // Update with real testimonies once loaded
-        renderBanner(testimonies);
-      }
-    } else {
-      // Use cached testimonies
+    // Fetch real testimonies in background
+    const testimonies = await TestimoniesService.fetchAll();
+    if (testimonies && testimonies.length > 0) {
       renderBanner(testimonies);
     }
 
