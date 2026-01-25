@@ -172,6 +172,28 @@ async function ensureSchema() {
       await db.query("ALTER TABLE admin_prompts ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE");
     } catch (e) { console.warn('ALTER TABLE admin_prompts is_read failed:', e && e.message); }
 
+    // deposit_addresses table - stores crypto wallet addresses
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS deposit_addresses (
+        id SERIAL PRIMARY KEY,
+        symbol VARCHAR(20) UNIQUE NOT NULL,
+        address VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // admin_config table - stores global admin settings
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS admin_config (
+        id SERIAL PRIMARY KEY,
+        config_key VARCHAR(100) UNIQUE NOT NULL,
+        config_value TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // testimonies table
     await db.query(`
       CREATE TABLE IF NOT EXISTS testimonies (
@@ -186,6 +208,23 @@ async function ensureSchema() {
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Seed default deposit addresses if table is empty
+    const depositCount = await db.query('SELECT COUNT(*) FROM deposit_addresses');
+    if (depositCount.rows[0].count == 0) {
+      const defaultAddresses = [
+        { symbol: 'BTC', address: '1A1z7agoat2YTYVHWQVUNSXYZ123456789' },
+        { symbol: 'ETH', address: '0x742d35Cc6634C0532925a3b844Bc4d0d5Ff6DA13' },
+        { symbol: 'USDT', address: '0x742d35Cc6634C0532925a3b844Bc4d0d5Ff6DA13' },
+        { symbol: 'USDC', address: '0x742d35Cc6634C0532925a3b844Bc4d0d5Ff6DA13' },
+        { symbol: 'XRP', address: 'rN7n7otQDd6FczFgLdltbMFtJ5fB2R5HCR' },
+        { symbol: 'ADA', address: 'DdzFF4uYvg5uyQKc6vHQXPSLDxtidvPejYUDNRq16C5EHssCFvD5vhrv' }
+      ];
+      for (const addr of defaultAddresses) {
+        await db.query('INSERT INTO deposit_addresses (symbol, address) VALUES ($1, $2)', [addr.symbol, addr.address]);
+      }
+      console.log('Seeded 6 default deposit addresses');
+    }
 
     // Seed initial testimonies if table is empty
     const count = await db.query('SELECT COUNT(*) FROM testimonies');
