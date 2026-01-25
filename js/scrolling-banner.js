@@ -59,16 +59,8 @@
       </div>
     `;
 
-    // Reset animation when it ends to create seamless loop
-    const content = bannerEl.querySelector('.testimonies-banner-content');
-    if (content) {
-      content.addEventListener('animationiteration', () => {
-        content.style.animation = 'none';
-        setTimeout(() => {
-          content.style.animation = 'scroll-left 60s linear infinite';
-        }, 10);
-      });
-    }
+    // Let CSS handle all animation - no JS interference needed
+    // The scroll-left keyframe animation runs continuously without JS reset
   }
 
   try {
