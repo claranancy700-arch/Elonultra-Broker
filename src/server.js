@@ -13,6 +13,16 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
+// Disable caching for static files to ensure fresh CSS/JS on updates
+app.use((req, res, next) => {
+  if (req.path.includes('/css/') || req.path.includes('/js/')) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+  }
+  next();
+});
+
 // Simple health endpoint (no DB dependency) - register FIRST so it's always available
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
