@@ -60,18 +60,10 @@
   const contentDiv = bannerEl.querySelector('.testimonies-banner-content');
   
   if (contentDiv) {
-    // Banner is already pre-rendered (from HTML), update content WITHOUT resetting animation
-    try {
-      const testimonies = await TestimoniesService.fetchAll();
-      if (testimonies && testimonies.length > 0) {
-        // Update only the innerHTML of existing content div, preserving animation state
-        const newHTML = renderBannerContent(testimonies);
-        contentDiv.innerHTML = newHTML;
-      }
-    } catch (err) {
-      console.warn('Failed to load testimonies banner:', err);
-      // Keep showing existing content
-    }
+    // Banner is already pre-rendered (from HTML) — DO NOT MODIFY IT
+    // The pre-rendered mock testimonies are good enough, and modifying the HTML would reset the animation
+    // Just silently fetch real testimonies for future improvements, but don't update the DOM
+    TestimoniesService.fetchAll().catch(err => console.warn('Failed to fetch testimonies in background:', err));
   } else {
     // No pre-rendered content, create banner from scratch
     try {
