@@ -264,7 +264,10 @@
         method: 'DELETE',
         headers: { 'x-admin-key': key }
       });
-      if (!res.ok) throw new Error('Delete failed');
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        throw new Error(`Delete failed (${res.status}): ${errorText}`);
+      }
       alert('Transaction deleted');
       fetchTransactions(); // Refresh
       if (typeof loadAdminDeposits === 'function') loadAdminDeposits(); // Refresh deposits table
@@ -341,7 +344,10 @@
         method: 'DELETE',
         headers: { 'x-admin-key': key }
       });
-      if (!res.ok) throw new Error('Delete failed');
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        throw new Error(`Delete failed (${res.status}): ${errorText}`);
+      }
       alert('Withdrawal deleted');
       fetchTransactions(); // Refresh
     } catch (err) {
