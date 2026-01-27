@@ -352,7 +352,7 @@ body.cmc-pro {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
 }
 
 .holdings-table {

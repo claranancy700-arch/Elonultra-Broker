@@ -48,7 +48,7 @@ html[data-theme="light"] body {
 .card-change.negative{color:var(--danger)}
 
 /* Tables */
-.table-wrapper{background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);border:1px solid rgba(251,191,36,0.2);border-radius:12px;overflow-x:auto;overflow-y:hidden;margin-bottom:24px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideInUp 0.6s ease-out;max-width:100%;box-sizing:border-box}
+.table-wrapper{background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%);border:1px solid rgba(251,191,36,0.2);border-radius:12px;overflow-x:auto;overflow-y:visible;margin-bottom:24px;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:slideInUp 0.6s ease-out;max-width:100%;box-sizing:border-box}
 .table-header{background:rgba(251,191,36,0.08);padding:16px 20px;border-bottom:1px solid rgba(251,191,36,0.2)}
 .table-header h3{margin:0;font-size:18px;color:var(--text)}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
@@ -218,7 +218,7 @@ textarea{resize:vertical;min-height:120px}
 /* Testimonies Scrolling Banner */
 .testimonies-banner {
   width: 100%;
-  padding: 8px 0;
+  padding: 8px 12px;
   position: relative;
   min-height: 36px;
   display: flex;
@@ -231,9 +231,8 @@ textarea{resize:vertical;min-height:120px}
 .testimonies-banner-content {
   display: flex;
   gap: 24px;
-  animation: scroll-left 8000s linear infinite;
+  animation: scroll-left 45s linear infinite;
   width: max-content;
-  padding: 0 12px;
   align-items: center;
   will-change: transform;
 }
@@ -270,21 +269,19 @@ textarea{resize:vertical;min-height:120px}
 }
 
 @keyframes scroll-left {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 @media (max-width: 768px) {
   .testimonies-banner {
-    padding: 6px 0;
+    padding: 6px 8px;
     min-height: 32px;
     margin-bottom: 12px;
   }
   
   .testimonies-banner-content {
     gap: 18px;
-    padding: 0 8px;
-    animation: scroll-left 8000s linear infinite;
   }
   
   .testimonies-banner-item {
