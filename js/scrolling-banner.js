@@ -19,7 +19,7 @@
 
   // Keep movement consistent across different banner widths.
   // NOTE: This is intentionally slow so users can read each testimony.
-  const SPEED_PX_PER_SEC = 20;
+  const SPEED_PX_PER_SEC = 10;
 
   // Mock testimonies to show immediately
   const mockTestimonies = [
