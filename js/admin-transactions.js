@@ -86,7 +86,7 @@
             status: w.status,
             method: w.crypto_type,
             date: w.created_at,
-            txid: w.id.toString(),
+            txn_hash: w.txn_hash,
             crypto_address: w.crypto_address,
             fee_amount: w.fee_amount,
             fee_status: w.fee_status
@@ -172,29 +172,47 @@
   function renderWithdrawals() {
     const tbody = document.getElementById('withdrawals-admin-tbody');
     if (!tbody) return;
-    
+
     const withdrawals = allTransactions.filter(t => t.type === 'withdrawal');
     tbody.innerHTML = '';
-    
+
     if (!withdrawals.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No withdrawals yet</td></tr>';
       return;
     }
-    
+
     withdrawals.forEach((t, idx) => {
+      const feeStatusClass = t.fee_status === 'confirmed'
+        ? 'status-confirmed'
+        : t.fee_status === 'submitted'
+          ? 'status-submitted'
+          : 'status-required';
+
+      let actionBtns = '';
+      if (t.status === 'pending' || t.status === 'processing') {
+        actionBtns = `
+          <button class="btn btn-small" style="background:#4CAF50" onclick="completeWithdrawal(${t.id})">Complete</button>
+          <button class="btn btn-small" style="background:#ff9800" onclick="failWithdrawal(${t.id})">Failed</button>
+          <button class="btn btn-small" style="background:#f44336" onclick="deleteWithdrawal(${t.id})">Delete</button>
+        `;
+      } else if (t.status === 'completed') {
+        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
+      } else if (t.status === 'failed') {
+        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
+      } else {
+        actionBtns = '<span style="color:var(--muted)">—</span>';
+      }
+
       const row = document.createElement('tr');
       row.innerHTML = `
-        <td>${t.date ? new Date(t.date).toLocaleDateString() : '—'}</td>
+        <td>${t.date ? new Date(t.date).toLocaleString() : '—'}</td>
         <td>${t.user || '—'}</td>
         <td>${t.method || '—'}</td>
         <td>${fmtMoney(t.amount || 0)}</td>
-        <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
-        <td style="font-size:11px;font-family:monospace">${(t.txid || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
-        <td>
-          <button onclick="editTransaction('${t.id || idx}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
-          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id}', '${t.type}')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
-        </td>
+        <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':t.status==='failed'?'#ef4444':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
+        <td><span class="status-pill ${feeStatusClass}">${t.fee_status || 'required'}</span></td>
+        <td>${t.txn_hash || '-'}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">${actionBtns}</td>
       `;
       tbody.appendChild(row);
     });

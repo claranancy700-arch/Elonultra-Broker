@@ -988,32 +988,161 @@ router.post('/withdrawals/:id/approve', async (req, res) => {
 
     const { id } = req.params;
     const approvedBy = req.body.approvedBy || 'admin';
-    
+
     console.log('[APPROVE WITHDRAWAL] Processing withdrawal:', id, 'approvedBy:', approvedBy);
-    
-    const result = await db.query(
-      `UPDATE withdrawals
-         SET fee_status='confirmed',
-             status='completed',
-             fee_confirmed_at=NOW(),
-             fee_confirmed_by=$2,
-             completed_at=NOW(),
-             completed_by=$2
-       WHERE id=$1
-       RETURNING id, fee_status, status`,
-      [id, approvedBy]
-    );
-    
-    if (!result.rows.length) {
-      console.warn('[APPROVE WITHDRAWAL] Withdrawal not found:', id);
-      return res.status(404).json({ error: 'Withdrawal not found' });
+
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const result = await client.query(
+        `UPDATE withdrawals
+           SET fee_status='confirmed',
+               status='completed',
+               fee_confirmed_at=NOW(),
+               fee_confirmed_by=$2,
+               processed_at=NOW()
+         WHERE id=$1
+         RETURNING id, user_id, fee_status, status`,
+        [id, approvedBy]
+      );
+
+      if (!result.rows.length) {
+        await client.query('ROLLBACK');
+        console.warn('[APPROVE WITHDRAWAL] Withdrawal not found:', id);
+        return res.status(404).json({ error: 'Withdrawal not found' });
+      }
+
+      // Keep transactions table in sync (created with reference withdrawal-<id>)
+      await client.query(
+        "UPDATE transactions SET status='completed', updated_at=NOW() WHERE type='withdrawal' AND reference = $1",
+        [`withdrawal-${id}`]
+      );
+
+      await client.query('COMMIT');
+      console.log('[APPROVE WITHDRAWAL] ✓ Updated:', result.rows[0]);
+      return res.json({ success: true, withdrawal: result.rows[0] });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
     }
-    
-    console.log('[APPROVE WITHDRAWAL] ✓ Updated:', result.rows[0]);
-    return res.json({ success: true, withdrawal: result.rows[0] });
   } catch (err) {
     console.error('[APPROVE WITHDRAWAL] Error:', err.message || err);
     return res.status(500).json({ error: 'failed to approve withdrawal', details: err.message });
+  }
+});
+
+// POST /api/admin/withdrawals/:id/fail - mark withdrawal as failed and refund
+router.post('/withdrawals/:id/fail', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'invalid withdrawal id' });
+
+  const failedBy = (req.body && req.body.failedBy) || 'admin';
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Lock withdrawal row
+    const wRes = await client.query(
+      'SELECT id, user_id, amount, fee_amount, status FROM withdrawals WHERE id=$1 FOR UPDATE',
+      [id]
+    );
+    if (!wRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'withdrawal not found' });
+    }
+
+    const w = wRes.rows[0];
+
+    // Refund only if not already completed
+    if (w.status !== 'completed') {
+      const refund = Number(w.amount || 0) + Number(w.fee_amount || 0);
+      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
+    }
+
+    const upd = await client.query(
+      `UPDATE withdrawals
+         SET status='failed',
+             processed_at=NOW(),
+             error_message=COALESCE(error_message, '')
+       WHERE id=$1
+       RETURNING id, status`,
+      [id]
+    );
+
+    await client.query(
+      "UPDATE transactions SET status='failed', updated_at=NOW() WHERE type='withdrawal' AND reference = $1",
+      [`withdrawal-${id}`]
+    );
+
+    // Audit (best-effort)
+    try {
+      await client.query('INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)', [req.headers['x-admin-key'], 'withdrawal_fail', JSON.stringify({ id, failedBy })]);
+    } catch (ea) {
+      console.warn('Failed to write admin audit', ea.message || ea);
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, withdrawal: upd.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Fail withdrawal error:', err.message || err);
+    return res.status(500).json({ error: 'failed to mark withdrawal as failed' });
+  } finally {
+    client.release();
+  }
+});
+
+// DELETE /api/admin/withdrawals/:id - delete withdrawal (refund if not completed)
+router.delete('/withdrawals/:id', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'invalid withdrawal id' });
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const wRes = await client.query(
+      'SELECT id, user_id, amount, fee_amount, status FROM withdrawals WHERE id=$1 FOR UPDATE',
+      [id]
+    );
+    if (!wRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'withdrawal not found' });
+    }
+
+    const w = wRes.rows[0];
+    if (w.status !== 'completed') {
+      const refund = Number(w.amount || 0) + Number(w.fee_amount || 0);
+      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
+    }
+
+    await client.query('DELETE FROM withdrawals WHERE id=$1', [id]);
+    await client.query('DELETE FROM transactions WHERE type=\'withdrawal\' AND reference = $1', [`withdrawal-${id}`]);
+
+    try {
+      await client.query('INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)', [req.headers['x-admin-key'], 'withdrawal_delete', JSON.stringify({ id })]);
+    } catch (ea) {
+      console.warn('Failed to write admin audit', ea.message || ea);
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, deleted: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Delete withdrawal error:', err.message || err);
+    return res.status(500).json({ error: 'failed to delete withdrawal' });
+  } finally {
+    client.release();
   }
 });
 

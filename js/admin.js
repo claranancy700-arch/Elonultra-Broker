@@ -950,27 +950,40 @@ async function loadWithdrawals() {
   const key = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
   const tbody = document.getElementById('withdrawals-admin-tbody');
   if (!tbody) return;
-  
+
   if (!key) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:red">Please enter admin key first</td></tr>';
     return;
   }
-  
+
   try {
-    console.log('[ADMIN] Loading withdrawals with key:', key.substring(0, 5) + '...');
-    const data = await getJSON('/admin/withdrawals', { 
-      headers: { 'x-admin-key': key } 
+    const data = await getJSON('/admin/withdrawals', {
+      headers: { 'x-admin-key': key }
     });
-    
-    console.log('[ADMIN] Withdrawals data:', data);
-    
+
     const html = (data.withdrawals || []).map(w => {
-      const feeStatusClass = w.fee_status === 'confirmed' ? 'status-confirmed' : 
-                             w.fee_status === 'submitted' ? 'status-submitted' : 'status-required';
-      const confirmBtn = w.fee_status !== 'confirmed' 
-        ? `<button class="btn btn-small" onclick="confirmWithdrawalFee(${w.id}, '${key}')">Confirm Fee</button>`
-        : '<span style="color:green;font-weight:600">✓ Confirmed</span>';
-      
+      const feeStatusClass = w.fee_status === 'confirmed'
+        ? 'status-confirmed'
+        : w.fee_status === 'submitted'
+          ? 'status-submitted'
+          : 'status-required';
+
+      let actionBtns = '';
+      if (w.status === 'pending' || w.status === 'processing') {
+        // Match deposit table look, but "Complete" here approves withdrawal AND confirms fee.
+        actionBtns = `
+          <button class="btn btn-small" style="background:#4CAF50" onclick="completeWithdrawal(${w.id})">Complete</button>
+          <button class="btn btn-small" style="background:#ff9800" onclick="failWithdrawal(${w.id})">Failed</button>
+          <button class="btn btn-small" style="background:#f44336" onclick="deleteWithdrawal(${w.id})">Delete</button>
+        `;
+      } else if (w.status === 'completed') {
+        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
+      } else if (w.status === 'failed') {
+        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
+      } else {
+        actionBtns = '<span style="color:var(--muted)">—</span>';
+      }
+
       return `<tr>
         <td>${new Date(w.created_at).toLocaleString()}</td>
         <td>${w.user_id}</td>
@@ -979,10 +992,10 @@ async function loadWithdrawals() {
         <td>${w.status}</td>
         <td><span class="status-pill ${feeStatusClass}">${w.fee_status || 'required'}</span></td>
         <td>${w.txn_hash || '-'}</td>
-        <td>${confirmBtn}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">${actionBtns}</td>
       </tr>`;
     }).join('');
-    
+
     tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No withdrawals</td></tr>';
   } catch (err) {
     console.error('[ADMIN] loadWithdrawals error:', err);
@@ -990,12 +1003,12 @@ async function loadWithdrawals() {
   }
 }
 
-async function confirmWithdrawalFee(withdrawalId, adminKey) {
+async function confirmWithdrawalFee(withdrawalId) {
+  // Kept for backwards compatibility / debugging, but the primary action is now "Complete".
+  const adminKey = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
+  if (!adminKey) return alert('Admin key required');
   if (!confirm('Confirm withdrawal fee?')) return;
-  
-  console.log('[ADMIN] Confirming fee for withdrawal:', withdrawalId);
-  console.log('[ADMIN] Using admin key:', adminKey ? adminKey.substring(0, 5) + '...' : 'EMPTY');
-  
+
   try {
     const response = await fetch(`${baseApi}/admin/withdrawals/${withdrawalId}/confirm-fee`, {
       method: 'POST',
@@ -1005,19 +1018,15 @@ async function confirmWithdrawalFee(withdrawalId, adminKey) {
       },
       body: JSON.stringify({ confirmedBy: 'admin' })
     });
-    
-    console.log('[ADMIN] Response status:', response.status);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `HTTP ${response.status}`);
     }
-    
-    const responseData = await response.json();
-    console.log('[ADMIN] ✓ Withdrawal fee confirmed:', withdrawalId, responseData);
-    await new Promise(r => setTimeout(r, 500));
+
+    await new Promise(r => setTimeout(r, 300));
     await loadWithdrawals();
-    alert('✓ Withdrawal fee confirmed - user will be redirected');
+    alert('✓ Withdrawal fee confirmed');
   } catch (err) {
     console.error('[ADMIN] Confirm fee error:', err);
     alert('❌ Failed to confirm fee: ' + err.message);
@@ -1110,25 +1119,68 @@ async function completeDeposit(depositId) {
   }
 }
 
-// Complete withdrawal
+// Complete withdrawal (approve withdrawal AND confirm fee)
 async function completeWithdrawal(withdrawalId) {
   const key = adminKeyInput.value.trim();
   if (!key) return alert('Admin key required');
   if (!confirm('Complete this withdrawal? This will approve the withdrawal and confirm the fee.')) return;
-  
+
   try {
     const res = await fetch(baseApi + `/admin/withdrawals/${withdrawalId}/approve`, {
       method: 'POST',
       headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
       body: JSON.stringify({ approvedBy: 'admin' })
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'approval failed');
     alert('✅ Withdrawal completed successfully!');
-    await loadAdminWithdrawals();
+    await loadWithdrawals();
   } catch (err) {
     console.error('Complete withdrawal error:', err);
     alert('❌ Failed to complete withdrawal: ' + err.message);
+  }
+}
+
+// Mark withdrawal as failed
+async function failWithdrawal(withdrawalId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('Mark this withdrawal as failed? The user will be refunded.')) return;
+
+  try {
+    const res = await fetch(baseApi + `/admin/withdrawals/${withdrawalId}/fail`, {
+      method: 'POST',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ failedBy: 'admin' })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'fail withdrawal failed');
+    alert('✅ Withdrawal marked as failed (refunded)');
+    await loadWithdrawals();
+  } catch (err) {
+    console.error('Fail withdrawal error:', err);
+    alert('❌ Failed to mark withdrawal as failed: ' + err.message);
+  }
+}
+
+// Delete withdrawal
+async function deleteWithdrawal(withdrawalId) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('⚠️ DELETE this withdrawal permanently? Pending withdrawals will be refunded.')) return;
+
+  try {
+    const res = await fetch(baseApi + `/admin/withdrawals/${withdrawalId}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'delete failed');
+    alert('✅ Withdrawal deleted');
+    await loadWithdrawals();
+  } catch (err) {
+    console.error('Delete withdrawal error:', err);
+    alert('❌ Failed to delete withdrawal: ' + err.message);
   }
 }
 
@@ -1175,11 +1227,13 @@ async function deleteDeposit(depositId) {
   }
 }
 
-// Expose deposit functions globally
+// Expose deposit/withdrawal functions globally
 window.completeDeposit = completeDeposit;
 window.failDeposit = failDeposit;
 window.deleteDeposit = deleteDeposit;
 window.completeWithdrawal = completeWithdrawal;
+window.failWithdrawal = failWithdrawal;
+window.deleteWithdrawal = deleteWithdrawal;
 
 // Wire tab switching for transactions
 document.querySelectorAll('.transaction-tab').forEach(tab => {

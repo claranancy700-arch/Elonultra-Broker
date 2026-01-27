@@ -88,6 +88,12 @@ textarea{resize:vertical;min-height:120px}
 .tab-content{display:none;animation:fadeIn 0.3s ease-out}
 .tab-content.active{display:block}
 
+/* Status pill (used in admin withdrawals fee status) */
+.status-pill{display:inline-block;padding:6px 10px;border-radius:16px;font-size:12px;font-weight:600;text-transform:lowercase}
+.status-required{background:#fef3c7;color:#92400e}
+.status-submitted{background:#dbeafe;color:#1d4ed8}
+.status-confirmed{background:#d1fae5;color:#065f46}
+
 /* Hero & Sections */
 .hero{padding:80px 24px;text-align:center;animation:fadeInDown 0.8s ease-out}
 .hero h1{font-size:48px;margin:0 0 16px 0;color:var(--text)}
