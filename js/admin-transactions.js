@@ -191,13 +191,17 @@
       let actionBtns = '';
       if (t.status === 'pending' || t.status === 'processing') {
         actionBtns = `
-          <button class="btn btn-small" style="background:#4CAF50" onclick="completeWithdrawal(${t.id})">Complete</button>
-          <button class="btn btn-small" style="background:#ff9800" onclick="failWithdrawal(${t.id})">Failed</button>
-          <button class="btn btn-small" style="background:#f44336" onclick="deleteWithdrawal(${t.id})">Delete</button>
+          <button onclick="editTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="approveTransaction('${t.id}', 'withdrawal')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
+          <button onclick="deleteWithdrawal(${t.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
       } else if (t.status === 'completed') {
         actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
       } else if (t.status === 'failed') {
+        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
+      } else {
+        actionBtns = '<span style="color:var(--muted)">—</span>';
+      }
         actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
       } else {
         actionBtns = '<span style="color:var(--muted)">—</span>';
@@ -292,36 +296,23 @@
     }
   }
   
-  async function approveTransaction(id, type) {
+  async function deleteWithdrawal(id) {
+    if (!confirm('Delete this withdrawal permanently?')) return;
+    
     const key = getAdminKey();
     if (!key) return alert('Admin key required');
     
     try {
-      if (type === 'withdrawal') {
-        // For withdrawals, first confirm fee, then approve
-        await fetch(`${apiBase}/admin/withdrawals/${id}/confirm-fee`, {
-          method: 'POST',
-          headers: { 'x-admin-key': key }
-        });
-        const res = await fetch(`${apiBase}/admin/withdrawals/${id}/approve`, {
-          method: 'POST',
-          headers: { 'x-admin-key': key }
-        });
-        if (!res.ok) throw new Error('Approve withdrawal failed');
-        alert('Withdrawal approved (fee confirmed and completed)');
-      } else {
-        // For deposits
-        const res = await fetch(`${apiBase}/admin/transactions/${id}/approve`, {
-          method: 'POST',
-          headers: { 'x-admin-key': key }
-        });
-        if (!res.ok) throw new Error('Approve failed');
-        alert('Deposit approved');
-      }
+      const res = await fetch(`${apiBase}/admin/withdrawals/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': key }
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      alert('Withdrawal deleted');
       fetchTransactions(); // Refresh
     } catch (err) {
-      console.error('Approve error:', err);
-      alert('Failed to approve: ' + err.message);
+      console.error('Delete error:', err);
+      alert('Failed to delete: ' + err.message);
     }
   }
   
@@ -336,6 +327,7 @@
   window.deleteTransaction = deleteTransaction;
   window.editTransaction = editTransaction;
   window.approveTransaction = approveTransaction;
+  window.deleteWithdrawal = deleteWithdrawal;
   
   // Auto-load transactions when admin key is available
   document.addEventListener('DOMContentLoaded', () => {

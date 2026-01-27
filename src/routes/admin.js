@@ -1197,6 +1197,25 @@ router.delete('/transactions/:id', async (req, res) => {
 
 // --------------------------------
 // Clear all trades (for admin reset)
+// DELETE /api/admin/transactions/:id - Delete a transaction
+router.delete('/transactions/:id', async (req, res) => {
+  const guard = requireAdminKey(req, res);
+  if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const txId = parseInt(req.params.id, 10);
+  if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
+
+  try {
+    const result = await db.query('DELETE FROM transactions WHERE id=$1 RETURNING id', [txId]);
+    if (!result.rows.length) {
+      return res.status(404).json({ error: 'transaction not found' });
+    }
+    return res.json({ success: true, deleted: true });
+  } catch (err) {
+    console.error('Delete transaction error:', err.message || err);
+    return res.status(500).json({ error: 'failed to delete transaction' });
+  }
+});
+
 // --------------------------------
 router.post('/trades/clear-all', async (req, res) => {
   const guard = requireAdminKey(req, res);
