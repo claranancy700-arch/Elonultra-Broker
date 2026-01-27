@@ -131,7 +131,7 @@
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${t.status==='completed'?'#10b981':'#fbbf24'};color:white">${t.status || 'pending'}</span></td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -202,10 +202,6 @@
       } else {
         actionBtns = '<span style="color:var(--muted)">—</span>';
       }
-        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
-      } else {
-        actionBtns = '<span style="color:var(--muted)">—</span>';
-      }
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -246,7 +242,7 @@
         <td>${fmtMoney((t.amount || 0) * (t.price || 0))}</td>
         <td>
           <button onclick="editTransaction('${t.id || idx}')" style="padding:4px 8px;font-size:12px;margin-right:4px">Edit</button>
-          <button onclick="deleteTransaction('${t.id}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}', '${t.type}')" style="padding:4px 8px;font-size:12px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -254,7 +250,10 @@
   }
   
   // Transaction CRUD functions
-  async function deleteTransaction(id) {
+  async function deleteTransaction(id, type) {
+    if (type === 'withdrawal') {
+      return deleteWithdrawal(id);
+    }
     if (!confirm('Delete this transaction permanently?')) return;
     
     const key = getAdminKey();
@@ -268,6 +267,7 @@
       if (!res.ok) throw new Error('Delete failed');
       alert('Transaction deleted');
       fetchTransactions(); // Refresh
+      if (typeof loadAdminDeposits === 'function') loadAdminDeposits(); // Refresh deposits table
     } catch (err) {
       console.error('Delete error:', err);
       alert('Failed to delete: ' + err.message);

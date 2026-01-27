@@ -948,6 +948,9 @@ window.disablePrompt = disablePrompt;
 window.loadWithdrawals = loadWithdrawals;
 window.loadGrowthTrades = loadGrowthTrades;
 window.triggerGrowthNow = triggerGrowthNow;
+window.loadAdminDeposits = loadAdminDeposits;
+window.failWithdrawal = failWithdrawal;
+window.failDeposit = failDeposit;
 window.loadDeposits = loadDeposits;
 
 // Load and display deposits
@@ -1021,14 +1024,14 @@ async function loadWithdrawals() {
         actionBtns = `
           <button onclick="editTransaction('${w.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
           <button onclick="approveTransaction('${w.id}', 'withdrawal')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
+          <button onclick="failWithdrawal(${w.id})" style="padding:2px 4px;font-size:11px;background:#ff9800;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Failed</button>
           <button onclick="deleteWithdrawal(${w.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
-      } else if (w.status === 'completed') {
-        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
-      } else if (w.status === 'failed') {
-        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
       } else {
-        actionBtns = '<span style="color:var(--muted)">—</span>';
+        actionBtns = `
+          <button onclick="editTransaction('${w.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="deleteWithdrawal(${w.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+        `;
       }
 
       return `<tr>
@@ -1111,16 +1114,20 @@ async function loadAdminDeposits() {
     const deposits = (data.transactions || []).filter(t => t.type === 'deposit');
 
     const html = deposits.map(d => {
-      const statusColor = d.status === 'completed' ? '#10b981' : '#fbbf24';
+      const statusColor = d.status === 'completed' ? '#10b981' : d.status === 'failed' ? '#ef4444' : '#fbbf24';
       let actionBtns = '';
-      if (d.status !== 'completed') {
+      if (d.status !== 'completed' && d.status !== 'failed') {
         actionBtns = `
           <button onclick="editTransaction('${d.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
           <button onclick="approveTransaction('${d.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
-          <button onclick="deleteTransaction('${d.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="failDeposit('${d.id}')" style="padding:2px 4px;font-size:11px;background:#ff9800;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Failed</button>
+          <button onclick="deleteTransaction('${d.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
       } else {
-        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
+        actionBtns = `
+          <button onclick="editTransaction('${d.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="deleteTransaction('${d.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+        `;
       }
 
       return `<tr>
