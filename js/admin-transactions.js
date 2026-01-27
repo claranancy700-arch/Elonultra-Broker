@@ -278,6 +278,40 @@
     alert('Edit functionality not implemented yet');
   }
   
+  async function approveTransaction(id, type) {
+    const key = getAdminKey();
+    if (!key) return alert('Admin key required');
+    
+    try {
+      if (type === 'withdrawal') {
+        // For withdrawals, first confirm fee, then approve
+        await fetch(`${apiBase}/admin/withdrawals/${id}/confirm-fee`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        const res = await fetch(`${apiBase}/admin/withdrawals/${id}/approve`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        if (!res.ok) throw new Error('Approve withdrawal failed');
+        alert('Withdrawal approved (fee confirmed and completed)');
+      } else {
+        // For deposits
+        const res = await fetch(`${apiBase}/admin/deposits/${id}/approve`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+        if (!res.ok) throw new Error('Approve failed');
+        alert('Deposit approved');
+      }
+      fetchTransactions(); // Refresh
+      if (typeof loadAdminDeposits === 'function') loadAdminDeposits(); // Refresh deposits table
+    } catch (err) {
+      console.error('Approve error:', err);
+      alert('Failed to approve: ' + err.message);
+    }
+  }
+  
   async function confirmFee(id) {
     const key = getAdminKey();
     if (!key) return alert('Admin key required');
