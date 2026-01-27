@@ -193,14 +193,14 @@
         actionBtns = `
           <button onclick="editTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
           <button onclick="approveTransaction('${t.id}', 'withdrawal')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
+          <button onclick="failWithdrawal(${t.id})" style="padding:2px 4px;font-size:11px;background:#ff9800;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Failed</button>
           <button onclick="deleteWithdrawal(${t.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
-      } else if (t.status === 'completed') {
-        actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
-      } else if (t.status === 'failed') {
-        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
       } else {
-        actionBtns = '<span style="color:var(--muted)">—</span>';
+        actionBtns = `
+          <button onclick="editTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="deleteWithdrawal(${t.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+        `;
       }
 
       const row = document.createElement('tr');
