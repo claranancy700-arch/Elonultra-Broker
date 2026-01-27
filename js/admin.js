@@ -148,6 +148,10 @@ if (loadUsersBtn) {
       // persist admin key for convenience
       sessionStorage.setItem('adminKey', key);
       
+      // Load transaction tables
+      loadAdminDeposits();
+      loadWithdrawals();
+      
       // Show modal automatically after loading
       usersModal.classList.add('active');
     } catch (err) {
@@ -944,6 +948,49 @@ window.disablePrompt = disablePrompt;
 window.loadWithdrawals = loadWithdrawals;
 window.loadGrowthTrades = loadGrowthTrades;
 window.triggerGrowthNow = triggerGrowthNow;
+window.loadDeposits = loadDeposits;
+
+// Load and display deposits
+async function loadDeposits() {
+  const key = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
+  const tbody = document.getElementById('deposits-admin-tbody');
+  if (!tbody) return;
+
+  if (!key) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red">Please enter admin key first</td></tr>';
+    return;
+  }
+
+  try {
+    const data = await getJSON('/admin/transactions', {
+      headers: { 'x-admin-key': key }
+    });
+
+    const deposits = (data.transactions || []).filter(t => t.type === 'deposit');
+
+    const html = deposits.map(t => {
+      const statusColor = t.status === 'completed' ? '#10b981' : '#fbbf24';
+      return `<tr>
+        <td>${new Date(t.date || t.created_at).toLocaleDateString()}</td>
+        <td>${t.user || t.user_id || '—'}</td>
+        <td>${t.method || t.currency || '—'}</td>
+        <td>$${parseFloat(t.amount).toFixed(2)}</td>
+        <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${statusColor};color:white">${t.status || 'pending'}</span></td>
+        <td style="font-size:11px;font-family:monospace">${(t.txid || t.reference || '—').substring(0,12)}${t.txid && t.txid.length > 12 ? '...' : ''}</td>
+        <td>
+          <button onclick="editTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>` : ''}
+          <button onclick="deleteTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>';
+  } catch (err) {
+    console.error('Load deposits error:', err);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red">Error loading deposits: ' + err.message + '</td></tr>';
+  }
+}
 
 // Load and display withdrawals with fee status
 async function loadWithdrawals() {
@@ -970,11 +1017,11 @@ async function loadWithdrawals() {
 
       let actionBtns = '';
       if (w.status === 'pending' || w.status === 'processing') {
-        // Match deposit table look, but "Complete" here approves withdrawal AND confirms fee.
+        // Match deposit table look
         actionBtns = `
-          <button class="btn btn-small" style="background:#4CAF50" onclick="completeWithdrawal(${w.id})">Complete</button>
-          <button class="btn btn-small" style="background:#ff9800" onclick="failWithdrawal(${w.id})">Failed</button>
-          <button class="btn btn-small" style="background:#f44336" onclick="deleteWithdrawal(${w.id})">Delete</button>
+          <button onclick="editTransaction('${w.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="approveTransaction('${w.id}', 'withdrawal')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
+          <button onclick="deleteWithdrawal(${w.id})" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
       } else if (w.status === 'completed') {
         actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
@@ -1051,43 +1098,43 @@ async function loadAdminDeposits() {
     // Get the selected user ID to filter deposits
     const selectedUserId = currentUserSelect?.value;
     
-    // If a user is selected, fetch deposits for that specific user
-    // Otherwise fetch all deposits
-    let endpoint = '/admin/deposits';
+    // Fetch transactions, filter for deposits
+    let endpoint = '/admin/transactions';
     if (selectedUserId) {
-      endpoint = `/admin/users/${selectedUserId}/deposits`;
+      endpoint = `/admin/users/${selectedUserId}/transactions`;
     }
     
     const data = await getJSON(endpoint, {
       headers: { 'x-admin-key': key }
     });
 
-    const html = (data.deposits || []).map(d => {
+    const deposits = (data.transactions || []).filter(t => t.type === 'deposit');
+
+    const html = deposits.map(d => {
+      const statusColor = d.status === 'completed' ? '#10b981' : '#fbbf24';
       let actionBtns = '';
-      if (d.status === 'pending') {
+      if (d.status !== 'completed') {
         actionBtns = `
-          <button class="btn btn-small" style="background:#4CAF50" onclick="completeDeposit(${d.id})">Complete</button>
-          <button class="btn btn-small" style="background:#ff9800" onclick="failDeposit(${d.id})">Failed</button>
-          <button class="btn btn-small" style="background:#f44336" onclick="deleteDeposit(${d.id})">Delete</button>
+          <button onclick="editTransaction('${d.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
+          <button onclick="approveTransaction('${d.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>
+          <button onclick="deleteTransaction('${d.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         `;
-      } else if (d.status === 'completed') {
+      } else {
         actionBtns = '<span style="color:green;font-weight:600">✓ Completed</span>';
-      } else if (d.status === 'failed') {
-        actionBtns = '<span style="color:red;font-weight:600">✗ Failed</span>';
       }
 
       return `<tr>
-        <td>${new Date(d.created_at).toLocaleString()}</td>
+        <td>${new Date(d.created_at).toLocaleDateString()}</td>
         <td>${d.user_id}</td>
         <td>${d.currency}</td>
         <td>$${parseFloat(d.amount).toFixed(2)}</td>
-        <td>${d.status}</td>
-        <td>${d.reference || '-'}</td>
-        <td style="display:flex;gap:4px;flex-wrap:wrap">${actionBtns}</td>
+        <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${statusColor};color:white">${d.status}</span></td>
+        <td style="font-size:11px;font-family:monospace">${(d.reference || '—').substring(0,12)}${d.reference && d.reference.length > 12 ? '...' : ''}</td>
+        <td>${actionBtns}</td>
       </tr>`;
     }).join('');
 
-    tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No deposits</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No deposits yet</td></tr>';
   } catch (err) {
     console.error('Load deposits error:', err);
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red">Error: ${err.message}</td></tr>`;
