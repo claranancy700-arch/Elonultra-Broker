@@ -17,10 +17,9 @@
     return;
   }
 
-  // Keep movement consistent across different banner widths
-  const SPEED_PX_PER_SEC = 60;
-  const MIN_DURATION_S = 18;
-  const MAX_DURATION_S = 80;
+  // Keep movement consistent across different banner widths.
+  // NOTE: This is intentionally slow so users can read each testimony.
+  const SPEED_PX_PER_SEC = 20;
 
   // Mock testimonies to show immediately
   const mockTestimonies = [
@@ -66,17 +65,27 @@
   function applyScrollDuration(contentDiv) {
     if (!contentDiv) return;
 
-    // Wait for layout so scrollWidth is accurate.
+    // Pause + restart the animation so speed doesn't "ramp" when duration is updated
+    // (and so changing content length doesn't cause an apparent speed-up).
+    contentDiv.style.animationPlayState = 'paused';
+
     requestAnimationFrame(() => {
       const fullWidth = contentDiv.scrollWidth;
-      if (!fullWidth) return;
+      if (!fullWidth) {
+        contentDiv.style.animationPlayState = 'running';
+        return;
+      }
 
       // We animate from 0% to -50%, so distance is half the loop width.
       const distancePx = fullWidth / 2;
-      const raw = distancePx / SPEED_PX_PER_SEC;
-      const duration = Math.max(MIN_DURATION_S, Math.min(MAX_DURATION_S, raw));
+      const duration = distancePx / SPEED_PX_PER_SEC;
 
-      contentDiv.style.animationDuration = `${duration.toFixed(1)}s`;
+      // Force a restart so the speed is constant from the beginning.
+      contentDiv.style.animation = 'none';
+      // eslint-disable-next-line no-unused-expressions
+      contentDiv.offsetHeight;
+      contentDiv.style.animation = `scroll-left ${duration.toFixed(1)}s linear infinite`;
+      contentDiv.style.animationPlayState = 'running';
     });
   }
 
