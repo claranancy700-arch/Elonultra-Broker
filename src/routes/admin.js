@@ -1126,6 +1126,9 @@ router.delete('/withdrawals/:id', async (req, res) => {
       await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
     }
 
+    // Delete associated trades first
+    await client.query('DELETE FROM trades WHERE transaction_id IN (SELECT id FROM transactions WHERE type=\'withdrawal\' AND reference = $1)', [`withdrawal-${id}`]);
+
     await client.query('DELETE FROM withdrawals WHERE id=$1', [id]);
     await client.query('DELETE FROM transactions WHERE type=\'withdrawal\' AND reference = $1', [`withdrawal-${id}`]);
 
@@ -1204,15 +1207,28 @@ router.delete('/transactions/:id', async (req, res) => {
   const txId = parseInt(req.params.id, 10);
   if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
 
+  const client = await db.pool.connect();
   try {
-    const result = await db.query('DELETE FROM transactions WHERE id=$1 RETURNING id', [txId]);
+    await client.query('BEGIN');
+
+    // First delete associated trades
+    await client.query('DELETE FROM trades WHERE transaction_id = $1', [txId]);
+
+    // Then delete the transaction
+    const result = await client.query('DELETE FROM transactions WHERE id=$1 RETURNING id', [txId]);
     if (!result.rows.length) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'transaction not found' });
     }
+
+    await client.query('COMMIT');
     return res.json({ success: true, deleted: true });
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Delete transaction error:', err.message || err);
     return res.status(500).json({ error: 'failed to delete transaction' });
+  } finally {
+    client.release();
   }
 });
 
