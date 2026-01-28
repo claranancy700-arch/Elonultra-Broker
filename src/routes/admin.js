@@ -1126,8 +1126,12 @@ router.delete('/withdrawals/:id', async (req, res) => {
       await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
     }
 
-    // Delete associated trades first
-    await client.query('DELETE FROM trades WHERE transaction_id IN (SELECT id FROM transactions WHERE type=\'withdrawal\' AND reference = $1)', [`withdrawal-${id}`]);
+    // Delete associated trades first (wrapped in try-catch as column may not exist)
+    try {
+      await client.query('DELETE FROM trades WHERE transaction_id IN (SELECT id FROM transactions WHERE type=\'withdrawal\' AND reference = $1)', [`withdrawal-${id}`]);
+    } catch (tradeErr) {
+      console.log('Trade deletion skipped:', tradeErr.message);
+    }
 
     await client.query('DELETE FROM withdrawals WHERE id=$1', [id]);
     await client.query('DELETE FROM transactions WHERE type=\'withdrawal\' AND reference = $1', [`withdrawal-${id}`]);
@@ -1141,9 +1145,13 @@ router.delete('/withdrawals/:id', async (req, res) => {
     await client.query('COMMIT');
     return res.json({ success: true, deleted: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (e) {
+      // Ignore rollback errors
+    }
     console.error('Delete withdrawal error:', err.message || err);
-    return res.status(500).json({ error: 'failed to delete withdrawal' });
+    return res.status(500).json({ error: 'failed to delete withdrawal', details: err.message });
   } finally {
     client.release();
   }
@@ -1177,24 +1185,6 @@ router.put('/transactions/:id', async (req, res) => {
   } catch (err) {
     console.error('Update transaction error:', err.message || err);
     return res.status(500).json({ error: 'failed to update transaction' });
-  }
-});
-
-// DELETE /api/admin/transactions/:id - delete transaction
-router.delete('/transactions/:id', async (req, res) => {
-  try {
-    const provided = req.headers['x-admin-key'];
-    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
-    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
-
-    const txId = parseInt(req.params.id, 10);
-    if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });
-
-    const result = await db.query('DELETE FROM transactions WHERE id=$1', [txId]);
-    return res.json({ success: true, deleted: result.rowCount });
-  } catch (err) {
-    console.error('Delete transaction error:', err.message || err);
-    return res.status(500).json({ error: 'failed to delete transaction' });
   }
 });
 

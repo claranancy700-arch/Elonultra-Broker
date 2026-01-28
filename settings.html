@@ -287,9 +287,9 @@
 
       profileForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const name = document.getElementById('input-name').value;
-        const email = document.getElementById('input-email').value;
-        const phone = document.getElementById('input-phone').value;
+        const name = document.getElementById('input-name').value.trim();
+        const email = document.getElementById('input-email').value.trim();
+        const phone = document.getElementById('input-phone').value.trim();
         
         if (!name || !email) {
           alert('Full name and email are required');
@@ -299,19 +299,31 @@
         // Save to backend
         AuthService.updateProfile(name, email, phone)
           .then(user => {
-            // Update display with response from server
-            const displayName = user.fullName || user.full_name || name;
-            const displayEmail = user.email || email;
-            const displayPhone = user.phone || phone;
+            console.log('Profile update response:', user);
             
+            // Update display with response from server - try multiple field names
+            const displayName = user.fullName || user.full_name || user.name || name;
+            const displayEmail = user.email || email;
+            const displayPhone = user.phone || phone || '';
+            
+            // Update read-only display
             document.getElementById('profile-name').textContent = displayName;
             document.getElementById('profile-email').textContent = displayEmail;
             document.getElementById('profile-phone').textContent = displayPhone;
             
-            // Update form inputs to match display
+            // Update form inputs
             document.getElementById('input-name').value = displayName;
             document.getElementById('input-email').value = displayEmail;
             document.getElementById('input-phone').value = displayPhone;
+            
+            // Also update the user in AuthService/localStorage so it persists
+            if (AuthService.getUser()) {
+              const updatedUser = AuthService.getUser();
+              updatedUser.fullName = displayName;
+              updatedUser.email = displayEmail;
+              updatedUser.phone = displayPhone;
+              AuthService.setUser(updatedUser);
+            }
             
             // Toggle view
             profileView.style.display = 'block';
@@ -320,6 +332,7 @@
             alert('✓ Profile updated successfully');
           })
           .catch(err => {
+            console.error('Profile update error:', err);
             alert('Failed to update profile: ' + err.message);
           });
       });

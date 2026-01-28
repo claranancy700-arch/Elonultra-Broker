@@ -265,8 +265,15 @@
         headers: { 'x-admin-key': key }
       });
       if (!res.ok) {
-        const errorText = await res.text().catch(() => 'Unknown error');
-        throw new Error(`Delete failed (${res.status}): ${errorText}`);
+        let errorMsg = 'Unknown error';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.details || errorData.error || errorMsg;
+        } catch (e) {
+          const errorText = await res.text().catch(() => 'Unknown error');
+          errorMsg = errorText || errorMsg;
+        }
+        throw new Error(`Delete failed (${res.status}): ${errorMsg}`);
       }
       alert('Transaction deleted');
       fetchTransactions(); // Refresh
@@ -345,8 +352,15 @@
         headers: { 'x-admin-key': key }
       });
       if (!res.ok) {
-        const errorText = await res.text().catch(() => 'Unknown error');
-        throw new Error(`Delete failed (${res.status}): ${errorText}`);
+        let errorMsg = 'Unknown error';
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.details || errorData.error || errorMsg;
+        } catch (e) {
+          const errorText = await res.text().catch(() => 'Unknown error');
+          errorMsg = errorText || errorMsg;
+        }
+        throw new Error(`Delete failed (${res.status}): ${errorMsg}`);
       }
       alert('Withdrawal deleted');
       fetchTransactions(); // Refresh
