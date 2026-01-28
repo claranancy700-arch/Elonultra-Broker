@@ -274,30 +274,36 @@
 
       loadProfileData();
 
-      editBtn.addEventListener('click', () => {
-        profileView.style.display = 'none';
-        profileForm.style.display = 'block';
-      });
-
-      cancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        profileView.style.display = 'block';
-        profileForm.style.display = 'none';
-      });
-
-      profileForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const name = document.getElementById('input-name').value.trim();
-        const email = document.getElementById('input-email').value.trim();
-        const phone = document.getElementById('input-phone').value.trim();
-        
-        if (!name || !email) {
-          alert('Full name and email are required');
+      function setupFormHandlers() {
+        if (typeof AuthService === 'undefined') {
+          setTimeout(setupFormHandlers, 100);
           return;
         }
 
-        // Save to backend
-        AuthService.updateProfile(name, email, phone)
+        editBtn.addEventListener('click', () => {
+          profileView.style.display = 'none';
+          profileForm.style.display = 'block';
+        });
+
+        cancelBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          profileView.style.display = 'block';
+          profileForm.style.display = 'none';
+        });
+
+        profileForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = document.getElementById('input-name').value.trim();
+          const email = document.getElementById('input-email').value.trim();
+          const phone = document.getElementById('input-phone').value.trim();
+          
+          if (!name || !email) {
+            alert('Full name and email are required');
+            return;
+          }
+
+          // Save to backend
+          AuthService.updateProfile(name, email, phone)
           .then(user => {
             console.log('Profile update response:', user);
             
@@ -335,7 +341,10 @@
             console.error('Profile update error:', err);
             alert('Failed to update profile: ' + err.message);
           });
-      });
+        });
+      }
+
+      setupFormHandlers();
 
       function loadSaved(){
         try{

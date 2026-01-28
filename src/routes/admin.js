@@ -1126,11 +1126,13 @@ router.delete('/withdrawals/:id', async (req, res) => {
       await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
     }
 
-    // Delete associated trades first (wrapped in try-catch as column may not exist)
+    // Delete associated trades first using SAVEPOINT to recover from errors
+    await client.query('SAVEPOINT sp_trades');
     try {
       await client.query('DELETE FROM trades WHERE transaction_id IN (SELECT id FROM transactions WHERE type=\'withdrawal\' AND reference = $1)', [`withdrawal-${id}`]);
     } catch (tradeErr) {
-      console.log('Trade deletion skipped:', tradeErr.message);
+      console.log('Trade deletion skipped (rolling back to savepoint):', tradeErr.message);
+      await client.query('ROLLBACK TO SAVEPOINT sp_trades');
     }
 
     await client.query('DELETE FROM withdrawals WHERE id=$1', [id]);
@@ -1201,12 +1203,13 @@ router.delete('/transactions/:id', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Try to delete associated trades (if transaction_id column exists)
+    // Try to delete associated trades using SAVEPOINT to recover from errors
+    await client.query('SAVEPOINT sp_trades');
     try {
       await client.query('DELETE FROM trades WHERE transaction_id = $1', [txId]);
     } catch (e) {
-      // Column doesn't exist, silently continue
-      console.log('Note: trades.transaction_id column not found or delete failed');
+      console.log('Trade deletion skipped (rolling back to savepoint):', e.message);
+      await client.query('ROLLBACK TO SAVEPOINT sp_trades');
     }
 
     // Then delete the transaction
@@ -1219,7 +1222,11 @@ router.delete('/transactions/:id', async (req, res) => {
     await client.query('COMMIT');
     return res.json({ success: true, deleted: true });
   } catch (err) {
-    await client.query('ROLLBACK').catch(()=>{});
+    try {
+      await client.query('ROLLBACK');
+    } catch (e) {
+      // Ignore rollback errors
+    }
     console.error('Delete transaction error:', err.message || err);
     return res.status(500).json({ error: 'failed to delete transaction', details: err.message });
   } finally {
