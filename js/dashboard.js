@@ -70,7 +70,6 @@ function renderHoldings(){
         <td>$${(asset.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         <td>$${asset.value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : 0}%</td>
-        <td><button class="btn" onclick="alert('Trade panel coming soon')">Trade</button></td>
       </tr>
     `).join('');
 }

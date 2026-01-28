@@ -239,24 +239,40 @@
             return;
           }
           
-          // Fetch fresh user data from server
-          const user = await AuthService.fetchUserProfile();
-          const name = user.fullName || 'John Doe';
-          const email = user.email || 'john@example.com';
-          const phone = user.phone || '+1 234 567 8900';
-          
-          document.getElementById('profile-name').textContent = name;
-          document.getElementById('profile-email').textContent = email;
-          document.getElementById('profile-phone').textContent = phone;
-          document.getElementById('input-name').value = name;
-          document.getElementById('input-email').value = email;
-          document.getElementById('input-phone').value = phone;
+          try {
+            // Try to fetch fresh user data from server
+            const user = await AuthService.fetchUserProfile();
+            const name = user.fullName || user.full_name || 'John Doe';
+            const email = user.email || 'john@example.com';
+            const phone = user.phone || '+1 234 567 8900';
+            
+            document.getElementById('profile-name').textContent = name;
+            document.getElementById('profile-email').textContent = email;
+            document.getElementById('profile-phone').textContent = phone;
+            document.getElementById('input-name').value = name;
+            document.getElementById('input-email').value = email;
+            document.getElementById('input-phone').value = phone;
+          } catch (serverErr) {
+            console.warn('Server fetch failed, using localStorage:', serverErr.message);
+            // Fallback to localStorage if server fetch fails
+            const user = AuthService.getUser() || {};
+            const name = user.fullName || user.full_name || 'John Doe';
+            const email = user.email || 'john@example.com';
+            const phone = user.phone || '+1 234 567 8900';
+            
+            document.getElementById('profile-name').textContent = name;
+            document.getElementById('profile-email').textContent = email;
+            document.getElementById('profile-phone').textContent = phone;
+            document.getElementById('input-name').value = name;
+            document.getElementById('input-email').value = email;
+            document.getElementById('input-phone').value = phone;
+          }
         }catch(e){
-          console.warn('Failed to load profile, using local data', e);
-          // Fallback to local data if server fetch fails
+          console.warn('Failed to load profile', e);
+          // Last resort fallback
           try {
             const user = AuthService.getUser() || {};
-            const name = user.fullName || 'John Doe';
+            const name = user.fullName || user.full_name || 'John Doe';
             const email = user.email || 'john@example.com';
             const phone = user.phone || '+1 234 567 8900';
             
@@ -307,29 +323,28 @@
           .then(user => {
             console.log('Profile update response:', user);
             
-            // Update display with response from server - try multiple field names
+            // Get the updated data - prioritize what server returned
             const displayName = user.fullName || user.full_name || user.name || name;
             const displayEmail = user.email || email;
             const displayPhone = user.phone || phone || '';
             
-            // Update read-only display
+            // Update localStorage immediately
+            const currentUser = AuthService.getUser() || {};
+            currentUser.fullName = displayName;
+            currentUser.full_name = displayName;
+            currentUser.email = displayEmail;
+            currentUser.phone = displayPhone;
+            AuthService.setUser(currentUser);
+            
+            // Update read-only display with the saved values
             document.getElementById('profile-name').textContent = displayName;
             document.getElementById('profile-email').textContent = displayEmail;
             document.getElementById('profile-phone').textContent = displayPhone;
             
-            // Update form inputs
+            // Update form inputs to match display
             document.getElementById('input-name').value = displayName;
             document.getElementById('input-email').value = displayEmail;
             document.getElementById('input-phone').value = displayPhone;
-            
-            // Also update the user in AuthService/localStorage so it persists
-            if (AuthService.getUser()) {
-              const updatedUser = AuthService.getUser();
-              updatedUser.fullName = displayName;
-              updatedUser.email = displayEmail;
-              updatedUser.phone = displayPhone;
-              AuthService.setUser(updatedUser);
-            }
             
             // Toggle view
             profileView.style.display = 'block';
