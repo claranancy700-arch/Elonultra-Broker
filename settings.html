@@ -299,15 +299,19 @@
         // Save to backend
         AuthService.updateProfile(name, email, phone)
           .then(user => {
-            // Update display
-            document.getElementById('profile-name').textContent = user.fullName || name;
-            document.getElementById('profile-email').textContent = user.email || email;
-            document.getElementById('profile-phone').textContent = user.phone || phone;
+            // Update display with response from server
+            const displayName = user.fullName || user.full_name || name;
+            const displayEmail = user.email || email;
+            const displayPhone = user.phone || phone;
             
-            // Update form inputs
-            document.getElementById('input-name').value = user.fullName || name;
-            document.getElementById('input-email').value = user.email || email;
-            document.getElementById('input-phone').value = user.phone || phone;
+            document.getElementById('profile-name').textContent = displayName;
+            document.getElementById('profile-email').textContent = displayEmail;
+            document.getElementById('profile-phone').textContent = displayPhone;
+            
+            // Update form inputs to match display
+            document.getElementById('input-name').value = displayName;
+            document.getElementById('input-email').value = displayEmail;
+            document.getElementById('input-phone').value = displayPhone;
             
             // Toggle view
             profileView.style.display = 'block';

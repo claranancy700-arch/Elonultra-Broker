@@ -1211,8 +1211,13 @@ router.delete('/transactions/:id', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // First delete associated trades
-    await client.query('DELETE FROM trades WHERE transaction_id = $1', [txId]);
+    // Try to delete associated trades (if transaction_id column exists)
+    try {
+      await client.query('DELETE FROM trades WHERE transaction_id = $1', [txId]);
+    } catch (e) {
+      // Column doesn't exist, silently continue
+      console.log('Note: trades.transaction_id column not found or delete failed');
+    }
 
     // Then delete the transaction
     const result = await client.query('DELETE FROM transactions WHERE id=$1 RETURNING id', [txId]);
@@ -1224,9 +1229,9 @@ router.delete('/transactions/:id', async (req, res) => {
     await client.query('COMMIT');
     return res.json({ success: true, deleted: true });
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(()=>{});
     console.error('Delete transaction error:', err.message || err);
-    return res.status(500).json({ error: 'failed to delete transaction' });
+    return res.status(500).json({ error: 'failed to delete transaction', details: err.message });
   } finally {
     client.release();
   }

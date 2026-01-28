@@ -602,3 +602,87 @@ html[data-theme="light"] select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .app-wrapper { flex-direction: column; }
+  .sidebar { 
+    position: fixed;
+    left: -210px;
+    width: 210px;
+    height: 100vh;
+    z-index: 999;
+    transition: left 0.3s ease;
+  }
+  .sidebar.active { left: 0; }
+  .main-content { margin-left: 0; padding: 24px 16px; }
+  .site-header .container { padding: 12px 16px; }
+  .brand span { display: none; }
+  .brand img { height: 48px; width: 48px; }
+  
+  /* Table Responsive Adjustments */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 24px;
+  }
+  
+  table {
+    width: 100%;
+    min-width: 500px;
+  }
+  
+  th {
+    padding: 10px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+    word-break: break-word;
+  }
+  
+  .cards-grid { grid-template-columns: 1fr; }
+  
+  .nav { display: none; }
+  .nav.active { 
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+    z-index: 100;
+  }
+  .nav.active a { margin: 0; padding: 12px 24px; }
+}
+
+@media (max-width: 640px) {
+  .main-content { padding: 16px 12px; }
+  .hero { padding: 40px 16px; }
+  .hero h1 { font-size: 32px; }
+  
+  /* Further table optimization for small screens */
+  table {
+    min-width: 320px;
+  }
+  
+  th, td {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .table-wrapper {
+    margin-bottom: 16px;
+  }
+  
+  /* Stack form labels on mobile */
+  .form { gap: 12px; }
+  
+  .btn { padding: 8px 12px; font-size: 13px; }
+}
