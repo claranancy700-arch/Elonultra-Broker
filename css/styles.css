@@ -237,7 +237,7 @@ textarea{resize:vertical;min-height:120px}
 .testimonies-banner-content {
   display: flex;
   gap: 24px;
-  animation: scroll-left 45s linear infinite;
+  animation: scroll-left 800s linear infinite;
   width: max-content;
   align-items: center;
   will-change: transform;
