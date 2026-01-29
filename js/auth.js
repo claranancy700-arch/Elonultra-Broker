@@ -29,8 +29,18 @@ const AuthService = {
 
   // Store user data in memory (or localStorage)
   setUser(user) {
-    if (user) localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-    else localStorage.removeItem(this.USER_KEY);
+    if (user) {
+      try {
+        const u = Object.assign({}, user);
+        // Normalize naming fields so frontend can read `name` or `fullName`
+        if (u.fullName && !u.name) u.name = u.fullName;
+        if (u.name && !u.fullName) u.fullName = u.name;
+        localStorage.setItem(this.USER_KEY, JSON.stringify(u));
+      } catch (e) {
+        console.warn('Failed to set user in localStorage', e);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+      }
+    } else localStorage.removeItem(this.USER_KEY);
   },
 
   // Retrieve stored user data

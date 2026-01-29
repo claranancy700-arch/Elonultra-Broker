@@ -64,8 +64,8 @@
             <button type="button" class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="toggleCollapse('market-table')">See More</button>
           </div>
         </div>
-        <div id="market-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
-        <table id="market-table">
+        <div id="market-table-wrapper" style="overflow-x:auto;overflow-y:auto;max-height:250px;transition:max-height 0.3s ease">
+        <table id="market-table" style="min-width:900px;table-layout:auto">
           <thead>
             <tr>
               <th>Asset</th>
@@ -75,7 +75,6 @@
               <th>24h Low</th>
               <th>Volume</th>
               <th>Market Cap</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody id="market-tbody">
@@ -121,10 +120,10 @@
             <div id="watchlist-table-wrapper" style="overflow:hidden;max-height:250px;transition:max-height 0.3s ease">
             <table>
               <thead>
-                <tr><th>Asset</th><th>Price</th><th>Action</th></tr>
+                <tr><th>Asset</th><th>Price</th></tr>
               </thead>
               <tbody id="watchlist-tbody">
-                <tr><td colspan="3" style="text-align:center;color:var(--muted)">No assets in watchlist</td></tr>
+                <tr><td colspan="2" style="text-align:center;color:var(--muted)">No assets in watchlist</td></tr>
               </tbody>
             </table>
             </div>

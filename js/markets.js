@@ -182,7 +182,6 @@ function renderMarketTable(){
       <td>$${m.low.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:m.low < 1 ? 4 : 2})}</td>
       <td>${m.volume}</td>
       <td>${m.cap}</td>
-      <td><button class="btn btn-success" style="font-size:16px;padding:6px 10px;background:none;border:none;cursor:pointer" title="Add to watchlist" onclick="addToWatchlist('${m.symbol}')">⭐</button></td>
     </tr>
   `).join('');
 }
