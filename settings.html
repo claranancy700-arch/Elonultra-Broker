@@ -242,7 +242,7 @@
           try {
             // Try to fetch fresh user data from server
             const user = await AuthService.fetchUserProfile();
-            const name = user.fullName || user.full_name || 'John Doe';
+            const name = user.fullName || user.full_name || user.name || 'John Doe';
             const email = user.email || 'john@example.com';
             const phone = user.phone || '+1 234 567 8900';
             
@@ -256,7 +256,7 @@
             console.warn('Server fetch failed, using localStorage:', serverErr.message);
             // Fallback to localStorage if server fetch fails
             const user = AuthService.getUser() || {};
-            const name = user.fullName || user.full_name || 'John Doe';
+            const name = user.fullName || user.full_name || user.name || 'John Doe';
             const email = user.email || 'john@example.com';
             const phone = user.phone || '+1 234 567 8900';
             
@@ -272,7 +272,7 @@
           // Last resort fallback
           try {
             const user = AuthService.getUser() || {};
-            const name = user.fullName || user.full_name || 'John Doe';
+            const name = user.fullName || user.full_name || user.name || 'John Doe';
             const email = user.email || 'john@example.com';
             const phone = user.phone || '+1 234 567 8900';
             
