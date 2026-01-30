@@ -80,11 +80,29 @@
       const distancePx = fullWidth / 2;
       const duration = distancePx / SPEED_PX_PER_SEC;
 
-      // Force a restart so the speed is constant from the beginning.
+      // Persist a single canonical start timestamp so the animation appears continuous
+      // across page navigations. We store the timestamp (ms) of when the animation
+      // timeline began; new pages compute an elapsed offset and jump into the same
+      // point of the animation using a negative animation-delay.
+      const STORAGE_KEY = 'testimonies-banner-start-v1';
+      let startMs = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+      if (Number.isNaN(startMs)) {
+        startMs = Date.now();
+        try {
+          localStorage.setItem(STORAGE_KEY, String(startMs));
+        } catch (e) {
+          // ignore (e.g., storage disabled)
+        }
+      }
+
+      const elapsedSec = ((Date.now() - startMs) / 1000) % duration;
+
+      // Force a restart then set a negative delay so the animation begins already-in-progress.
       contentDiv.style.animation = 'none';
       // eslint-disable-next-line no-unused-expressions
       contentDiv.offsetHeight;
       contentDiv.style.animation = `scroll-left ${duration.toFixed(1)}s linear infinite`;
+      contentDiv.style.animationDelay = `-${elapsedSec.toFixed(1)}s`;
       contentDiv.style.animationPlayState = 'running';
     });
   }

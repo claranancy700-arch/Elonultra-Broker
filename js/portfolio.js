@@ -209,13 +209,55 @@
         const url = `${apiBase}/prices?symbols=${symbolStr}`;
         console.log('Fetching prices from backend:', url);
         
-        const resp = await fetch(url);
-        if (!resp.ok) {
-          console.warn('Failed to fetch prices', resp.status);
+        // Attempt fetch with one retry and fall back to cached prices if API is unavailable
+        const CACHE_KEY = 'prices-cache-v1';
+        const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+        async function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+        let resp = null;
+        let attempts = 0;
+        let lastErr = null;
+        while(attempts < 2){
+          try{
+            resp = await fetch(url);
+            if (resp && resp.ok) break;
+            lastErr = new Error('Price fetch failed: ' + (resp ? resp.status : 'no response'));
+          }catch(e){ lastErr = e; }
+          attempts++;
+          // small backoff before retry
+          await sleep(500 * attempts);
+        }
+
+        let prices = null;
+        if (resp && resp.ok){
+          prices = await resp.json();
+          console.log('Prices fetched:', prices);
+          try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), prices })); } catch(e){ /* ignore storage errors */ }
+        } else {
+          console.warn('Failed to fetch prices from backend, using cached if available', lastErr);
+          try{
+            const cachedRaw = localStorage.getItem(CACHE_KEY);
+            if (cachedRaw){
+              const parsed = JSON.parse(cachedRaw);
+              if (parsed && parsed.prices){
+                const age = Date.now() - (parsed.ts || 0);
+                if (age <= CACHE_TTL_MS) {
+                  prices = parsed.prices;
+                  console.log('Using cached prices (age ms):', age);
+                } else {
+                  // Allow stale cache as a last resort but log age
+                  prices = parsed.prices;
+                  console.log('Using stale cached prices (age ms):', age);
+                }
+              }
+            }
+          }catch(e){ console.warn('Failed to read cached prices', e); }
+        }
+        if (!prices){
+          console.warn('No prices available (network & cache missing)');
           return;
         }
-        const prices = await resp.json();
-        console.log('Prices fetched:', prices);
         
         // Update each asset value = amount * price
         let total = 0;
