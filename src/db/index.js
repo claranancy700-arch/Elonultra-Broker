@@ -12,7 +12,8 @@ async function initializeDatabase() {
   try {
     // Try PostgreSQL first
     if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL environment variable is not set. Set it in .env file.');
+      console.warn('⚠️  DATABASE_URL not set. Database features will be unavailable.');
+      return;
     }
 
     pool = new Pool({
@@ -24,9 +25,9 @@ async function initializeDatabase() {
     await pool.query('SELECT 1');
     console.log('✓ Using PostgreSQL database');
   } catch (err) {
-    console.error('❌ PostgreSQL connection failed:', err.message);
-    console.error('Make sure DATABASE_URL is set in .env file');
-    process.exit(1);
+    console.warn('⚠️  PostgreSQL connection failed:', err.message);
+    console.warn('   (This is OK for local testing. Render will use its internal database URL)');
+    console.warn('   Backend API calls will fail, but React frontend will still load.');
   }
 }
 
@@ -34,17 +35,25 @@ async function initializeDatabase() {
 initializeDatabase().catch(err => console.error('Database initialization error:', err));
 
 async function query(text, params) {
+  if (!pool) {
+    throw new Error('Database connection not available. Set DATABASE_URL in .env');
+  }
   return pool.query(text, params);
 }
 
 async function getClient() {
+  if (!pool) {
+    throw new Error('Database connection not available. Set DATABASE_URL in .env');
+  }
   return pool.connect();
 }
 
 // Log connection errors for PostgreSQL
-pool.on('error', (err) => {
-  console.error('Unexpected PostgreSQL pool error:', err);
-});
+if (pool) {
+  pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL pool error:', err);
+  });
+}
 /**
  * ensureSchema
  * Idempotently creates core tables and required columns, including withdrawal fee fields
