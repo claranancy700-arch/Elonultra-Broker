@@ -94,9 +94,13 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   }
 
   // Serve old HTML files from project root for backwards compatibility
-  // MUST BE AFTER API ROUTES so /api/* endpoints take priority
+  // Only register legacy static files if there is NO React build present.
+  // This prevents legacy .html files (login.html, dashboard.html) from
+  // shadowing the React SPA routes when frontend/dist exists.
   const webRoot = path.join(__dirname, '..');
-  app.use(express.static(webRoot));
+  if (!fs.existsSync(frontendDist)) {
+    app.use(express.static(webRoot));
+  }
 
   // If a request matches a top-level path like /markets, try to serve markets.html
   app.get('/:page', (req, res, next) => {
