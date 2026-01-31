@@ -75,7 +75,8 @@ router.post('/login', async (req, res) => {
       expiresIn: '7d',
     });
 
-    res.json({ success: true, token, userId: user.id });
+    // Return token and a minimal user object to match frontend expectations
+    res.json({ success: true, token, user: { id: user.id, email: user.email } });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
