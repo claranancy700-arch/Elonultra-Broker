@@ -4,8 +4,8 @@ services:
     env: node
     plan: free
     branch: main
-    buildCommand: npm install
-    startCommand: npm run server
+    buildCommand: npm run frontend:build
+    startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
         value: production
