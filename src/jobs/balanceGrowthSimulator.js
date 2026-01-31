@@ -57,6 +57,12 @@ async function processBalanceGrowth() {
   }
 
   try {
+    // Check if database is available
+    if (!db || !db.query) {
+      console.warn('[BalanceGrowth] Database not ready, skipping this run');
+      return;
+    }
+
     if (CONFIG.DEBUG) console.log('[BalanceGrowth] Starting hourly processing...');
 
     // Fetch all active users with simulators enabled

@@ -53,6 +53,12 @@ function generateTestimony() {
 
 async function generateTestimonies(count = 3) {
   try {
+    // Check if database is available
+    if (!db || !db.query) {
+      console.warn('[Testimonies Auto-Generate] Database not ready, skipping this run');
+      return [];
+    }
+
     const savedTestimonies = [];
     for (let i = 0; i < count; i++) {
       const testimony = generateTestimony();

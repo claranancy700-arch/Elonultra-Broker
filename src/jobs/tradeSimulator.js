@@ -209,6 +209,12 @@ async function runTradeGeneration() {
   console.log(`[Trade Generation] Starting at ${timestamp}`);
 
   try {
+    // Check if database is available
+    if (!db || !db.query) {
+      console.warn('[Trade Generation] Database not ready, skipping this run');
+      return;
+    }
+
     // Fetch all users with non-zero balance
     const usersRes = await db.query(
       'SELECT id FROM users WHERE balance > 0 ORDER BY id'

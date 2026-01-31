@@ -25,6 +25,12 @@ async function fetchPrices(symbols) {
 
 async function updatePortfolioValues() {
   try {
+    // Check if database is available
+    if (!db || !db.query) {
+      console.warn('[Portfolio Updater] Database not ready, skipping this run');
+      return;
+    }
+
     // read portfolio rows
     const p = await db.query('SELECT user_id, btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio');
     if (!p.rows || p.rows.length === 0) return;
