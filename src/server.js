@@ -108,16 +108,6 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     app.use(express.static(webRoot));
   }
 
-  // If a request matches a top-level path like /markets, try to serve markets.html
-  app.get('/:page', (req, res, next) => {
-    const page = req.params.page;
-    // ignore API routes
-    if (page === 'api' || page.startsWith('api')) return next();
-    const file = path.join(webRoot, `${page}.html`);
-    if (fs.existsSync(file)) return res.sendFile(file);
-    next();
-  });
-
   // Catch-all for nested or arbitrary frontend routes (e.g. /markets, /settings/profile)
   app.get('*', (req, res, next) => {
     console.log('[CATCH-ALL] Request to:', req.path, '| Will check if API...');
