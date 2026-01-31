@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import API from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -7,16 +8,45 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize auth from localStorage
+  // Initialize auth from localStorage but validate token with server
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    let mounted = true;
+    const init = async () => {
+      const savedToken = localStorage.getItem('token');
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+      if (!savedToken) {
+        if (mounted) setLoading(false);
+        return;
+      }
+
+      try {
+        // Attempt to validate and fetch current user
+        const res = await API.get('/auth/me');
+        if (mounted && res?.data?.user) {
+          setToken(savedToken);
+          setUser(res.data.user);
+        } else if (mounted) {
+          // Invalid response - clear stored auth
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        }
+      } catch (err) {
+        // Token invalid or network error - clear stored auth
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (mounted) {
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    init();
+    return () => { mounted = false; };
   }, []);
 
   const login = (userData, authToken) => {
