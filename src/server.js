@@ -86,7 +86,14 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     console.error('Background jobs error:', err.message || err);
   }
 
-  // Serve frontend static files from project root (so /markets or /markets.html work)
+  // Serve React frontend static files from frontend/dist (production build)
+  const frontendDist = path.join(__dirname, '../frontend/dist');
+  if (fs.existsSync(frontendDist)) {
+    console.log('📦 Serving React SPA from frontend/dist');
+    app.use(express.static(frontendDist));
+  }
+
+  // Serve old HTML files from project root for backwards compatibility
   // MUST BE AFTER API ROUTES so /api/* endpoints take priority
   const webRoot = path.join(__dirname, '..');
   app.use(express.static(webRoot));
@@ -112,6 +119,14 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     }
 
     console.log('[CATCH-ALL] Serving frontend for path:', reqPath);
+
+    // React SPA: serve React's index.html which handles routing client-side
+    const reactIndex = path.join(webRoot, 'frontend/dist/index.html');
+    if (fs.existsSync(reactIndex)) {
+      return res.sendFile(reactIndex);
+    }
+
+    // Fallback to legacy HTML pages in root directory
     const candidate = path.join(webRoot, `${reqPath || 'index'}.html`);
     if (fs.existsSync(candidate)) return res.sendFile(candidate);
 
@@ -122,7 +137,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
       if (fs.existsSync(fallback)) return res.sendFile(fallback);
     }
 
-    // Fallback to index.html to let frontend handle routing, or send 404
+    // Final fallback
     const indexFile = path.join(webRoot, 'index.html');
     if (fs.existsSync(indexFile)) return res.sendFile(indexFile);
 

@@ -4,12 +4,15 @@
   "private": true,
   "description": "Static frontend for ELON ULTRA ELONS",
   "scripts": {
-    "dev": "live-server --port=3000 --open=./index.html",
+    "dev": "concurrently \"npm run server:dev\" \"npm run frontend:dev\"",
+    "dev:server": "npm run server:dev",
+    "dev:frontend": "npm run frontend:dev",
     "start": "node src/server.js",
     "server": "node src/server.js",
     "server:dev": "nodemon src/server.js",
-    "frontend": "live-server --port=3000",
-    "frontend:dev": "live-server --port=3000 --open=./index.html",
+    "frontend": "cd frontend && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
     "format": "prettier --write \"**/*.{html,css,js,md,json}\"",
     "lint": "eslint \"js/**/*.js\" --fix"
   },
@@ -23,6 +26,7 @@
     "pg": "^8.11.0"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "eslint": "^8.45.0",
     "live-server": "^1.2.2",
     "nodemon": "^3.1.11",
