@@ -66,3 +66,20 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Center the application root and constrain width for balanced layout */
+#root {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Ensure body centers content vertically while #root handles horizontal centering */
+body {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
