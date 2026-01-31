@@ -1,6 +1,9 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
+const path = require('path');
 
+// Load .env.local first (for local development), then .env
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 dotenv.config();
 
 let pool;
