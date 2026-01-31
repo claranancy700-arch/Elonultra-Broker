@@ -134,10 +134,10 @@
   color: white !important;
 }
 
-  width: 100%;
-  max-width: 1200px;
 .features-section {
   margin: 80px 0;
+  width: 100%;
+  max-width: 1200px;
 }
 
 .features-grid {
@@ -174,14 +174,14 @@
   color: var(--muted, #cbd5e1);
   line-height: 1.6;
 }
-auto 60px;
+
+.testimonies-section {
+  margin: 100px auto 60px;
   padding: 60px 20px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
   border-radius: 12px;
   width: 100%;
-  max-width: 1200x;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
-  border-radius: 12px;
+  max-width: 1200px;
 }
 
 .testimonies-section h2 {
