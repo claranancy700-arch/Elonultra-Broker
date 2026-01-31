@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
 import './DashboardPage.css';
+import PieChart from '../../common/PieChart';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -67,15 +68,20 @@ export const DashboardPage = () => {
           <section className="panel positions">
             <h3>Positions</h3>
             {portfolio?.positions?.length ? (
-              <ul className="positions-list">
-                {portfolio.positions.map((pos) => (
-                  <li key={pos.coin} className="position-item">
-                    <div className="coin">{pos.coin}</div>
-                    <div className="meta">{pos.amount} • ${pos.price.toFixed(2)}</div>
-                    <div className="val">${pos.value.toFixed(2)}</div>
-                  </li>
-                ))}
-              </ul>
+              <div className="positions-with-chart">
+                <div className="chart-wrap">
+                  <PieChart data={portfolio.positions.map(p => ({ label: p.coin, value: p.value }))} size={160} />
+                </div>
+                <ul className="positions-list">
+                  {portfolio.positions.map((pos) => (
+                    <li key={pos.coin} className="position-item">
+                      <div className="coin">{pos.coin}</div>
+                      <div className="meta">{pos.amount} • ${pos.price.toFixed(2)}</div>
+                      <div className="val">${pos.value.toFixed(2)}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : (
               <div className="empty">No positions yet</div>
             )}
