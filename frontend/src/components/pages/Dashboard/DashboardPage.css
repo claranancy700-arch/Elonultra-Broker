@@ -1,0 +1,32 @@
+/* Simple dashboard styles */
+.dashboard-page {
+  padding: 20px;
+}
+.dashboard-header h2 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+}
+.panel {
+  background: #0f1724;
+  color: #e6eef8;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(5,10,20,0.6);
+}
+.panel.error { background: #3b0b0b; color: #ffd6d6; }
+.summary-row { display: flex; gap: 24px; align-items: center; }
+.label { font-size: 12px; color: #9fb0c7; }
+.value { font-size: 22px; font-weight: 700; }
+.positions-list, .tx-list { list-style: none; padding: 0; margin: 0; }
+.position-item, .tx-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.position-item .coin { font-weight:700; }
+.tx-item .tx-type { text-transform:capitalize; font-weight:600; }
+.empty { color: #9fb0c7; padding: 12px 0; }
+@media (max-width: 800px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
