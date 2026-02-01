@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './Header.css';
@@ -6,38 +6,42 @@ import './Header.css';
 export const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [theme, setTheme] = useState('dark');
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
   return (
-    <header className="header">
-      <div className="header-container">
-        <Link to="/" className="logo">
-          ELON ULTRA ELONS
+    <header className="site-header">
+      <div className="container">
+        <Link to="/" className="brand">
+          <span style={{display:'block'}}>ELON ULTRA ELONS</span>
         </Link>
         
-        <nav className="nav-menu">
-          <Link to="/dashboard" className="nav-link">Dashboard</Link>
-          <Link to="/markets" className="nav-link">Markets</Link>
-          <Link to="/transactions" className="nav-link">Transactions</Link>
-          {user?.isAdmin && <Link to="/admin" className="nav-link">Admin</Link>}
-        </nav>
-
-        <div className="header-right">
-          {user ? (
-            <>
-              <span className="user-name">{user.email}</span>
-              <button onClick={handleLogout} className="logout-btn">
-                Logout
-              </button>
-            </>
-          ) : (
-            <Link to="/login" className="login-link">Login</Link>
+        <nav className="nav">
+          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/markets">Markets</Link>
+          <Link to="/transactions">Transactions</Link>
+          <Link to="/settings">Settings</Link>
+          <Link to="/help">Support</Link>
+          <button className="theme-toggle" onClick={toggleTheme}>
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
+          {user && (
+            <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{color:'#ef4444'}}>
+              Logout
+            </a>
           )}
-        </div>
+        </nav>
       </div>
     </header>
   );

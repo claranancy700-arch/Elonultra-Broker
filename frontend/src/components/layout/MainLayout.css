@@ -1,22 +1,37 @@
 /* Main Layout Styles */
-.main-layout {
+.app-wrapper {
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
-  color: #e0e7ff;
+  min-height: calc(100vh - 60px);
 }
 
 .main-content {
+  margin-left: 260px;
   flex: 1;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 32px;
+  animation: fadeInUp 0.6s ease-out;
   width: 100%;
-  padding: 2rem 1.5rem;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
+  .app-wrapper {
+    flex-direction: column;
+  }
+
   .main-content {
-    padding: 1rem;
+    margin-left: 0;
+    padding: 16px;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

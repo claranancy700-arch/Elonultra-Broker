@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
 import './DashboardPage.css';
-import PieChart from '../../common/PieChart';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -39,73 +38,108 @@ export const DashboardPage = () => {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <div className="dashboard-page">
+        <div className="panel">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-page">
+        <div className="panel error">
+          <strong>Error:</strong> {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-page">
-      <header className="dashboard-header">
-        <h2>Welcome{user?.name ? `, ${user.name}` : ''}</h2>
-      </header>
-
-      {loading ? (
-        <div className="panel">Loading dashboard...</div>
-      ) : error ? (
-        <div className="panel error">{error}</div>
-      ) : (
-        <div className="dashboard-grid">
-          <section className="panel summary">
-            <h3>Account Summary</h3>
-            <div className="summary-row">
-              <div>
-                <div className="label">Cash Balance</div>
-                <div className="value">${portfolio?.balance?.toFixed(2) ?? '0.00'}</div>
-              </div>
-              <div>
-                <div className="label">Portfolio Value</div>
-                <div className="value">${portfolio?.total_value?.toFixed(2) ?? '0.00'}</div>
-              </div>
-            </div>
-          </section>
-
-          <section className="panel positions">
-            <h3>Positions</h3>
-            {portfolio?.positions?.length ? (
-              <div className="positions-with-chart">
-                <div className="chart-wrap">
-                  <PieChart data={portfolio.positions.map(p => ({ label: p.coin, value: p.value }))} size={160} />
-                </div>
-                <ul className="positions-list">
-                  {portfolio.positions.map((pos) => (
-                    <li key={pos.coin} className="position-item">
-                      <div className="coin">{pos.coin}</div>
-                      <div className="meta">{pos.amount} • ${pos.price.toFixed(2)}</div>
-                      <div className="val">${pos.value.toFixed(2)}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="empty">No positions yet</div>
-            )}
-          </section>
-
-          <section className="panel transactions">
-            <h3>Recent Transactions</h3>
-            {transactions.length ? (
-              <ul className="tx-list">
-                {transactions.slice(0, 10).map((tx) => (
-                  <li key={tx.id} className="tx-item">
-                    <div className="tx-type">{tx.type}</div>
-                    <div className="tx-amount">{tx.amount} {tx.method || tx.currency}</div>
-                    <div className="tx-status">{tx.status}</div>
-                    <div className="tx-time">{new Date(tx.createdAt || tx.created_at).toLocaleString()}</div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="empty">No recent transactions</div>
-            )}
-          </section>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1>Dashboard</h1>
+        <div style={{ fontSize: '14px', color: 'var(--muted)' }}>
+          Welcome, <span style={{ color: 'var(--accent)', fontWeight: '600' }}>{user?.email || 'User'}</span>
         </div>
-      )}
+      </div>
+
+      {/* Portfolio Summary Cards */}
+      <div className="cards-grid">
+        <div className="card">
+          <div className="card-title">Total Portfolio Value</div>
+          <div className="card-value">${portfolio?.total_value?.toFixed(2) ?? '0.00'}</div>
+          <div className="card-change positive">+$0.00 (+0%)</div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">24h Change</div>
+          <div className="card-value">+$0.00</div>
+          <div className="card-change positive">+0%</div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Available Balance</div>
+          <div className="card-value">${portfolio?.balance?.toFixed(2) ?? '0.00'}</div>
+          <div className="muted" style={{ marginTop: '8px' }}>Ready to invest</div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Active Positions</div>
+          <div className="card-value">{portfolio?.positions?.length ?? 0}</div>
+          <div className="muted" style={{ marginTop: '8px' }}>Holdings</div>
+        </div>
+      </div>
+
+      {/* Positions Section */}
+      <div className="panel">
+        <h3>Positions</h3>
+        {portfolio?.positions?.length ? (
+          <div className="positions-list">
+            {portfolio.positions.map((pos) => (
+              <div key={pos.coin} className="position-item">
+                <div className="position-coin">{pos.coin}</div>
+                <div className="position-meta">{pos.amount} • ${pos.price?.toFixed(2) ?? '0.00'}</div>
+                <div className="position-value">${pos.value?.toFixed(2) ?? '0.00'}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty">No positions yet</div>
+        )}
+      </div>
+
+      {/* Transactions Section */}
+      <div className="panel">
+        <h3>Recent Transactions</h3>
+        {transactions.length ? (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.slice(0, 10).map((tx) => (
+                  <tr key={tx.id}>
+                    <td>{tx.type}</td>
+                    <td>{tx.amount} {tx.method || tx.currency}</td>
+                    <td><span className={`status-pill status-${tx.status?.toLowerCase()}`}>{tx.status}</span></td>
+                    <td>{new Date(tx.createdAt || tx.created_at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="empty">No recent transactions</div>
+        )}
+      </div>
     </div>
   );
 };

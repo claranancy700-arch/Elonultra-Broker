@@ -1,36 +1,185 @@
-/* Simple dashboard styles */
+/* Dashboard styles */
 .dashboard-page {
-  padding: 20px;
+  animation: fadeInUp 0.6s ease-out;
 }
-.dashboard-header h2 {
-  margin: 0 0 12px 0;
-  font-size: 20px;
+
+.dashboard-page h1 {
+  font-size: 28px;
+  margin: 0 0 24px 0;
+  color: var(--text);
 }
-.dashboard-grid {
+
+.muted {
+  color: var(--muted);
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.positions-list {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  gap: 12px;
+}
+
+.position-item {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: 16px;
-}
-.panel {
-  background: #0f1724;
-  color: #e6eef8;
-  padding: 16px;
+  padding: 12px;
+  background: rgba(251, 191, 36, 0.05);
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(5,10,20,0.6);
+  border: 1px solid rgba(251, 191, 36, 0.1);
+  align-items: center;
 }
-.panel.error { background: #3b0b0b; color: #ffd6d6; }
-.summary-row { display: flex; gap: 24px; align-items: center; }
-.label { font-size: 12px; color: #9fb0c7; }
-.value { font-size: 22px; font-weight: 700; }
-.positions-list, .tx-list { list-style: none; padding: 0; margin: 0; }
-.position-item, .tx-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
-.position-item .coin { font-weight:700; }
-.tx-item .tx-type { text-transform:capitalize; font-weight:600; }
-.empty { color: #9fb0c7; padding: 12px 0; }
-.positions-with-chart { display:flex; gap:16px; align-items:flex-start; }
-.chart-wrap { width:160px; height:160px; flex:0 0 160px; }
-@media (max-width: 800px) {
-  .dashboard-grid { grid-template-columns: 1fr; }
-  .positions-with-chart { flex-direction: column; align-items: stretch; }
-  .chart-wrap { margin: 0 auto 12px auto; }
+
+.position-coin {
+  font-weight: 600;
+  color: var(--accent-light);
 }
+
+.position-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.position-value {
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.table-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.6s ease-out;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+thead tr {
+  background: rgba(251, 191, 36, 0.05);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  word-wrap: break-word;
+}
+
+td {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+  transition: var(--transition);
+  color: var(--text);
+  word-wrap: break-word;
+}
+
+tbody tr {
+  transition: var(--transition);
+}
+
+tbody tr:hover {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.status-required {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-submitted {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-confirmed,
+.status-success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-failed,
+.status-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .position-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .position-value {
+    text-align: left;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 8px 12px;
+  }
+}
+
