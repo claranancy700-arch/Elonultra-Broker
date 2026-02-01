@@ -1,10 +1,15 @@
 import React from 'react';
 
 const MobilePortfolioCard = ({ portfolio }) => {
-  const portfolioValue = portfolio?.totalValue || 0;
+  // Handle null or undefined portfolio
+  if (!portfolio) {
+    return null;
+  }
+
+  const portfolioValue = portfolio?.total_value || 0;
   const balance = portfolio?.balance || 0;
-  const change24h = portfolio?.change24h || 0;
-  const positions = portfolio?.positions || 0;
+  const change24h = portfolio?.change_24h || 0;
+  const positions = portfolio?.positions?.length || 0;
 
   return (
     <div className="mobile-portfolio-card">
