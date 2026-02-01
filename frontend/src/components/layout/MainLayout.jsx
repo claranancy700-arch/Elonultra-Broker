@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import './MainLayout.css';
 
 export const MainLayout = () => {
@@ -14,6 +15,7 @@ export const MainLayout = () => {
           <Outlet />
         </main>
       </div>
+      <MobileBottomNav />
     </>
   );
 };

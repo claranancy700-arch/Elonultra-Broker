@@ -24,6 +24,7 @@ export const Header = () => {
     <header className="site-header">
       <div className="container">
         <Link to="/" className="brand">
+          <img src="/images/elon-logo-v2.svg" alt="EUE" className="brand-logo" />
           <span style={{display:'block'}}>ELON ULTRA ELONS</span>
         </Link>
         

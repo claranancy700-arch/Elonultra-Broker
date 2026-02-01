@@ -326,6 +326,10 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 768px) {
+  .dashboard-page {
+    padding-bottom: 80px;
+  }
+
   .dashboard-page h1 {
     font-size: 20px;
     margin-bottom: 16px;
@@ -335,22 +339,77 @@ tbody tr:last-child td {
     font-size: 18px;
   }
 
+  /* Hide desktop cards on mobile */
   .cards-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+    display: none;
   }
 
-  .card {
+  /* Show mobile portfolio card */
+  .mobile-portfolio-card {
+    display: block;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(251, 191, 36, 0.2);
     padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
   }
 
-  .card-title {
-    font-size: 11px;
+  .portfolio-bg-animation {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    z-index: 0;
   }
 
-  .card-value {
-    font-size: 20px;
+  .mobile-portfolio-card > div {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Mobile action buttons */
+  .mobile-action-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 12px;
+    color: var(--accent-light);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .action-btn:hover {
+    background: rgba(251, 191, 36, 0.25);
+    border-color: var(--accent);
+  }
+
+  .action-btn svg {
+    stroke: var(--accent-light);
+    transition: all 0.3s;
+  }
+
+  .action-btn:hover svg {
+    stroke: var(--accent);
   }
 
   table {
@@ -406,19 +465,6 @@ tbody tr:last-child td {
     font-size: 16px;
   }
 
-  .cards-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .card {
-    padding: 12px;
-  }
-
-  .card-value {
-    font-size: 18px;
-  }
-
   table {
     font-size: 10px;
   }
@@ -453,6 +499,15 @@ tbody tr:last-child td {
   .btn {
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  .mobile-action-buttons {
+    gap: 10px;
+  }
+
+  .action-btn {
+    padding: 10px;
+    font-size: 11px;
   }
 }
 

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
+import MobilePortfolioCard from './MobilePortfolioCard';
+import MobileActionButtons from './MobileActionButtons';
+import MobileBottomNav from './MobileBottomNav';
 import './DashboardPage.css';
 
 export const DashboardPage = () => {
@@ -88,6 +91,12 @@ export const DashboardPage = () => {
           Welcome, <span style={{ color: 'var(--accent)', fontWeight: '600' }}>{user?.email || 'User'}</span>
         </div>
       </div>
+
+      {/* Mobile Portfolio Card - only shows on mobile */}
+      <MobilePortfolioCard portfolio={portfolio} />
+
+      {/* Mobile Action Buttons - only shows on mobile */}
+      <MobileActionButtons />
 
       {/* Portfolio Summary Cards */}
       <div className="cards-grid">

@@ -35,6 +35,12 @@
   flex-shrink: 0;
 }
 
+.brand-logo {
+  height: 64px;
+  width: 64px;
+  object-fit: contain;
+}
+
 .brand span {
   font-size: 16px;
   font-weight: 700;
