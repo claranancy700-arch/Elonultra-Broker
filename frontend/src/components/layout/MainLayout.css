@@ -17,11 +17,19 @@
 @media (max-width: 768px) {
   .app-wrapper {
     flex-direction: column;
+    min-height: calc(100vh - 70px);
   }
 
   .main-content {
     margin-left: 0;
     padding: 16px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 12px;
   }
 }
 

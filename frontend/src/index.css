@@ -207,38 +207,43 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 1;
   }
 }
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
 
-/* Center the application root and constrain width for balanced layout */
-#root {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  box-sizing: border-box;
-  padding-left: 16px;
-  padding-right: 16px;
-}
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
 
-/* Ensure body centers content vertically while #root handles horizontal centering */
-body {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  h3 {
+    font-size: 16px;
+  }
 }
