@@ -1,49 +1,71 @@
-// Safe localStorage wrapper that handles access denied errors
-const isStorageAvailable = () => {
-  try {
-    const test = '__test__';
-    localStorage.setItem(test, test);
-    localStorage.removeItem(test);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
+// Safe storage wrapper with in-memory fallback for environments
+// where localStorage is unavailable or blocked (e.g., some iframes/privacy modes)
+let storageAvailable = true;
+try {
+  const test = '__storage_test__';
+  localStorage.setItem(test, test);
+  localStorage.removeItem(test);
+  storageAvailable = true;
+} catch (e) {
+  storageAvailable = false;
+}
+
+const inMemoryStore = Object.create(null);
 
 export const safeGetItem = (key) => {
   try {
-    return localStorage.getItem(key);
+    if (storageAvailable) {
+      return localStorage.getItem(key);
+    }
+    // return from in-memory fallback
+    return Object.prototype.hasOwnProperty.call(inMemoryStore, key)
+      ? inMemoryStore[key]
+      : null;
   } catch (e) {
-    console.warn(`localStorage getItem failed for key "${key}":`, e.message);
+    console.warn(`safeGetItem failed for key "${key}":`, e?.message || e);
     return null;
   }
 };
 
 export const safeSetItem = (key, value) => {
   try {
-    localStorage.setItem(key, value);
+    if (storageAvailable) {
+      localStorage.setItem(key, value);
+      return;
+    }
+    inMemoryStore[key] = String(value);
   } catch (e) {
-    console.warn(`localStorage setItem failed for key "${key}":`, e.message);
+    console.warn(`safeSetItem failed for key "${key}":`, e?.message || e);
   }
 };
 
 export const safeRemoveItem = (key) => {
   try {
-    localStorage.removeItem(key);
+    if (storageAvailable) {
+      localStorage.removeItem(key);
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(inMemoryStore, key)) {
+      delete inMemoryStore[key];
+    }
   } catch (e) {
-    console.warn(`localStorage removeItem failed for key "${key}":`, e.message);
+    console.warn(`safeRemoveItem failed for key "${key}":`, e?.message || e);
   }
 };
 
 export const safeGetAllItems = () => {
   const items = {};
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      items[key] = localStorage.getItem(key);
+    if (storageAvailable) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        items[k] = localStorage.getItem(k);
+      }
+      return items;
     }
+    return { ...inMemoryStore };
   } catch (e) {
-    console.warn('localStorage access failed:', e.message);
+    console.warn('safeGetAllItems failed:', e?.message || e);
+    return items;
   }
-  return items;
 };

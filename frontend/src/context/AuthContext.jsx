@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
     const init = async () => {
       const savedToken = safeGetItem('token');
+      console.debug('[Auth] init: savedToken present?', !!savedToken);
 
       if (!savedToken) {
         if (mounted) setLoading(false);
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, authToken) => {
+    console.debug('[Auth] login: storing token and user');
     safeSetItem('token', authToken);
     safeSetItem('user', JSON.stringify(userData));
     setUser(userData);
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.debug('[Auth] logout: clearing token and user');
     safeRemoveItem('token');
     safeRemoveItem('user');
     setUser(null);

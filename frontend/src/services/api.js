@@ -12,6 +12,9 @@ API.interceptors.request.use((config) => {
   const token = safeGetItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.debug('[api] attaching token to request for', config.url ? config.url : '(unknown)');
+  } else {
+    console.debug('[api] no token available for request', config.url ? config.url : '(unknown)');
   }
   return config;
 });
@@ -21,9 +24,14 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      console.warn('[api] received 401, clearing stored auth and redirecting to /login');
       safeRemoveItem('token');
       safeRemoveItem('user');
-      window.location.href = '/login';
+      try {
+        window.location.href = '/login';
+      } catch (e) {
+        console.warn('[api] redirect to /login failed:', e?.message || e);
+      }
     }
     return Promise.reject(error);
   }
