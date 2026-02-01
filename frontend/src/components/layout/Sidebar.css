@@ -5,8 +5,8 @@
   padding: 24px 0;
   position: fixed;
   left: 0;
-  top: 60px;
-  height: calc(100vh - 60px);
+  top: 70px;
+  height: calc(100vh - 70px);
   overflow-y: auto;
   box-shadow: none;
   transition: var(--transition);
