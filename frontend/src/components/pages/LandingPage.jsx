@@ -48,13 +48,13 @@ export const LandingPage = () => {
         <section className="hero-section">
           <h1>ELON ULTRA ELONS Trading Platform</h1>
           <p>Fast, secure, and user-friendly crypto trading platform. Start with as little as $100.</p>
-          <div style={{ marginTop: '32px' }}>
-            <Link to="/login" className="btn btn-primary" style={{ fontSize: '16px', padding: '12px 32px' }}>
+          <div className="hero-cta">
+            <Link to="/login" className="btn btn-primary">
               Get Started
             </Link>
-            <a href="#features" className="btn btn-secondary" style={{ fontSize: '16px', padding: '12px 32px', marginLeft: '12px' }}>
-              Learn More
-            </a>
+            <Link to="/login" className="btn btn-secondary">
+              Login
+            </Link>
           </div>
         </section>
 

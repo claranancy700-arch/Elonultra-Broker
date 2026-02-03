@@ -217,6 +217,57 @@ export const SettingsPage = () => {
         </form>
       </div>
 
+      {/* Banking & Verification (from legacy UI) */}
+      <div className="settings-section banking">
+        <h2>Account Banking & Verification</h2>
+        <div className="bank-grid">
+          <div className="card banking-card">
+            <h3>Banking / Registration</h3>
+            <form id="embedded-reg" onSubmit={(e)=>{ e.preventDefault(); const fd=new FormData(e.target); const body=Object.fromEntries(fd.entries()); localStorage.setItem('banking', JSON.stringify(body)); alert('Banking details saved (simulated)'); }}>
+              <label><span>Country</span>
+                <select name="country">
+                  <option value="">Select country</option>
+                  <option>United States</option>
+                  <option>Nigeria</option>
+                  <option>United Kingdom</option>
+                  <option>Kenya</option>
+                  <option>Ghana</option>
+                </select>
+              </label>
+              <label><span>Account number</span><input name="acctNumber" placeholder="1234567890" /></label>
+              <label><span>Account name</span><input name="acctName" placeholder="Full name on account" /></label>
+              <label><span>Personal ID</span><input name="personalId" placeholder="National ID / Passport" /></label>
+              <label><span>Branch</span><input name="branch" placeholder="Branch name or code" /></label>
+              <label><span>Email</span><input name="email" type="email" placeholder="you@example.com" /></label>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button type="button" id="settings-sendCode" className="btn" onClick={()=>{ document.getElementById('settings-msg') && (document.getElementById('settings-msg').textContent='Verification code sent (simulated)'); setTimeout(()=>document.getElementById('settings-msg') && (document.getElementById('settings-msg').textContent=''),3000); }}>Send verification code</button>
+                <input name="code" placeholder="Verification code" style={{flex:1,minWidth:150}} />
+              </div>
+              <div style={{marginTop:12}}>
+                <button type="submit" id="settings-register" className="btn">Save banking details</button>
+              </div>
+              <p id="settings-msg" style={{color:'green',marginTop:8}}></p>
+            </form>
+          </div>
+
+          <div className="card banking-card">
+            <h3>Email Verification</h3>
+            <form id="embedded-verify" onSubmit={(e)=>{ e.preventDefault(); const fd=new FormData(e.target); const body=Object.fromEntries(fd.entries()); if(!body.email||!body.code){ alert('Enter email and verification code'); return;} const saved=JSON.parse(localStorage.getItem('banking')||'{}'); saved.emailVerified=true; localStorage.setItem('banking', JSON.stringify(saved)); alert('Email verified (simulated)'); }}>
+              <label><span>Email</span><input name="email" type="email" placeholder="you@example.com" /></label>
+              <label><span>Verification code</span><input name="code" placeholder="Enter code" /></label>
+              <button type="submit" id="settings-verify" className="btn">Verify Email</button>
+              <p id="verify-msg" style={{color:'green',marginTop:8}}></p>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="settings-section">
+        <h2 style={{color:'var(--danger)'}}>Danger Zone</h2>
+        <button className="btn btn-danger" onClick={() => { if (window.confirm('Delete account? This cannot be undone.')) { alert('Account deletion pending... (simulated)'); } }}>Delete Account</button>
+      </div>
+
       <MobileBottomNav />
     </div>
   );

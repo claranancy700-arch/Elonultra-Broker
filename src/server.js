@@ -40,6 +40,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   try {
     // Register routes after DB init attempt
     const authRoutes = require('./routes/auth');
+    const marketsRoutes = require('./routes/markets');
     const contactRoutes = require('./routes/contact');
     const withdrawalRoutes = require('./routes/withdrawals');
     const depositRoutes = require('./routes/deposit');
@@ -55,6 +56,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     const promptsRoutes = require('./routes/prompts');
     
     app.use('/api/auth', authRoutes);
+    app.use('/api/markets', marketsRoutes);
     app.use('/api/contact', contactRoutes);
     app.use('/api/withdrawals', withdrawalRoutes);
     app.use('/api/deposit', depositRoutes);

@@ -24,8 +24,11 @@ export const Header = () => {
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/markets">Markets</Link>
           <Link to="/transactions">Transactions</Link>
+          <Link to="/deposit">Deposit</Link>
           <Link to="/settings">Settings</Link>
           <Link to="/help">Support</Link>
+          <Link to="/about">About</Link>
+          <Link to="/contact">Contact</Link>
           {/* Theme toggle moved to floating control (ThemeFab) */}
           {user && (
             <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{color:'#ef4444'}}>

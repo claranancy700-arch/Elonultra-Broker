@@ -1,10 +1,19 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import './NotFoundPage.css';
 
 export const NotFoundPage = () => {
   return (
-    <div className="not-found-container">
-      <h1>404 - Page Not Found</h1>
-      <p>The page you're looking for doesn't exist.</p>
+    <div className="not-found-page">
+      <div className="not-found-content">
+        <div className="not-found-icon">🔍</div>
+        <h1>404</h1>
+        <p>The page you're looking for doesn't exist or has been moved.</p>
+        <div className="not-found-buttons">
+          <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
+          <Link to="/" className="btn btn-secondary">Back to Home</Link>
+        </div>
+      </div>
     </div>
   );
 };

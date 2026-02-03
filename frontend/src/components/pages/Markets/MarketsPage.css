@@ -2,53 +2,66 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+.markets-page.modern {
+  padding: 18px 16px 80px;
 }
 
-.markets-page h1 {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 8px;
+.markets-hero {
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:center;
+  margin-bottom:18px;
 }
 
-.markets-page .muted {
-  color: var(--muted);
-  font-size: 14px;
-  margin-bottom: 24px;
-}
+.markets-hero h1{ margin:0; font-size:24px }
+.markets-hero .muted{ color:var(--muted); margin:4px 0 0 }
 
-.search-filter {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
+.markets-controls { display:flex; gap:12px; align-items:center }
+.mp-search { padding:8px 12px; border-radius:8px; border:1px solid var(--border); min-width:220px }
+.mp-filters { display:flex; gap:8px }
+.chip { padding:6px 10px; border-radius:999px; border:1px solid rgba(var(--accent-rgb),0.08); background:transparent; cursor:pointer }
+.chip.active { background: linear-gradient(90deg,var(--accent),var(--accent-light)); color:white; box-shadow:0 4px 12px rgba(var(--accent-rgb),0.14) }
 
-.search-input,
-.sort-select {
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--text-rgb), 0.2);
-  background: rgba(var(--card-rgb), 0.5);
-  color: var(--text);
-  font-size: 14px;
-  transition: border-color 200ms ease;
-}
+.market-cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px }
+.market-card { display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:12px; background:var(--card); border:1px solid var(--border); text-decoration:none; color:inherit }
+.market-card { cursor: pointer }
+.market-card:focus { outline: 2px solid rgba(var(--accent-rgb),0.18) }
+.mc-top { display:flex; justify-content:space-between; align-items:center }
+.mc-symbol { font-weight:700 }
+.mc-change.positive { color:var(--success) }
+.mc-change.negative { color:var(--danger) }
+.mc-price { font-size:18px; font-weight:700 }
+.mc-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--muted) }
+.mc-spark { height:28px; border-radius:6px; background:linear-gradient(90deg, rgba(var(--accent-rgb),0.04), rgba(var(--card-rgb),0.02)) }
 
-.search-input:focus,
-.sort-select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+.mc-actions { display:flex; gap:8px; margin-top:8px }
+.mc-action-btn { flex:1; padding:8px 10px; border-radius:8px; border:1px solid rgba(var(--accent-rgb),0.06); background:transparent; font-weight:600; cursor:pointer }
+.mc-action-btn.watched { background: linear-gradient(90deg, rgba(var(--accent-rgb),0.06), rgba(var(--card-rgb),0.02)); color:var(--accent) }
+.mc-action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.06) }
 
-.search-input {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
-}
+.mp-loading, .mp-empty { text-align:center; color:var(--muted); padding:40px }
 
-.sort-select {
-  min-width: 150px;
+@media (max-width:600px){ .markets-hero{flex-direction:column;align-items:flex-start} .markets-controls{width:100%;display:flex;flex-direction:column;gap:8px} .mp-search{width:100%} }
+
+.mp-livebar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.live-dot{width:10px;height:10px;border-radius:50%;background:#aaa;display:inline-block}
+.live-dot.on{background:#16a34a}
+.live-dot.off{background:#ef4444}
+.live-label{font-size:13px;color:var(--muted)}
+
+/* Mobile optimizations */
+@media (max-width: 600px) {
+  .market-cards { grid-template-columns: 1fr; gap: 10px }
+  .market-card { padding: 14px; border-radius: 12px }
+  .mc-price { font-size: 16px }
+  .mc-meta { display: none }
+  .mc-symbol { font-size: 16px }
+  .mc-change { font-size: 13px }
+  .mp-filters { display:flex; gap:6px }
+  .chip { padding:6px 8px; font-size:13px }
+  .mp-search { font-size:14px; padding:10px }
+}
 }
 
 .markets-table-wrapper {

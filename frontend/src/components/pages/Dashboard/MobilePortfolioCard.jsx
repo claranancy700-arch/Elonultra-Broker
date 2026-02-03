@@ -1,4 +1,5 @@
 import React from 'react';
+import './MobilePortfolioCard.css';
 
 const MobilePortfolioCard = ({ portfolio }) => {
   // Handle null or undefined portfolio

@@ -1,0 +1,10 @@
+.withdrawals-page{padding:20px 16px 80px}
+.withdraw-grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+.user-card{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:10px}
+.user-card .field{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(var(--accent-rgb),0.04)}
+.withdraw-form{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:10px}
+.withdraw-form label{display:block;margin-bottom:12px}
+.withdraw-form input,.withdraw-form select{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border)}
+.fee-box{background:rgba(var(--accent-rgb),0.03);padding:10px;border-radius:8px;margin-bottom:12px}
+.actions{display:flex;gap:8px;margin-top:8px}
+@media(max-width:900px){.withdraw-grid{grid-template-columns:1fr}}

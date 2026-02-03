@@ -1,171 +1,122 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './MarketsPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
-import API from '../../services/api';
+import API from '../../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const MarketsPage = () => {
   const [markets, setMarkets] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('price');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('top');
   const [loading, setLoading] = useState(true);
-  const [expandedTables, setExpandedTables] = useState({
-    markets: false,
-    trending: false,
-    watchlist: false
-  });
+  const [live, setLive] = useState(true);
+  const pollRef = useRef(null);
 
   useEffect(() => {
     fetchMarkets();
+    // start live polling from CoinGecko
+    startLivePolling();
+    return () => stopLivePolling();
   }, []);
 
   const fetchMarkets = async () => {
     try {
       setLoading(true);
-      const response = await API.get('/markets');
-      setMarkets(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch markets:', error);
+      const res = await API.get('/markets');
+      setMarkets(res.data || []);
+    } catch (err) {
+      console.error('fetchMarkets error', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredMarkets = markets
-    .filter((m) => m.symbol?.toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === 'name') return a.symbol.localeCompare(b.symbol);
-      if (sortBy === 'price') return (b.price || 0) - (a.price || 0);
-      if (sortBy === 'change') return (b.change_24h || 0) - (a.change_24h || 0);
-      return 0;
-    });
-
-  const trendingMarkets = [...markets]
-    .sort((a, b) => Math.abs(b.change_24h || 0) - Math.abs(a.change_24h || 0))
-    .slice(0, 5);
-
-  const toggleTable = (table) => {
-    setExpandedTables(prev => ({ ...prev, [table]: !prev[table] }));
+  // Fetch real-time market data from backend `/markets` endpoint
+  const fetchExternalMarkets = async () => {
+    try {
+      const res = await API.get('/markets');
+      const data = res?.data || [];
+      // Normalize keys (ensure symbol uppercase)
+      const mapped = data.map(d => ({
+        id: d.id,
+        symbol: (d.symbol || d.ticker || d.code || '').toUpperCase(),
+        name: d.name || d.title || '',
+        price: d.price ?? d.current_price ?? 0,
+        change_24h: d.change_24h ?? d.price_change_percentage_24h ?? 0,
+        high_24h: d.high_24h ?? d.high ?? 0,
+        low_24h: d.low_24h ?? d.low ?? 0,
+        volume_24h: d.volume_24h ?? d.total_volume ?? 0,
+        market_cap: d.market_cap ?? d.marketcap ?? 0,
+      }));
+      setMarkets(mapped);
+    } catch (err) {
+      console.warn('Backend market fetch failed, keeping previous data', err.message);
+    }
   };
 
-  const MarketTable = ({ title, data, showMarketCap = true, actionLabel = null, onAction = null }) => (
-    <div className="table-wrapper">
-      <div className="table-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3>{title}</h3>
-          {actionLabel && <button className="btn btn-secondary">{actionLabel}</button>}
-        </div>
-      </div>
-      <table className="markets-table">
-        <thead>
-          <tr>
-            <th>Asset</th>
-            <th>Price</th>
-            <th className="col-change"><span className="desktop">24h Change</span><span className="mobile">24H</span></th>
-            <th className="col-high"><span className="desktop">24h High</span><span className="mobile" aria-hidden="true">▲</span></th>
-            <th className="col-low"><span className="desktop">24h Low</span><span className="mobile" aria-hidden="true">▼</span></th>
-            <th>Volume</th>
-            {showMarketCap && <th>Market Cap</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {data.length ? (
-            data.map((m) => (
-              <tr key={m.id || m.symbol}>
-                <td className="asset-cell">
-                  <span className="asset-symbol">{m.symbol}</span>
-                  <span className="asset-name">{m.name}</span>
-                </td>
-                <td>${m.price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td className={`change ${m.change_24h >= 0 ? 'positive' : 'negative'}`}>
-                  {m.change_24h >= 0 ? '+' : ''}{m.change_24h?.toFixed(2)}%
-                </td>
-                <td>${m.high_24h?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td>${m.low_24h?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                <td>${m.volume_24h?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                {showMarketCap && <td>${m.market_cap?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={showMarketCap ? 7 : 6} style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                No data available
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  const startLivePolling = () => {
+    if (pollRef.current) return;
+    // fetch immediately then every 5 seconds
+    fetchExternalMarkets();
+    pollRef.current = setInterval(() => {
+      if (live) fetchExternalMarkets();
+    }, 5000);
+  };
+
+  const stopLivePolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const filtered = markets
+    .filter(m => {
+      if (!m) return false;
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      return (m.symbol || '').toLowerCase().includes(q) || (m.name || '').toLowerCase().includes(q);
+    })
+    .sort((a,b) => {
+      if (filter === 'gainers') return (b.change_24h||0) - (a.change_24h||0);
+      if (filter === 'losers') return (a.change_24h||0) - (b.change_24h||0);
+      // top by market cap
+      return (b.market_cap||0) - (a.market_cap||0);
+    });
 
   return (
-    <div className="markets-page">
-      <h1>Markets</h1>
-      <p className="muted">Real-time cryptocurrency market data</p>
+    <div className="markets-page modern">
+      <header className="markets-hero">
+        <div>
+          <h1>Markets</h1>
+          <p className="muted">Fast, lightweight market overview — tap an asset to trade.</p>
+        </div>
+        <div className="markets-controls">
+          <input className="mp-search" placeholder="Search symbol or name" value={query} onChange={e=>setQuery(e.target.value)} />
+          <div className="mp-filters">
+            <button className={`chip ${filter==='top'?'active':''}`} onClick={()=>setFilter('top')}>Top</button>
+            <button className={`chip ${filter==='gainers'?'active':''}`} onClick={()=>setFilter('gainers')}>Gainers</button>
+            <button className={`chip ${filter==='losers'?'active':''}`} onClick={()=>setFilter('losers')}>Losers</button>
+          </div>
+        </div>
+      </header>
 
-      <div className="search-filter">
-        <input
-          type="text"
-          placeholder="Search assets..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="sort-select">
-          <option value="name">Sort by Name</option>
-          <option value="price">Sort by Price</option>
-          <option value="change">Sort by 24h Change</option>
-        </select>
+      <div className="mp-livebar">
+        <span className={`live-dot ${live ? 'on' : 'off'}`}></span>
+        <span className="live-label">Live</span>
+        <button className="btn btn-small" onClick={() => setLive(prev => !prev)} style={{marginLeft:8}}>{live ? 'Pause' : 'Resume'}</button>
       </div>
 
       {loading ? (
-        <div className="loading">Loading markets...</div>
+        <div className="mp-loading">Loading market data...</div>
       ) : (
-        <>
-          {/* Cryptocurrency Prices Table */}
-          <div style={{ marginBottom: '32px' }}>
-            <MarketTable
-              title="Cryptocurrency Prices"
-              data={filteredMarkets}
-              showMarketCap={true}
-            />
-          </div>
-
-          {/* Trending & Watchlist Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '48px' }}>
-            <div>
-              <h2>Trending Today</h2>
-              <MarketTable
-                title="Top Movers"
-                data={trendingMarkets}
-                showMarketCap={false}
-              />
-            </div>
-
-            <div>
-              <h2>Your Watchlist</h2>
-              <div className="table-wrapper">
-                <div className="table-header">
-                  <h3>Watchlist</h3>
-                </div>
-                <table className="markets-table">
-                  <thead>
-                    <tr>
-                      <th>Asset</th>
-                      <th>Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td colSpan="2" style={{ textAlign: 'center', color: 'var(--muted)', padding: '20px' }}>
-                        No assets in watchlist
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </>
+        <section className="market-cards">
+          {filtered.length ? filtered.map(m => (
+            <MarketCard key={m.id || m.symbol} m={m} />
+          )) : (
+            <div className="mp-empty">No markets match your search</div>
+          )}
+        </section>
       )}
 
       <MobileBottomNav />
@@ -174,3 +125,37 @@ const MarketsPage = () => {
 };
 
 export { MarketsPage };
+
+const MarketCard = ({ m }) => {
+  const navigate = useNavigate();
+  const [watched, setWatched] = React.useState(false);
+
+  const openDetail = () => {
+    const symbol = m.symbol || m.id || '';
+    navigate(`/markets/${symbol}`);
+  };
+
+  const toggleWatch = (e) => {
+    e.stopPropagation();
+    setWatched(prev => !prev);
+  };
+
+  return (
+    <div className="market-card" onClick={openDetail} role="button" tabIndex={0} onKeyPress={(e)=>{ if(e.key==='Enter') openDetail(); }}>
+      <div className="mc-top">
+        <div className="mc-symbol">{m.symbol}</div>
+        <div className={`mc-change ${ (m.change_24h||0) >=0 ? 'positive' : 'negative' }`}>{(m.change_24h||0).toFixed(2)}%</div>
+      </div>
+      <div className="mc-price">${Number(m.price||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+      <div className="mc-meta">
+        <span>Vol: ${Number(m.volume_24h||0).toLocaleString()}</span>
+        <span>MC: ${Number(m.market_cap||0).toLocaleString()}</span>
+      </div>
+      <div className="mc-spark"></div>
+      <div className="mc-actions">
+        <button className="mc-action-btn" onClick={(e)=>{ e.stopPropagation(); navigate(`/markets/${m.symbol}`); }}>Trade</button>
+        <button className={`mc-action-btn ${watched ? 'watched' : ''}`} onClick={toggleWatch}>{watched ? '★ Watchlist' : '☆ Watch'}</button>
+      </div>
+    </div>
+  );
+};

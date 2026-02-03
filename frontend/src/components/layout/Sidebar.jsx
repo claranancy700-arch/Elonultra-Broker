@@ -28,6 +28,12 @@ export const Sidebar = () => {
         💳 Transactions
       </Link>
       <Link 
+        to="/deposit" 
+        className={`sidebar-link ${isActive('/deposit') ? 'active' : ''}`}
+      >
+        💰 Deposit
+      </Link>
+      <Link 
         to="/settings" 
         className={`sidebar-link ${isActive('/settings') ? 'active' : ''}`}
       >

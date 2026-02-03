@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './TransactionsPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
-import API from '../../services/api';
+import { Link } from 'react-router-dom';
+import API from '../../../services/api';
 
 export const TransactionsPage = () => {
   const [activeTab, setActiveTab] = useState('deposits');
@@ -109,7 +110,7 @@ export const TransactionsPage = () => {
                 columns={['Date', 'Method', 'Asset', 'Amount', 'Status', 'TxID']}
                 emptyMsg="No deposits yet"
               />
-              <a href="/deposit" className="btn" style={{ marginTop: '16px' }}>Add Funds</a>
+              <Link to="/deposit" className="btn" style={{ marginTop: '16px' }}>Add Funds</Link>
             </div>
           )}
 
@@ -121,7 +122,7 @@ export const TransactionsPage = () => {
                 columns={['Date', 'Method', 'Asset', 'Amount', 'Status', 'TxID']}
                 emptyMsg="No withdrawals yet"
               />
-              <a href="/withdrawals" className="btn" style={{ marginTop: '16px' }}>Withdraw Funds</a>
+              <Link to="/withdrawals" className="btn" style={{ marginTop: '16px' }}>Withdraw Funds</Link>
             </div>
           )}
 

@@ -1,0 +1,111 @@
+.mobile-portfolio-card {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-portfolio-card {
+    display: block;
+    background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mobile-portfolio-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+  }
+
+  .portfolio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .portfolio-header h3 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .portfolio-header .change {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .portfolio-header .change.positive {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
+
+  .portfolio-header .change.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .portfolio-stat {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .portfolio-stat:last-child {
+    margin-bottom: 0;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-item label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .stat-item .value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .portfolio-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .portfolio-actions button {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .portfolio-actions button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+}
