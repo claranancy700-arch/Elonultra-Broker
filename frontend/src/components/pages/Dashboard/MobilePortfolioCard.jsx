@@ -30,14 +30,11 @@ const MobilePortfolioCard = ({ portfolio }) => {
               stroke-width: 2;
               fill: none;
               stroke-dasharray: 1000;
-              animation: flowChart 4s ease-in-out infinite;
+              animation: flowChart 3.5s ease-in-out infinite;
             }
-            .chart-line:nth-child(2) {
-              animation-delay: 0.3s;
-            }
-            .chart-line:nth-child(3) {
-              animation-delay: 0.6s;
-            }
+            .chart-line:nth-of-type(1) { opacity: 0.95; }
+            .chart-line:nth-of-type(2) { opacity: 0.6; animation-delay: 0.2s; }
+            .chart-line:nth-of-type(3) { opacity: 0.35; animation-delay: 0.5s; }
           `}</style>
           <linearGradient id="gradientChart" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="rgba(251, 191, 36, 0.8)" />
@@ -69,8 +66,8 @@ const MobilePortfolioCard = ({ portfolio }) => {
         zIndex: 10
       }}>
         <div style={{
-          backgroundColor: 'rgba(251, 191, 36, 0.1)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          backgroundColor: 'transparent',
+          border: 'none',
           borderRadius: '8px',
           padding: '12px',
           textAlign: 'center'
@@ -94,8 +91,8 @@ const MobilePortfolioCard = ({ portfolio }) => {
         </div>
 
         <div style={{
-          backgroundColor: 'rgba(251, 191, 36, 0.1)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          backgroundColor: 'transparent',
+          border: 'none',
           borderRadius: '8px',
           padding: '12px',
           textAlign: 'center'
@@ -119,8 +116,8 @@ const MobilePortfolioCard = ({ portfolio }) => {
         </div>
 
         <div style={{
-          backgroundColor: 'rgba(251, 191, 36, 0.1)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          backgroundColor: 'transparent',
+          border: 'none',
           borderRadius: '8px',
           padding: '12px',
           textAlign: 'center'
@@ -144,8 +141,8 @@ const MobilePortfolioCard = ({ portfolio }) => {
         </div>
 
         <div style={{
-          backgroundColor: 'rgba(251, 191, 36, 0.1)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          backgroundColor: 'transparent',
+          border: 'none',
           borderRadius: '8px',
           padding: '12px',
           textAlign: 'center'

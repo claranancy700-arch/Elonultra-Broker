@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './Header.css';
@@ -6,18 +6,10 @@ import './Header.css';
 export const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState('dark');
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
   };
 
   return (
@@ -34,9 +26,7 @@ export const Header = () => {
           <Link to="/transactions">Transactions</Link>
           <Link to="/settings">Settings</Link>
           <Link to="/help">Support</Link>
-          <button className="theme-toggle" onClick={toggleTheme}>
-            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
+          {/* Theme toggle moved to floating control (ThemeFab) */}
           {user && (
             <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{color:'#ef4444'}}>
               Logout

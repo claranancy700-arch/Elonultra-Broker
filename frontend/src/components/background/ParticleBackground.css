@@ -1,0 +1,37 @@
+.particle-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Sit behind UI features but above plain background */
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Disable transition to avoid vibration on route changes */
+  transition: none;
+  will-change: transform;
+}
+
+/* Dark theme - use screen blend mode for particles */
+.particle-background.dark {
+  mix-blend-mode: screen;
+  opacity: 0.6;
+}
+
+/* Light theme - DEBUG: force visibility */
+.particle-background.light {
+  mix-blend-mode: normal;
+  opacity: 1;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.particle-background svg {
+  width: 100%;
+  height: 100%;
+  min-width: 700px;
+  min-height: 400px;
+  display: block;
+  object-fit: cover;
+}

@@ -3,6 +3,19 @@
   animation: fadeInUp 0.6s ease-out;
 }
 
+/* Mobile-only components hidden by default (show via media queries) */
+.mobile-portfolio-card,
+.mobile-action-buttons,
+.mobile-portfolio-carousel {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-portfolio-carousel {
+    display: block;
+  }
+}
+
 .dashboard-page h1 {
   font-size: 28px;
   margin: 0 0 24px 0;
@@ -28,22 +41,23 @@
 
 /* Table Wrapper */
 .table-wrapper {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: rgba(var(--card-rgb), 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--text-rgb), 0.1);
   border-radius: 12px;
   overflow-x: auto;
   overflow-y: visible;
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(var(--text-rgb), 0.05);
   animation: slideInUp 0.6s ease-out;
   max-width: 100%;
   box-sizing: border-box;
 }
 
 .table-header {
-  background: rgba(251, 191, 36, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
 }
 
 .table-header h3 {
@@ -110,7 +124,7 @@ tbody tr:last-child td {
 /* Tabs */
 .tabs {
   display: flex;
-  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
   margin-bottom: 24px;
   gap: 0;
 }
@@ -129,7 +143,7 @@ tbody tr:last-child td {
 
 .tab-btn:hover {
   color: var(--accent-light);
-  background: rgba(251, 191, 36, 0.08);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .tab-btn.active {
@@ -157,30 +171,30 @@ tbody tr:last-child td {
 }
 
 .status-required {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(var(--warn-rgb), 0.15);
+  color: var(--warn);
 }
 
 .status-submitted {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
 }
 
 .status-confirmed,
 .status-success {
-  background: #d1fae5;
-  color: #065f46;
+  background: rgba(var(--success), 0.1);
+  color: var(--success);
 }
 
 .status-pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: rgba(var(--warn-rgb), 0.15);
+  color: var(--warn);
 }
 
 .status-failed,
 .status-error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: rgba(var(--danger), 0.1);
+  color: var(--danger);
 }
 
 /* Form Styles */
@@ -211,13 +225,14 @@ tbody tr:last-child td {
 .form select {
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(251, 191, 36, 0.2);
-  background: #0f172a;
+  border: 1px solid rgba(var(--text-rgb), 0.2);
+  background: rgba(var(--text-rgb), 0.05);
+  backdrop-filter: blur(5px);
   color: var(--text);
   font-size: 14px;
   font-family: inherit;
   transition: var(--transition);
-  box-shadow: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .form input:focus,
@@ -225,8 +240,8 @@ tbody tr:last-child td {
 .form select:focus {
   outline: none;
   border-color: var(--accent);
-  background: #0f172a;
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
 }
 
 .form input::placeholder,
@@ -241,20 +256,22 @@ tbody tr:last-child td {
 
 /* Button Styles */
 .btn {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: #0f172a;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  background: rgba(var(--accent-rgb), 0.85);
+  backdrop-filter: blur(10px);
+  color: #fff;
   padding: 10px 16px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   text-decoration: none;
   display: inline-block;
-  border: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn:hover {
@@ -347,8 +364,7 @@ tbody tr:last-child td {
   /* Show mobile portfolio card */
   .mobile-portfolio-card {
     display: block;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid rgba(251, 191, 36, 0.2);
+    background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);\n    border: 1px solid rgba(var(--accent-rgb), 0.2);
     padding: 16px;
     border-radius: 12px;
     margin-bottom: 20px;
@@ -470,7 +486,7 @@ tbody tr:last-child td {
   }
 
   th, td {
-    padding: 6px 8px;
+    padding: 13px 8px;
   }
 
   .tab-btn {
@@ -497,8 +513,8 @@ tbody tr:last-child td {
   }
 
   .btn {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   .mobile-action-buttons {
@@ -508,6 +524,12 @@ tbody tr:last-child td {
   .action-btn {
     padding: 10px;
     font-size: 11px;
+  }
+
+  /* Reduce See More / secondary buttons on very small screens (override inline styles) */
+  .table-header .btn.btn-secondary {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
   }
 }
 

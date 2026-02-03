@@ -1,0 +1,65 @@
+<svg id="sunRaysSVG" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 400" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" width="700" height="400" preserveAspectRatio="xMidYMid slice" style="background-color:transparent">
+  <defs>
+    <linearGradient id="sunGradient1" x1="0" y1="0" x2="1" y2="1" spreadMethod="pad" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#FFA500" />
+      <stop offset="100%" stop-color="#FF8C00" />
+    </linearGradient>
+    <linearGradient id="sunGradient2" x1="0" y1="1" x2="1" y2="0" spreadMethod="pad" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#FF6347" />
+      <stop offset="50%" stop-color="#FFB347" />
+      <stop offset="100%" stop-color="#FFD700" />
+    </linearGradient>
+    <filter id="sunGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <style>{`
+    @keyframes sunRayRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes sunRayPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    @keyframes sunRadiate { 0% { r: 80px; opacity: 0.8; } 100% { r: 180px; opacity: 0; } }
+    
+    #sunCore { animation: sunRayPulse 4000ms ease-in-out infinite; filter: url(#sunGlow); }
+    #sunRayGroup { animation: sunRayRotate 20000ms linear infinite; transform-origin: -100px -100px; }
+    .sunRadiance { animation: sunRadiate 3000ms ease-out infinite; }
+  `}</style>
+
+  <!-- Radiating circles for glow effect -->
+  <circle cx="-50" cy="-50" r="80px" class="sunRadiance" fill="none" stroke="url(#sunGradient1)" stroke-width="2" />
+  <circle cx="-50" cy="-50" r="80px" class="sunRadiance" fill="none" stroke="url(#sunGradient2)" stroke-width="1" style="animation-delay: 1000ms" />
+
+  <!-- Sun core with glow -->
+  <g id="sunCore">
+    <circle cx="-50" cy="-50" r="60" fill="url(#sunGradient1)" />
+    <circle cx="-50" cy="-50" r="55" fill="url(#sunGradient2)" opacity="0.8" />
+  </g>
+
+  <!-- Rotating rays -->
+  <g id="sunRayGroup">
+    <!-- Ray 1 -->
+    <path d="M -50,-50 Q -70,-120 -60,-180" stroke="url(#sunGradient1)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 2 -->
+    <path d="M -50,-50 Q 0,-130 50,-180" stroke="url(#sunGradient2)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 3 -->
+    <path d="M -50,-50 Q 70,-100 140,-100" stroke="url(#sunGradient1)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 4 -->
+    <path d="M -50,-50 Q 80,-30 160,30" stroke="url(#sunGradient2)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 5 -->
+    <path d="M -50,-50 Q 50,50 80,140" stroke="url(#sunGradient1)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 6 -->
+    <path d="M -50,-50 Q -10,80 -60,150" stroke="url(#sunGradient2)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 7 -->
+    <path d="M -50,-50 Q -80,60 -160,100" stroke="url(#sunGradient1)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <!-- Ray 8 -->
+    <path d="M -50,-50 Q -100,-20 -170,-40" stroke="url(#sunGradient2)" stroke-width="8" fill="none" stroke-linecap="round" />
+  </g>
+
+  <!-- Soft wave overlay for additional depth -->
+  <path d="M -200,-200 Q -100,-100 0,0 T 200,200" stroke="url(#sunGradient1)" stroke-width="2" fill="none" opacity="0.3" />
+  <path d="M -200,0 Q 0,100 200,0 T 400,200" stroke="url(#sunGradient2)" stroke-width="2" fill="none" opacity="0.25" style="animation: sunRayRotate 30000ms linear infinite reverse" />
+</svg>

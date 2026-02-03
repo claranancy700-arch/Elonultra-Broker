@@ -24,12 +24,14 @@
     margin-left: 0;
     padding: 16px;
     width: 100%;
+    padding-bottom: 80px; /* space for sticky mobile bottom nav */
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
     padding: 12px;
+    padding-bottom: 72px; /* ensure content isn't obscured by bottom nav on very small screens */
   }
 }
 

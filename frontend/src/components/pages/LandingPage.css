@@ -5,8 +5,8 @@
 }
 
 .site-header {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(var(--card-rgb), 0.15));
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.2);
   padding: 16px 0;
   position: sticky;
   top: 0;
@@ -25,7 +25,7 @@
 .site-header .brand {
   font-size: 18px;
   font-weight: 700;
-  color: var(--primary, #3b82f6);
+  color: var(--accent);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -40,17 +40,17 @@
 
 .site-header .nav a {
   text-decoration: none;
-  color: var(--text, #e0e7ff);
+  color: var(--text);
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .site-header .nav a:hover {
-  color: var(--primary, #3b82f6);
+  color: var(--accent);
 }
 
 .site-header .btn {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   color: white;
   padding: 8px 16px;
   border-radius: 6px;
@@ -84,7 +84,7 @@
   font-size: 48px;
   font-weight: 800;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -93,7 +93,7 @@
 
 .hero-section p {
   font-size: 18px;
-  color: var(--muted, #cbd5e1);
+  color: var(--muted);
   margin-bottom: 24px;
   max-width: 600px;
   margin-left: auto;
@@ -101,7 +101,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
   color: white !important;
   padding: 12px 32px !important;
   border-radius: 6px !important;
@@ -119,9 +119,9 @@
 
 .btn-secondary {
   background: transparent !important;
-  color: var(--primary, #3b82f6) !important;
+  color: var(--accent) !important;
   padding: 12px 32px !important;
-  border: 2px solid var(--primary, #3b82f6) !important;
+  border: 2px solid var(--accent) !important;
   border-radius: 6px !important;
   text-decoration: none !important;
   font-weight: 600 !important;
@@ -148,8 +148,8 @@
 }
 
 .feature-card {
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: 12px;
   padding: 32px 24px;
   text-align: center;
@@ -157,8 +157,8 @@
 }
 
 .feature-card:hover {
-  border-color: rgba(139, 92, 246, 0.5);
-  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.15);
   transform: translateY(-2px);
 }
 
@@ -166,19 +166,19 @@
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 12px;
-  color: var(--text, #e0e7ff);
+  color: var(--text);
 }
 
 .feature-card p {
   font-size: 14px;
-  color: var(--muted, #cbd5e1);
+  color: var(--muted);
   line-height: 1.6;
 }
 
 .testimonies-section {
   margin: 100px auto 60px;
   padding: 60px 20px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.05), rgba(var(--card-rgb), 0.08));
   border-radius: 12px;
   width: 100%;
   max-width: 1200px;
@@ -189,7 +189,7 @@
   font-size: 36px;
   font-weight: 800;
   margin-bottom: 50px;
-  color: var(--text, #e0e7ff);
+  color: var(--text);
 }
 
 .testimonies-grid {
@@ -200,16 +200,16 @@
 }
 
 .testimony-card {
-  background: rgba(139, 92, 246, 0.05);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(var(--accent-rgb), 0.05);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: 12px;
   padding: 24px;
   transition: all 0.3s ease;
 }
 
 .testimony-card:hover {
-  border-color: rgba(139, 92, 246, 0.5);
-  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 .testimony-card .stars {
@@ -219,7 +219,7 @@
 
 .testimony-card .message {
   font-size: 14px;
-  color: var(--muted, #cbd5e1);
+  color: var(--muted);
   line-height: 1.6;
   margin-bottom: 12px;
   font-style: italic;
@@ -228,15 +228,15 @@
 .testimony-card .name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--primary, #3b82f6);
+  color: var(--accent);
 }
 
 .site-footer {
-  background: rgba(139, 92, 246, 0.1);
-  border-top: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-top: 1px solid rgba(var(--accent-rgb), 0.2);
   padding: 32px 24px;
   text-align: center;
-  color: var(--muted, #cbd5e1);
+  color: var(--muted);
   margin-top: auto;
 }
 

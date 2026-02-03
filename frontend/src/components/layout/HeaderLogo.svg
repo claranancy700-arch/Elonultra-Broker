@@ -1,0 +1,81 @@
+<svg id="headerLogo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="var(--accent)" />
+      <stop offset="100%" stop-color="var(--accent-light, #FF006E)" />
+    </linearGradient>
+    <filter id="logoGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>{`
+    @keyframes logoFloat { 
+      0%, 100% { transform: translateY(0px); } 
+      50% { transform: translateY(-8px); } 
+    }
+    @keyframes logoPulse { 
+      0%, 100% { opacity: 1; filter: brightness(1); } 
+      50% { opacity: 0.85; filter: brightness(1.2); } 
+    }
+    @keyframes brandShimmer {
+      0% { fill-opacity: 0.7; }
+      50% { fill-opacity: 1; }
+      100% { fill-opacity: 0.7; }
+    }
+    @keyframes iconRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #logoIcon {
+      animation: logoFloat 3000ms ease-in-out infinite, logoPulse 4000ms ease-in-out infinite;
+      transform-origin: center;
+      filter: url(#logoGlow);
+    }
+    
+    #brandText {
+      animation: brandShimmer 3000ms ease-in-out infinite;
+    }
+
+    .logoDecor {
+      animation: iconRotate 8000ms linear infinite;
+      transform-origin: 50px 60px;
+    }
+  `}</style>
+
+  <!-- Decorative rotating circle behind icon -->
+  <circle cx="50" cy="60" r="45" fill="none" stroke="url(#logoGrad)" stroke-width="1.5" opacity="0.4" class="logoDecor" />
+
+  <!-- Main logo icon (stylized E for Elon) -->
+  <g id="logoIcon">
+    <!-- Vertical bar of E -->
+    <rect x="25" y="30" width="8" height="60" rx="2" fill="url(#logoGrad)" />
+    <!-- Top horizontal bar of E -->
+    <path d="M 33 30 Q 50 25 60 32" stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- Middle horizontal bar of E -->
+    <path d="M 33 58 Q 48 55 58 60" stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- Bottom horizontal bar of E -->
+    <path d="M 33 88 Q 52 92 62 88" stroke="url(#logoGrad)" stroke-width="6" fill="none" stroke-linecap="round" />
+  </g>
+
+  <!-- Brand text "Elon U" with shimmer -->
+  <g id="brandText">
+    <!-- "Elon" -->
+    <text x="80" y="65" font-family="'Segoe UI', Trebuchet MS, sans-serif" font-size="32" font-weight="700" fill="var(--text)" letter-spacing="1">
+      Elon
+    </text>
+    <!-- "U" with slight offset -->
+    <text x="195" y="65" font-family="'Segoe UI', Trebuchet MS, sans-serif" font-size="32" font-weight="700" fill="url(#logoGrad)" letter-spacing="1">
+      U
+    </text>
+  </g>
+
+  <!-- Accent dots for visual interest -->
+  <circle cx="75" cy="85" r="2.5" fill="url(#logoGrad)" opacity="0.6" />
+  <circle cx="190" cy="85" r="2.5" fill="url(#logoGrad)" opacity="0.6" />
+</svg>

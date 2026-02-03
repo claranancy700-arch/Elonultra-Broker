@@ -150,9 +150,33 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   app.use(errorHandler);
 
   // START THE SERVER - after routes are registered
-  const server = app.listen(port, () => {
-    console.log(`✓ Server listening on port ${port}`);
-  });
+  // Try to listen on configured port, but if it's in use, try the next few ports
+  const tryListen = (startPort, attempts = 5) => {
+    let p = startPort;
+    const attempt = () => {
+      const srv = app.listen(p, () => {
+        console.log(`✓ Server listening on port ${p}`);
+      });
+      srv.on('error', (err) => {
+        if (err && err.code === 'EADDRINUSE') {
+          console.warn(`Port ${p} in use, trying ${p + 1}...`);
+          p += 1;
+          if (p <= startPort + attempts) {
+            setTimeout(attempt, 200);
+            return;
+          }
+          console.error('No available ports found, exiting.');
+          process.exit(1);
+        } else {
+          console.error('Server error:', err);
+          process.exit(1);
+        }
+      });
+    };
+    attempt();
+  };
+
+  tryListen(port, 10);
 
   // Graceful shutdown
   process.on('SIGTERM', () => {

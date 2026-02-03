@@ -1,11 +1,13 @@
 /* Header Styles */
 .site-header {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
+  background: rgba(var(--card-rgb), 0.7);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(var(--text-rgb), 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(var(--text-rgb), 0.1);
   transition: var(--transition);
 }
 
@@ -20,7 +22,7 @@
 }
 
 .brand {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -126,15 +128,9 @@
     font-size: 12px;
   }
 
+  /* hide header nav on mobile - navigation provided by bottom nav */
   .nav {
-    margin-left: 0;
-    gap: 0;
-    width: 100%;
-    order: 3;
-    margin-top: 8px;
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: wrap;
+    display: none !important;
   }
 
   .nav a {
@@ -153,23 +149,36 @@
     padding: 10px 12px;
   }
 
+  /* Make brand take available space so name can fill header */
   .brand {
-    font-size: 12px;
-    gap: 8px;
+    font-size: 16px;
+    gap: 10px;
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    align-items: center;
+    white-space: normal;
   }
 
+  /* Slightly larger logo on mobile to balance the text */
   .brand-logo {
-    height: 40px;
-    width: 40px;
+    height: 48px;
+    width: 48px;
   }
 
+  /* Show the brand name and make it prominent */
   .brand span {
-    display: none;
+    display: block;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100vw - 96px);
   }
 
   .nav {
-    width: 100%;
-    margin-top: 6px;
+    display: none !important;
   }
 
   .nav a {

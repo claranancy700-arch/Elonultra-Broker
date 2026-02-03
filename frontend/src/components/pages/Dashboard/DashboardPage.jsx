@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
-import MobilePortfolioCard from './MobilePortfolioCard';
+import MobilePortfolioCarousel from './MobilePortfolioCarousel';
 import MobileActionButtons from './MobileActionButtons';
 import MobileBottomNav from './MobileBottomNav';
 import './DashboardPage.css';
@@ -92,8 +92,8 @@ export const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Mobile Portfolio Card - only shows on mobile */}
-      <MobilePortfolioCard portfolio={portfolio} />
+      {/* Mobile Portfolio Carousel (3 stacked duplicate cards) - only shows on mobile */}
+      <MobilePortfolioCarousel portfolio={portfolio} />
 
       {/* Mobile Action Buttons - only shows on mobile */}
       <MobileActionButtons />

@@ -8,7 +8,8 @@ const MobileBottomNav = () => {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: 'dashboard' },
     { path: '/markets', label: 'Markets', icon: 'markets' },
-    { path: '/transactions', label: 'History', icon: 'history' },
+    { path: '/transactions', label: 'Transactions', icon: 'history' },
+    { path: '/help', label: 'Help', icon: 'help' },
     { path: '/settings', label: 'Settings', icon: 'settings' },
   ];
 
@@ -42,6 +43,13 @@ const MobileBottomNav = () => {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m2.12-2.12l4.24-4.24"></path>
+          </svg>
+        );
+      case 'help':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4M12 8h.01"></path>
           </svg>
         );
       default:
