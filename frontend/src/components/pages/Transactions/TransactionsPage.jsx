@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './TransactionsPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
+import API from '../../services/api';
 
 export const TransactionsPage = () => {
   const [activeTab, setActiveTab] = useState('deposits');
@@ -14,13 +15,13 @@ export const TransactionsPage = () => {
       try {
         setLoading(true);
         const [depRes, withRes, tradeRes] = await Promise.all([
-          fetch('/api/transactions?type=deposit'),
-          fetch('/api/transactions?type=withdrawal'),
-          fetch('/api/trades')
+          API.get('/transactions?type=deposit'),
+          API.get('/transactions?type=withdrawal'),
+          API.get('/trades')
         ]);
-        setDeposits(await depRes.json() || []);
-        setWithdrawals(await withRes.json() || []);
-        setTrades(await tradeRes.json() || []);
+        setDeposits(depRes.data || []);
+        setWithdrawals(withRes.data || []);
+        setTrades(tradeRes.data || []);
       } catch (err) {
         console.error('Failed to fetch transaction data', err);
       } finally {

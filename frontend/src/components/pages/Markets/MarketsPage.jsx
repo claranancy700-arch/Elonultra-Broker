@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MarketsPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
+import API from '../../services/api';
 
 const MarketsPage = () => {
   const [markets, setMarkets] = useState([]);
@@ -20,9 +21,8 @@ const MarketsPage = () => {
   const fetchMarkets = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/markets');
-      const data = await response.json();
-      setMarkets(data || []);
+      const response = await API.get('/markets');
+      setMarkets(response.data || []);
     } catch (error) {
       console.error('Failed to fetch markets:', error);
     } finally {
