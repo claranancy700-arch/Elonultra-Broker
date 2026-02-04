@@ -58,8 +58,8 @@ async function fetchFromPolygon() {
 
   console.log('[Markets] Fetching from Polygon.io...');
 
-  // Polygon.io crypto tickers endpoint
-  const url = `https://api.polygon.io/v1/marketplaces/crypto/tickers?apikey=${POLYGON_API_KEY}&limit=100&sort=lastquote`;
+  // Polygon.io v3 tickers endpoint (metadata). Note: v3 provides ticker metadata; price fields may be missing.
+  const url = `https://api.polygon.io/v3/reference/tickers?market=crypto&active=true&limit=${per_page||100}&apiKey=${POLYGON_API_KEY}`;
 
   const response = await fetchWithRetry(url);
   const data = await response.json();
@@ -68,22 +68,22 @@ async function fetchFromPolygon() {
     throw new Error('Polygon returned no data');
   }
 
-  // Map Polygon format to our format
+  // Map Polygon v3 format to our format. Price information is not provided in this endpoint,
+  // so we set price to 0 and rely on CoinGecko for actual pricing (CoinGecko is primary).
   const mapped = data.results.map((ticker, index) => {
-    const symbol = ticker.ticker.replace('X:', '').toUpperCase();
-    const price = ticker.lastQuote?.ask || ticker.lastTrade?.p || 0;
-    const prevPrice = price / (1 + ((ticker.todaysChange || 0) / 100));
-    
+    const raw = (ticker.ticker || '').toUpperCase();
+    const symbol = (ticker.base_currency_symbol || raw.replace('X:', ''))?.toUpperCase();
+
     return {
-      id: ticker.ticker.toLowerCase(),
+      id: raw.toLowerCase(),
       symbol: symbol,
-      name: ticker.figi || symbol,
-      price: price,
-      change_24h: ticker.todaysChange || 0,
-      high_24h: ticker.lastQuote?.ask || price,
-      low_24h: ticker.lastQuote?.bid || price,
-      volume_24h: ticker.lastTrade?.s || 0,
-      market_cap: 0, // Polygon doesn't provide market cap
+      name: ticker.name || symbol,
+      price: 0,
+      change_24h: 0,
+      high_24h: 0,
+      low_24h: 0,
+      volume_24h: 0,
+      market_cap: 0,
       market_cap_rank: index + 1,
     };
   });
@@ -139,29 +139,25 @@ router.get('/', async (req, res) => {
     let dataSource = 'unknown';
 
     try {
-      // Try Polygon.io first
-      mapped = await fetchFromPolygon();
-      dataSource = 'Polygon.io';
-    } catch (polygonErr) {
-      console.warn('[Markets] Polygon.io failed:', polygonErr.message);
-      
-      if (COINGECKO_BACKUP) {
-        try {
-          console.log('[Markets] Falling back to CoinGecko...');
-          mapped = await fetchFromCoinGecko(per_page, page);
-          dataSource = 'CoinGecko (fallback)';
-        } catch (geckoErr) {
-          console.error('[Markets] CoinGecko also failed:', geckoErr.message);
-          
-          // Try to return cached data even if expired
-          if (marketCache.data) {
-            console.log('[Markets] Returning expired cache');
-            return res.json(marketCache.data);
-          }
-          
-          throw geckoErr;
+      // Try CoinGecko first (more reliable public endpoint)
+      mapped = await fetchFromCoinGecko(per_page, page);
+      dataSource = 'CoinGecko (primary)';
+    } catch (geckoErr) {
+      console.warn('[Markets] CoinGecko failed:', geckoErr.message);
+
+      // Try Polygon.io as fallback
+      try {
+        mapped = await fetchFromPolygon(per_page);
+        dataSource = 'Polygon.io (fallback)';
+      } catch (polygonErr) {
+        console.error('[Markets] Polygon.io also failed:', polygonErr.message);
+
+        // Try to return cached data even if expired
+        if (marketCache.data) {
+          console.log('[Markets] Returning expired cache');
+          return res.json(marketCache.data);
         }
-      } else {
+
         throw polygonErr;
       }
     }
