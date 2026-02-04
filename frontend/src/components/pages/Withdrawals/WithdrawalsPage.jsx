@@ -16,7 +16,10 @@ export const WithdrawalsPage = () => {
     // fetch profile to get balance
     let mounted = true;
     API.get('/auth/me').then(res => {
-      if (mounted && res?.data?.user) setBalance(res.data.user.balance ?? 0);
+      if (mounted && res?.data?.user) {
+        const bal = Number(res.data.user.balance ?? 0);
+        setBalance(isNaN(bal) ? 0 : bal);
+      }
     }).catch(()=>{});
     return () => { mounted = false; };
   }, []);
