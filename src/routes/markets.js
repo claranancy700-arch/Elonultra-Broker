@@ -8,6 +8,9 @@ let marketCache = {
   CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
 };
 
+const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
+const COINGECKO_BACKUP = true; // Use CoinGecko as fallback
+
 // Retry logic for API calls
 async function fetchWithRetry(url, maxRetries = 3, timeout = 8000) {
   for (let i = 0; i < maxRetries; i++) {
@@ -29,9 +32,8 @@ async function fetchWithRetry(url, maxRetries = 3, timeout = 8000) {
         return response;
       }
 
-      console.warn(`[Markets] Attempt ${i + 1}: CoinGecko returned ${response.status}`);
+      console.warn(`[Markets] Attempt ${i + 1}: API returned ${response.status}`);
       
-      // If rate limited, wait before retrying
       if (response.status === 429 && i < maxRetries - 1) {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
@@ -39,13 +41,81 @@ async function fetchWithRetry(url, maxRetries = 3, timeout = 8000) {
       console.warn(`[Markets] Attempt ${i + 1} failed:`, err.message);
       
       if (i < maxRetries - 1 && err.name !== 'AbortError') {
-        // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }
   
   throw new Error('Failed to fetch after retries');
+}
+
+// Fetch from Polygon.io
+async function fetchFromPolygon() {
+  if (!POLYGON_API_KEY) {
+    console.warn('[Markets] Polygon API key not configured');
+    throw new Error('Polygon API key not configured');
+  }
+
+  console.log('[Markets] Fetching from Polygon.io...');
+
+  // Polygon.io crypto tickers endpoint
+  const url = `https://api.polygon.io/v1/marketplaces/crypto/tickers?apikey=${POLYGON_API_KEY}&limit=100&sort=lastquote`;
+
+  const response = await fetchWithRetry(url);
+  const data = await response.json();
+
+  if (!data.results || data.results.length === 0) {
+    throw new Error('Polygon returned no data');
+  }
+
+  // Map Polygon format to our format
+  const mapped = data.results.map((ticker, index) => {
+    const symbol = ticker.ticker.replace('X:', '').toUpperCase();
+    const price = ticker.lastQuote?.ask || ticker.lastTrade?.p || 0;
+    const prevPrice = price / (1 + ((ticker.todaysChange || 0) / 100));
+    
+    return {
+      id: ticker.ticker.toLowerCase(),
+      symbol: symbol,
+      name: ticker.figi || symbol,
+      price: price,
+      change_24h: ticker.todaysChange || 0,
+      high_24h: ticker.lastQuote?.ask || price,
+      low_24h: ticker.lastQuote?.bid || price,
+      volume_24h: ticker.lastTrade?.s || 0,
+      market_cap: 0, // Polygon doesn't provide market cap
+      market_cap_rank: index + 1,
+    };
+  });
+
+  return mapped;
+}
+
+// Fetch from CoinGecko (fallback)
+async function fetchFromCoinGecko(per_page = 100, page = 1) {
+  console.log('[Markets] Fetching from CoinGecko...');
+
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${per_page}&page=${page}&sparkline=false&price_change_percentage=24h&locale=en`;
+
+  const response = await fetchWithRetry(url);
+  const data = await response.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('CoinGecko returned no data');
+  }
+
+  return data.map(d => ({
+    id: d.id,
+    symbol: (d.symbol || '').toUpperCase(),
+    name: d.name,
+    price: d.current_price,
+    change_24h: d.price_change_percentage_24h ?? 0,
+    high_24h: d.high_24h,
+    low_24h: d.low_24h,
+    volume_24h: d.total_volume,
+    market_cap: d.market_cap,
+    market_cap_rank: d.market_cap_rank,
+  }));
 }
 
 // GET /api/markets - fetch live market data
@@ -65,35 +135,42 @@ router.get('/', async (req, res) => {
 
     console.log('[Markets] Cache expired, fetching fresh data...');
 
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${per_page}&page=${page}&sparkline=false&price_change_percentage=24h&locale=en`;
+    let mapped;
+    let dataSource = 'unknown';
 
-    const response = await fetchWithRetry(url);
-    const data = await response.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
-      console.warn('[Markets] No data from CoinGecko');
-      return res.status(502).json({ error: 'CoinGecko returned no data' });
+    try {
+      // Try Polygon.io first
+      mapped = await fetchFromPolygon();
+      dataSource = 'Polygon.io';
+    } catch (polygonErr) {
+      console.warn('[Markets] Polygon.io failed:', polygonErr.message);
+      
+      if (COINGECKO_BACKUP) {
+        try {
+          console.log('[Markets] Falling back to CoinGecko...');
+          mapped = await fetchFromCoinGecko(per_page, page);
+          dataSource = 'CoinGecko (fallback)';
+        } catch (geckoErr) {
+          console.error('[Markets] CoinGecko also failed:', geckoErr.message);
+          
+          // Try to return cached data even if expired
+          if (marketCache.data) {
+            console.log('[Markets] Returning expired cache');
+            return res.json(marketCache.data);
+          }
+          
+          throw geckoErr;
+        }
+      } else {
+        throw polygonErr;
+      }
     }
-
-    const mapped = data.map(d => ({
-      id: d.id,
-      symbol: (d.symbol || '').toUpperCase(),
-      name: d.name,
-      price: d.current_price,
-      change_24h: d.price_change_percentage_24h ?? 0,
-      high_24h: d.high_24h,
-      low_24h: d.low_24h,
-      volume_24h: d.total_volume,
-      market_cap: d.market_cap,
-      market_cap_rank: d.market_cap_rank,
-      image: d.image, // Include image URL
-    }));
 
     // Cache the result
     marketCache.data = mapped;
     marketCache.timestamp = Date.now();
 
-    console.log('[Markets] Fetched and cached', mapped.length, 'coins');
+    console.log(`[Markets] Fetched ${mapped.length} coins from ${dataSource}`);
     res.json(mapped);
 
   } catch (err) {
@@ -106,7 +183,7 @@ router.get('/', async (req, res) => {
     }
 
     res.status(502).json({ 
-      error: 'Unable to fetch market data. API is temporarily unavailable.',
+      error: 'Unable to fetch market data. All data sources unavailable.',
       message: err.message 
     });
   }
