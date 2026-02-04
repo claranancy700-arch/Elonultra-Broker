@@ -19,7 +19,7 @@ export const ProAdminPage = () => {
   // For quick testing of legacy PRO-admin UI, render PRO-admin.html inside an iframe.
   if (!user?.isAdmin) {
     useEffect(() => { navigate('/dashboard'); }, [navigate]);
-    return null;
+    return null;  
   }
   const [htmlBody, setHtmlBody] = React.useState('');
   const [inlineStyles, setInlineStyles] = React.useState('');

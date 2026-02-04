@@ -28,11 +28,15 @@ export const MarketsPage = () => {
       }
     } catch (err) {
       console.error('Market fetch error:', err);
-      // If 404, provide helpful message
+      // Provide better error messages based on status code
       if (err.response?.status === 404) {
-        setError('Markets endpoint not available. Please ensure the backend is running and the markets route is registered.');
+        setError('Markets endpoint not available. Backend route may not be registered.');
+      } else if (err.response?.status === 502 || err.response?.status === 504) {
+        setError(`Backend error (${err.response.status}): ${err.response.data?.error || 'Unable to reach external API'}. Please try again in a moment.`);
       } else if (err.code === 'ERR_NETWORK') {
-        setError('Network error. Unable to reach the backend.');
+        setError('Network error. Unable to reach the backend server.');
+      } else if (err.message) {
+        setError(`Error: ${err.message}`);
       } else {
         setError('Failed to fetch market data. Please try again.');
       }
