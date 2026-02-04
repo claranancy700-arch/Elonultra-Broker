@@ -26,7 +26,7 @@ export const TestimoniesPage = () => {
           role: 'Day Trader',
           message: 'Best trading platform I\'ve used. Fast execution, great tools, and excellent support!',
           rating: 5,
-          avatar: '👨‍💼'
+          avatar: ''
         },
         {
           id: 2,
@@ -34,7 +34,7 @@ export const TestimoniesPage = () => {
           role: 'Portfolio Manager',
           message: 'The low fees and advanced charting tools make this platform a game-changer for professional traders.',
           rating: 5,
-          avatar: '👩‍💼'
+          avatar: ''
         },
         {
           id: 3,
@@ -42,7 +42,7 @@ export const TestimoniesPage = () => {
           role: 'Crypto Investor',
           message: 'Easy interface, reliable platform, and responsive customer support. Highly recommended!',
           rating: 5,
-          avatar: '👨‍💻'
+          avatar: ''
         }
       ]);
     } finally {
@@ -75,7 +75,7 @@ export const TestimoniesPage = () => {
         <div className="container">
           <div className="testimonies-header">
             <h2>Customer Testimonies</h2>
-            <div className="filter-buttons">
+              <div className="filter-buttons">
               <button 
                 className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
                 onClick={() => setFilter('all')}
@@ -86,13 +86,13 @@ export const TestimoniesPage = () => {
                 className={`filter-btn ${filter === '5' ? 'active' : ''}`}
                 onClick={() => setFilter('5')}
               >
-                ⭐⭐⭐⭐⭐ ({testimonies.filter(t => t.rating === 5).length})
+                ★★★★★ ({testimonies.filter(t => t.rating === 5).length})
               </button>
               <button 
                 className={`filter-btn ${filter === '4' ? 'active' : ''}`}
                 onClick={() => setFilter('4')}
               >
-                ⭐⭐⭐⭐ ({testimonies.filter(t => t.rating === 4).length})
+                ★★★★ ({testimonies.filter(t => t.rating === 4).length})
               </button>
             </div>
           </div>
@@ -104,7 +104,7 @@ export const TestimoniesPage = () => {
               {filteredTestimonies.map(testimony => (
                 <div key={testimony.id} className="testimony-card">
                   <div className="testimony-header">
-                    <div className="avatar">{testimony.avatar || '👤'}</div>
+                    <div className="avatar">{testimony.avatar || <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="8" r="3" stroke="currentColor" strokeWidth="1.6"/><path d="M4 20c1.5-4 6-6 8-6s6.5 2 8 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>}</div>
                     <div className="user-info">
                       <h3>{testimony.name}</h3>
                       <p className="role">{testimony.role || 'Trader'}</p>

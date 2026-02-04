@@ -145,7 +145,7 @@ export const MarketsPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="mpa-search-input"
             />
-            <span className="mpa-search-icon">🔍</span>
+            <span className="mpa-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{verticalAlign:'middle'}} xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6"/></svg></span>
           </div>
           <button 
             className={`btn-watchlist-toggle ${showWatchlistOnly ? 'active' : ''}`}
@@ -240,7 +240,7 @@ export const MarketsPage = () => {
       {/* Info */}
       {filtered.length > 0 && (
         <div className="mpa-info">
-          <span>📊 Showing {filtered.length} of {markets.length} markets • Prices update every 2 seconds</span>
+          <span>Showing {filtered.length} of {markets.length} markets • Prices update every 2 seconds</span>
         </div>
       )}
 
@@ -248,7 +248,7 @@ export const MarketsPage = () => {
       {selectedMarket && (
         <div className="mpa-modal-overlay" onClick={() => setSelectedMarket(null)}>
           <div className="mpa-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedMarket(null)}>✕</button>
+            <button className="modal-close" onClick={() => setSelectedMarket(null)}>×</button>
             <MarketDetail market={selectedMarket} isWatched={watchlist.includes(selectedMarket.id)} onWatchToggle={() => toggleWatchlist(selectedMarket.id)} />
           </div>
         </div>
@@ -324,7 +324,7 @@ const MarketDetail = ({ market, isWatched, onWatchToggle }) => {
         <button className="btn-trade-large secondary">Sell {market.symbol}</button>
       </div>
 
-      <p className="detail-note">💡 Prices are simulated for demo purposes. Connect real API for live data.</p>
+      <p className="detail-note">Note: Prices are simulated for demo purposes. Connect real API for live data.</p>
     </div>
   );
 };

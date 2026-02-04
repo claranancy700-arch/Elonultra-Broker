@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from '../../icons/Icon';
 
 export const AdminStats = ({ stats, loading }) => {
   if (loading) {
@@ -9,37 +10,37 @@ export const AdminStats = ({ stats, loading }) => {
     {
       label: 'Total Users',
       value: stats?.totalUsers || 0,
-      icon: '👥',
+      icon: 'dashboard',
       change: '+12%'
     },
     {
       label: 'Active Users (24h)',
       value: stats?.activeUsers || 0,
-      icon: '🟢',
+      icon: 'dashboard',
       change: '+8%'
     },
     {
       label: 'Total Trading Volume',
       value: `$${(stats?.totalVolume || 0).toLocaleString()}`,
-      icon: '📊',
+      icon: 'chart',
       change: '+24%'
     },
     {
       label: 'Platform Revenue',
       value: `$${(stats?.revenue || 0).toLocaleString()}`,
-      icon: '💰',
+      icon: 'money',
       change: '+18%'
     },
     {
       label: 'Total Deposits',
       value: `$${(stats?.totalDeposits || 0).toLocaleString()}`,
-      icon: '📥',
+      icon: 'bank',
       change: '+15%'
     },
     {
       label: 'Total Withdrawals',
       value: `$${(stats?.totalWithdrawals || 0).toLocaleString()}`,
-      icon: '📤',
+      icon: 'coin',
       change: '-5%'
     }
   ];
@@ -48,7 +49,7 @@ export const AdminStats = ({ stats, loading }) => {
     <div className="admin-stats-grid">
       {statCards.map((stat, idx) => (
         <div key={idx} className="stat-card">
-          <div className="stat-icon">{stat.icon}</div>
+          <div className="stat-icon"><Icon name={stat.icon} /></div>
           <div className="stat-details">
             <h4>{stat.label}</h4>
             <p className="stat-value">{stat.value}</p>

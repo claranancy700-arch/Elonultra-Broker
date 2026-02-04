@@ -28,7 +28,7 @@ export default function TestimoniesScrollBanner() {
       <div className="testimonies-banner-content">
         {repeatedTestimonies.map((testimony, index) => (
           <div key={index} className="testimonies-banner-item">
-            <strong>⭐ {testimony.name}</strong>
+            <strong>★ {testimony.name}</strong>
             <p className="testimonies-banner-item-text">{testimony.text}</p>
           </div>
         ))}

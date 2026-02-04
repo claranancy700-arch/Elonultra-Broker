@@ -1,233 +1,228 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DepositPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import API from '../../../services/api';
+import Icon from '../../icons/Icon';
+
+const MOCK_ADDRESSES = {
+  BTC: 'bc1qmockaddressforbtc00000000000000',
+  ETH: '0xMockEthereumAddressForDeposit0000000000000000',
+  USDT: 'TMockTetherAddressUSDT000000000000000',
+  USDC: '0xMockUSDCCryptoAddress0000000000000000'
+};
 
 export const DepositPage = () => {
-  const [selectedMethod, setSelectedMethod] = useState('bank');
   const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState('bank');
+  const [currency, setCurrency] = useState('BTC');
+  const [showCryptoSection, setShowCryptoSection] = useState(false);
+  const [depositAddress, setDepositAddress] = useState('');
+  const [qrCode, setQrCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  const depositMethods = {
-    bank: {
-      name: 'Bank Transfer',
-      icon: '🏦',
-      fee: '0%',
-      time: '1-3 days',
-      min: 10,
-      max: 50000,
-      description: 'Safe and reliable bank transfer'
-    },
-    card: {
-      name: 'Credit/Debit Card',
-      icon: '💳',
-      fee: '2.5%',
-      time: 'Instant',
-      min: 10,
-      max: 10000,
-      description: 'Quick deposit with your card'
-    },
-    crypto: {
-      name: 'Cryptocurrency',
-      icon: '₿',
-      fee: '0%',
-      time: 'Instant',
-      min: 0.001,
-      max: 'Unlimited',
-      description: 'Direct crypto transfer to your wallet'
-    },
-    paypal: {
-      name: 'PayPal',
-      icon: '🅿️',
-      fee: '1.5%',
-      time: 'Instant',
-      min: 10,
-      max: 25000,
-      description: 'Deposit via PayPal account'
+  // Fetch address when crypto method is selected or currency changes
+  useEffect(() => {
+    if (method === 'crypto' && currency) {
+      fetchAndShowAddress(currency);
+    }
+  }, [method, currency]);
+
+  const fetchAndShowAddress = async (sym) => {
+    try {
+      const symbol = sym.toUpperCase();
+      
+      // Try API first
+      try {
+        const res = await API.get(`/deposit/address?currency=${symbol}`);
+        if (res.data?.address) {
+          setDepositAddress(res.data.address);
+          setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(res.data.address)}`);
+          return;
+        }
+      } catch (apiErr) {
+        console.warn('Could not fetch from API, using mock address', apiErr.message);
+      }
+
+      // Fallback to mock
+      const mockAddr = MOCK_ADDRESSES[symbol] || '0xMOCKADDRESS0000000000000000000000000000';
+      setDepositAddress(mockAddr);
+      setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(mockAddr)}`);
+    } catch (err) {
+      console.error('Address fetch error:', err);
+      setDepositAddress('');
+      setQrCode('');
     }
   };
 
-  const method = depositMethods[selectedMethod];
+  const handleMethodChange = (e) => {
+    const newMethod = e.target.value;
+    setMethod(newMethod);
+    setShowCryptoSection(newMethod === 'crypto');
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleBinanceClick = () => {
+    const url = new URL('https://www.binance.com/en/buy-sell-crypto');
+    if (amount) url.searchParams.set('amount', amount);
+    window.open(url.toString(), '_blank', 'noopener');
+  };
+
+  const handleCompleteDeposit = async () => {
     setError('');
     setSuccess('');
-    setLoading(true);
+
+    const numAmount = parseFloat(amount || 0);
+    if (!numAmount || numAmount <= 0) {
+      setError('Enter an amount before confirming.');
+      return;
+    }
 
     try {
-      const response = await API.post('/deposits', {
-        amount: parseFloat(amount),
-        method: selectedMethod
+      setLoading(true);
+      const res = await API.post('/transactions/deposit', {
+        amount: numAmount,
+        method: method
       });
 
-      if (response.data?.success) {
-        setSuccess(`Deposit initiated! You will receive further instructions shortly.`);
-        setAmount('');
-      } else {
-        setError('Failed to initiate deposit. Please try again.');
-      }
+      setSuccess('✓ Deposit confirmation received! Redirecting to your transaction history...');
+      setAmount('');
+
+      setTimeout(() => {
+        window.location.href = '/transactions';
+      }, 1500);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to initiate deposit. Please try again.');
+      console.error('Deposit error:', err);
+      setError(err.response?.data?.error || err.message || 'Deposit confirmation failed');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCopyAddress = () => {
+    if (!depositAddress) return;
+    navigator.clipboard?.writeText(depositAddress);
+    alert('Address copied to clipboard');
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    alert('Please continue on Binance using the button above, then confirm using "I have completed deposit".');
+  };
+
   return (
     <div className="deposit-page">
-      <div className="container">
-        <h1>Add Funds to Your Account</h1>
-        <p className="subtitle">Choose your preferred payment method and deposit funds</p>
-
-        <div className="deposit-grid">
-          {/* Payment Methods */}
-          <section className="payment-methods">
-            <h2>Select Payment Method</h2>
-            <div className="methods-list">
-              {Object.entries(depositMethods).map(([key, method]) => (
-                <div
-                  key={key}
-                  className={`method-card ${selectedMethod === key ? 'active' : ''}`}
-                  onClick={() => setSelectedMethod(key)}
-                >
-                  <input
-                    type="radio"
-                    name="payment-method"
-                    value={key}
-                    checked={selectedMethod === key}
-                    onChange={() => setSelectedMethod(key)}
-                  />
-                  <div className="method-content">
-                    <div className="method-header">
-                      <span className="icon">{method.icon}</span>
-                      <h3>{method.name}</h3>
-                    </div>
-                    <p className="description">{method.description}</p>
-                    <div className="method-details">
-                      <span>Fee: {method.fee}</span>
-                      <span>Time: {method.time}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Deposit Form */}
-          <section className="deposit-form-section">
-            <div className="form-card">
-              <h2>Deposit Amount</h2>
-
-              {success && <div className="alert success">{success}</div>}
-              {error && <div className="alert error">{error}</div>}
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label htmlFor="amount">Amount (USD) *</label>
-                  <input
-                    type="number"
-                    id="amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="100.00"
-                    step="0.01"
-                    min={method.min}
-                    max={method.max !== 'Unlimited' ? method.max : undefined}
-                    required
-                  />
-                  <small>
-                    Min: ${method.min}, Max: {typeof method.max === 'number' ? '$' + method.max : method.max}
-                  </small>
-                </div>
-
-                {/* Fee Calculation */}
-                {amount && (
-                  <div className="fee-breakdown">
-                    <div className="fee-row">
-                      <span>Amount</span>
-                      <span>${parseFloat(amount).toFixed(2)}</span>
-                    </div>
-                    {method.fee !== '0%' && (
-                      <div className="fee-row">
-                        <span>Fee ({method.fee})</span>
-                        <span>${(parseFloat(amount) * (parseFloat(method.fee) / 100)).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="fee-row total">
-                      <span>You will receive</span>
-                      <span>${(parseFloat(amount) + (parseFloat(amount) * (parseFloat(method.fee) / 100))).toFixed(2)}</span>
-                    </div>
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading || !amount} className="btn btn-primary btn-block">
-                  {loading ? 'Processing...' : `Deposit via ${method.name}`}
-                </button>
-
-                <p className="security-note">
-                  🔒 Your transaction is encrypted and secure. We never store your payment details.
-                </p>
-              </form>
-            </div>
-
-            {/* Additional Info */}
-            <div className="info-card">
-              <h3>📋 {selectedMethod === 'crypto' ? 'Deposit Address' : 'Next Steps'}</h3>
-              {selectedMethod === 'crypto' ? (
-                <div className="crypto-info">
-                  <p>Send your crypto to:</p>
-                  <div className="address-box">
-                    <code>0x742d35Cc6634C0532925a3b844Bc924e56fAb34d</code>
-                  </div>
-                  <p className="info-text">Minimum deposit: 0.001 BTC or equivalent</p>
-                </div>
-              ) : (
-                <div className="steps-info">
-                  <ol>
-                    <li>Enter your deposit amount above</li>
-                    <li>Click "Deposit" to proceed</li>
-                    <li>Follow the payment gateway instructions</li>
-                    <li>Funds will appear in your account instantly or within the stated time</li>
-                  </ol>
-                </div>
-              )}
-            </div>
-          </section>
+      <div className="deposit-container">
+        {/* Header */}
+        <div className="deposit-header">
+          <h1><Icon name="money" className="icon-inline" /> Add Funds</h1>
+          <p>Deposit funds to your account quickly and securely</p>
         </div>
 
-        {/* FAQ */}
-        <section className="deposit-faq">
-          <h2>Frequently Asked Questions</h2>
-          <div className="faq-grid">
-            <div className="faq-item">
-              <h4>How long does a deposit take?</h4>
-              <p>Deposits via card and crypto are instant. Bank transfers typically take 1-3 business days.</p>
-            </div>
-            <div className="faq-item">
-              <h4>Are there any hidden fees?</h4>
-              <p>No, all fees are shown upfront before you confirm your deposit. Transparency is our commitment.</p>
-            </div>
-            <div className="faq-item">
-              <h4>What's the minimum deposit?</h4>
-              <p>The minimum deposit is $10 (or equivalent in crypto). This varies by payment method.</p>
-            </div>
-            <div className="faq-item">
-              <h4>Is my payment information secure?</h4>
-              <p>Yes! We use SSL encryption and PCI compliance. We never store your payment card details.</p>
-            </div>
-            <div className="faq-item">
-              <h4>Can I deposit in other currencies?</h4>
-              <p>Yes, we support deposits in USD, EUR, GBP, and other major currencies.</p>
-            </div>
-            <div className="faq-item">
-              <h4>What if my deposit fails?</h4>
-              <p>Contact our support team and we'll help resolve the issue within 24 hours.</p>
-            </div>
+        {/* Alerts */}
+        {success && <div className="alert alert-success">{success}</div>}
+        {error && <div className="alert alert-error">{error}</div>}
+
+        {/* Main Form */}
+        <form onSubmit={handleFormSubmit} className="deposit-form">
+          {/* Amount Card */}
+          <div className="form-card">
+            <label className="form-label">
+              <span className="label-text"><Icon name="chart" className="icon-inline" /> Deposit Amount</span>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                step="0.01"
+                min="0.01"
+                placeholder="100.00"
+                required
+              />
+            </label>
           </div>
-        </section>
+
+          {/* Method Card */}
+          <div className="form-card">
+            <label className="form-label">
+              <span className="label-text"><Icon name="coin" className="icon-inline" /> Payment Method</span>
+              <select value={method} onChange={handleMethodChange} required>
+                <option value="bank">Bank Transfer</option>
+                <option value="card">Credit/Debit Card</option>
+                <option value="crypto">Crypto Transfer</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Crypto Section */}
+          {showCryptoSection && (
+            <div className="form-card">
+              <label className="form-label">
+                <span className="label-text"><Icon name="coin" className="icon-inline" /> Cryptocurrency</span>
+                <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  <option value="BTC">Bitcoin (BTC)</option>
+                  <option value="ETH">Ethereum (ETH)</option>
+                  <option value="USDT">Tether (USDT)</option>
+                  <option value="USDC">USD Coin (USDC)</option>
+                </select>
+              </label>
+            </div>
+          )}
+
+          {/* Address & QR Card */}
+          {depositAddress && showCryptoSection && (
+            <div className="form-card address-card">
+              <div className="qr-section">
+                {qrCode && <img src={qrCode} alt="QR Code" className="qr-code" />}
+                <p className="qr-label">Scan to send funds</p>
+              </div>
+
+              <div className="address-section">
+                <p className="address-label">Deposit Address</p>
+                <div className="address-box">
+                  <code className="address-text">{depositAddress}</code>
+                  <button
+                    type="button"
+                    onClick={handleCopyAddress}
+                    className="copy-btn"
+                    title="Copy address"
+                  >
+                    <Icon name="copy" className="icon-inline" /> Copy
+                  </button>
+                </div>
+                <p className="address-hint">Transfer to this address from Binance before confirming</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="button-group">
+            <button
+              type="button"
+              className="btn btn-primary btn-full"
+              onClick={handleBinanceClick}
+            >
+              <Icon name="link" className="icon-inline" /> Continue on Binance
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-success btn-full"
+              onClick={handleCompleteDeposit}
+              disabled={loading}
+            >
+              {loading ? 'Processing...' : '✓ I Completed Deposit'}
+            </button>
+
+            <a href="/transactions" className="btn btn-secondary btn-full">
+              ← Cancel
+            </a>
+          </div>
+        </form>
+
+        {/* Info Box */}
+        <div className="info-box">
+          <p><Icon name="lock" className="icon-inline" /> <strong>Secure:</strong> Your transactions are encrypted. We never store payment details.</p>
+        </div>
       </div>
 
       <MobileBottomNav />

@@ -26,7 +26,7 @@
         <a href="/about.html">About</a>
         <a href="/testimonies.html" class="active">Testimonies</a>
         <a href="/contact.html">Support</a>
-        <button class="theme-toggle" style="margin:0 12px">☀️ Light Mode</button>
+        <button class="theme-toggle" style="margin:0 12px">Light Mode</button>
       </nav>
     </div>
   </header>
@@ -85,7 +85,7 @@
                 ${t.title ? `<small style="color:var(--muted)">${t.title}</small>` : ''}
               </div>
             </div>
-            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'⭐'.repeat(t.rating)}</div>` : ''}
+            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'★'.repeat(t.rating)}</div>` : ''}
             <p style="color:var(--text);line-height:1.8;margin:0">"${t.content}"</p>
           </div>
         `).join('');

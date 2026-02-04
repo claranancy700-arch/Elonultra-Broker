@@ -24,7 +24,7 @@
         <a href="about.html">About</a>
         <a href="contact.html">Contact</a>
         <a href="login.html">Login</a>
-        <button class="theme-toggle" style="margin:0 12px">☀️ Light Mode</button>
+        <button class="theme-toggle" style="margin:0 12px">Light Mode</button>
         <a href="signup.html" class="btn" style="margin-left:auto">Get Started</a>
       </nav>
     </div>
@@ -42,27 +42,27 @@
     <!-- Features Grid -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:80px auto;max-width:1200px">
       <div class="card">
-        <h3>📊 Real-Time Data</h3>
+        <h3>Real-Time Data</h3>
         <p class="muted">Live market data, price charts, and trading volume for hundreds of cryptocurrencies.</p>
       </div>
       <div class="card">
-        <h3>🔒 Secure</h3>
+        <h3>Secure</h3>
         <p class="muted">Cold storage, 2FA, and industry-leading security practices keep your assets safe.</p>
       </div>
       <div class="card">
-        <h3>⚡ Fast Trading</h3>
+        <h3>Fast Trading</h3>
         <p class="muted">Execute orders in milliseconds with our optimized trading infrastructure.</p>
       </div>
       <div class="card">
-        <h3>💰 Low Fees</h3>
+        <h3>Low Fees</h3>
         <p class="muted">Trade at 0.1% per transaction. VIP members get rates as low as 0.05%.</p>
       </div>
       <div class="card">
-        <h3>📱 Mobile Ready</h3>
+        <h3>Mobile Ready</h3>
         <p class="muted">Trade on the go with our responsive design and dedicated mobile app.</p>
       </div>
       <div class="card">
-        <h3>🔗 REST API</h3>
+        <h3>REST API</h3>
         <p class="muted">Build trading bots and integrate with your own systems using our API.</p>
       </div>
     </div>
@@ -110,7 +110,7 @@
                 ${t.title ? `<small style="color:var(--muted)">${t.title}</small>` : ''}
               </div>
             </div>
-            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'⭐'.repeat(t.rating)}</div>` : ''}
+            ${t.rating ? `<div style="color:#ffc107;margin-bottom:12px">${'★'.repeat(t.rating)}</div>` : ''}
             <p style="color:var(--text);line-height:1.6;margin:0;font-style:italic">"${t.content.substring(0, 150)}${t.content.length > 150 ? '...' : ''}"</p>
           </div>
         `).join('');

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './LandingPage.css';
+import Icon from '../icons/Icon';
 
 export const LandingPage = () => {
   const { user, loading } = useAuth();
@@ -62,27 +63,27 @@ export const LandingPage = () => {
         <section id="features" className="features-section">
           <div className="features-grid">
             <div className="feature-card">
-              <h3>📊 Real-Time Data</h3>
+              <h3><Icon name="chart" className="icon-inline" /> Real-Time Data</h3>
               <p>Live market data, price charts, and trading volume for hundreds of cryptocurrencies.</p>
             </div>
             <div className="feature-card">
-              <h3>🔒 Secure</h3>
+              <h3><Icon name="lock" className="icon-inline" /> Secure</h3>
               <p>Cold storage, 2FA, and industry-leading security practices keep your assets safe.</p>
             </div>
             <div className="feature-card">
-              <h3>⚡ Fast Trading</h3>
+              <h3>Fast Trading</h3>
               <p>Execute orders in milliseconds with our optimized trading infrastructure.</p>
             </div>
             <div className="feature-card">
-              <h3>💰 Low Fees</h3>
+              <h3><Icon name="money" className="icon-inline" /> Low Fees</h3>
               <p>Trade at 0.1% per transaction. VIP members get rates as low as 0.05%.</p>
             </div>
             <div className="feature-card">
-              <h3>📱 Mobile Ready</h3>
+              <h3>Mobile Ready</h3>
               <p>Trade on the go with our responsive design and dedicated mobile app.</p>
             </div>
             <div className="feature-card">
-              <h3>🔗 REST API</h3>
+              <h3><Icon name="link" className="icon-inline" /> REST API</h3>
               <p>Build trading bots and integrate with your own systems using our API.</p>
             </div>
           </div>
@@ -94,7 +95,7 @@ export const LandingPage = () => {
           <div className="testimonies-grid">
             {testimonies.map((t) => (
               <div key={t.id} className="testimony-card">
-                <div className="stars">{'⭐'.repeat(t.rating)}</div>
+                <div className="stars">{'★'.repeat(t.rating)}</div>
                 <p className="message">{t.message}</p>
                 <p className="name">— {t.name}</p>
               </div>

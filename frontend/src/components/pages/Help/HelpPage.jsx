@@ -1,6 +1,7 @@
 import React from 'react';
 import './HelpPage.css';
 import MobileBottomNav from '../Dashboard/MobileBottomNav';
+import Icon from '../../icons/Icon';
 
 export const HelpPage = () => {
   const [expandedFaq, setExpandedFaq] = React.useState(null);
@@ -63,19 +64,19 @@ export const HelpPage = () => {
           <h2>Quick Links</h2>
           <div className="quick-links">
             <a href="mailto:support@elon-u.com" className="quick-link">
-              <span className="icon">📧</span>
+              <Icon name="link" className="icon-inline" />
               <span className="text">Contact Support</span>
             </a>
             <a href="#" className="quick-link">
-              <span className="icon">📱</span>
+              <Icon name="dashboard" className="icon-inline" />
               <span className="text">Live Chat</span>
             </a>
             <a href="#" className="quick-link">
-              <span className="icon">📚</span>
+              <Icon name="copy" className="icon-inline" />
               <span className="text">Documentation</span>
             </a>
             <a href="#" className="quick-link">
-              <span className="icon">🐛</span>
+              <Icon name="dashboard" className="icon-inline" />
               <span className="text">Report a Bug</span>
             </a>
           </div>

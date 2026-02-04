@@ -159,7 +159,7 @@ export const MarketsPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="mp-search-input"
             />
-            <span className="mp-search-icon">🔍</span>
+            <span className="mp-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{verticalAlign:'middle'}} xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6"/></svg></span>
           </div>
           {lastUpdateTime && (
             <span className="mp-update-time">
@@ -172,7 +172,7 @@ export const MarketsPage = () => {
       {/* Error */}
       {error && (
         <div className="mp-error">
-          <span>⚠️ {error}</span>
+          <span>Error: {error}</span>
           <button onClick={fetchMarkets} className="btn-retry">Retry</button>
         </div>
       )}

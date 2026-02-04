@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
+import Icon from '../icons/Icon';
 
 export const Sidebar = () => {
   const location = useLocation();
@@ -13,37 +14,37 @@ export const Sidebar = () => {
         to="/dashboard" 
         className={`sidebar-link ${isActive('/dashboard') ? 'active' : ''}`}
       >
-        📊 Dashboard
+        <Icon name="dashboard" className="icon-inline" /> Dashboard
       </Link>
       <Link 
         to="/markets" 
         className={`sidebar-link ${isActive('/markets') ? 'active' : ''}`}
       >
-        📈 Markets
+        <Icon name="chart" className="icon-inline" /> Markets
       </Link>
       <Link 
         to="/transactions" 
         className={`sidebar-link ${isActive('/transactions') ? 'active' : ''}`}
       >
-        💳 Transactions
+        <Icon name="coin" className="icon-inline" /> Transactions
       </Link>
       <Link 
         to="/deposit" 
         className={`sidebar-link ${isActive('/deposit') ? 'active' : ''}`}
       >
-        💰 Deposit
+        <Icon name="money" className="icon-inline" /> Deposit
       </Link>
       <Link 
         to="/settings" 
         className={`sidebar-link ${isActive('/settings') ? 'active' : ''}`}
       >
-        ⚙️ Settings
+        <Icon name="settings" className="icon-inline" /> Settings
       </Link>
       <Link 
         to="/help" 
         className={`sidebar-link ${isActive('/help') ? 'active' : ''}`}
       >
-        ❓ Help & Docs
+        <Icon name="link" className="icon-inline" /> Help & Docs
       </Link>
     </aside>
   );

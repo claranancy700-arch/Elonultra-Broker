@@ -1,5 +1,6 @@
 import React from 'react';
 import './AboutPage.css';
+import Icon from '../../icons/Icon';
 
 export const AboutPage = () => {
   return (
@@ -26,27 +27,27 @@ export const AboutPage = () => {
             <h2>What We Offer</h2>
             <div className="features-grid">
               <div className="feature">
-                <h3>📊 Real-Time Market Data</h3>
+                <h3><Icon name="chart" className="icon-inline" /> Real-Time Market Data</h3>
                 <p>Access live price feeds, charts, and trading volumes for hundreds of cryptocurrencies with minimal latency.</p>
               </div>
               <div className="feature">
-                <h3>🔒 Enterprise Security</h3>
+                <h3><Icon name="lock" className="icon-inline" /> Enterprise Security</h3>
                 <p>Your assets are protected with cold storage, 2FA, multi-signature wallets, and regular security audits.</p>
               </div>
               <div className="feature">
-                <h3>⚡ Fast Execution</h3>
+                <h3>Fast Execution</h3>
                 <p>Execute trades in milliseconds with our optimized infrastructure and global server network.</p>
               </div>
               <div className="feature">
-                <h3>📈 Advanced Tools</h3>
+                <h3><Icon name="chart" className="icon-inline" /> Advanced Tools</h3>
                 <p>Technical analysis tools, portfolio management, risk management features, and trading algorithms.</p>
               </div>
               <div className="feature">
-                <h3>💰 Low Fees</h3>
+                <h3><Icon name="money" className="icon-inline" /> Low Fees</h3>
                 <p>Transparent pricing starting at 0.1% per transaction. VIP members enjoy rates as low as 0.05%.</p>
               </div>
               <div className="feature">
-                <h3>🌍 Global Access</h3>
+                <h3>Global Access</h3>
                 <p>Trade 24/7 from anywhere in the world. Multi-currency support and local payment methods.</p>
               </div>
             </div>
@@ -64,12 +65,12 @@ export const AboutPage = () => {
           <div className="about-section">
             <h2>Why Choose Us?</h2>
             <ul className="benefits-list">
-              <li>✅ Licensed and regulated in multiple jurisdictions</li>
-              <li>✅ $100M+ insurance coverage on user funds</li>
-              <li>✅ 24/7 customer support in multiple languages</li>
-              <li>✅ Zero hidden fees - complete transparency</li>
-              <li>✅ Regular platform updates and new features</li>
-              <li>✅ Active community with 50,000+ traders</li>
+              <li>✔ Licensed and regulated in multiple jurisdictions</li>
+              <li>✔ $100M+ insurance coverage on user funds</li>
+              <li>✔ 24/7 customer support in multiple languages</li>
+              <li>✔ Zero hidden fees - complete transparency</li>
+              <li>✔ Regular platform updates and new features</li>
+              <li>✔ Active community with 50,000+ traders</li>
             </ul>
           </div>
         </div>

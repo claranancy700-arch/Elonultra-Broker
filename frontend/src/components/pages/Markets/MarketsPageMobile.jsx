@@ -178,7 +178,7 @@ export const MarketsPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="mm-search-input"
           />
-          <span className="mm-search-icon">🔍</span>
+          <span className="mm-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{verticalAlign:'middle'}} xmlns="http://www.w3.org/2000/svg"><path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6"/></svg></span>
         </div>
 
         {/* Filter Tabs */}
@@ -189,23 +189,23 @@ export const MarketsPage = () => {
           >
             All
           </button>
-          <button
+            <button
             className={`mm-tab ${activeFilter === 'gainers' ? 'active' : ''}`}
             onClick={() => setActiveFilter('gainers')}
           >
-            🟢 Gainers
+            Gainers
           </button>
           <button
             className={`mm-tab ${activeFilter === 'losers' ? 'active' : ''}`}
             onClick={() => setActiveFilter('losers')}
           >
-            🔴 Losers
+            Losers
           </button>
-          <button
+            <button
             className={`mm-tab ${activeFilter === 'watchlist' ? 'active' : ''}`}
             onClick={() => setActiveFilter('watchlist')}
           >
-            ⭐ Watchlist
+            Watchlist
           </button>
         </div>
       </div>
@@ -242,7 +242,7 @@ export const MarketsPage = () => {
               ))
             ) : (
               <div className="mm-empty">
-                <span>📊</span>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{display:'block',margin:'0 auto 8px'}} xmlns="http://www.w3.org/2000/svg"><path d="M4 18H20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M7 14V6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M12 14V10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M17 14V4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
                 <p>No markets found</p>
               </div>
             )}
@@ -295,14 +295,14 @@ const MarketCard = ({ market, isWatched, onWatch, onSelect, formatPrice, formatV
             </div>
           </div>
         </div>
-        <button
+          <button
           className={`mm-watch-btn ${isWatched ? 'watched' : ''}`}
           onClick={(e) => {
             e.stopPropagation();
             onWatch();
           }}
         >
-          {isWatched ? '⭐' : '☆'}
+          {isWatched ? '★' : '☆'}
         </button>
       </div>
 
@@ -348,7 +348,7 @@ const MarketModal = ({ market, isWatched, onWatch, onClose, formatPrice, formatV
             <h2>{market.name}</h2>
             <p className="mm-modal-symbol">{market.symbol}</p>
           </div>
-          <button className="mm-modal-close" onClick={onClose}>✕</button>
+          <button className="mm-modal-close" onClick={onClose}>×</button>
         </div>
 
         <div className="mm-modal-price">
@@ -379,7 +379,7 @@ const MarketModal = ({ market, isWatched, onWatch, onClose, formatPrice, formatV
 
         <div className="mm-modal-actions">
           <button className={`mm-action-btn ${isWatched ? 'watched' : ''}`} onClick={onWatch}>
-            {isWatched ? '⭐ In Watchlist' : '☆ Add to Watchlist'}
+            {isWatched ? '★ In Watchlist' : '☆ Add to Watchlist'}
           </button>
           <button
             className="mm-action-btn mm-trade-primary"
