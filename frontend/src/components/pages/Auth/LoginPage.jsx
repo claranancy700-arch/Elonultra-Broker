@@ -12,6 +12,7 @@ export const LoginPage = () => {
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,17 +93,28 @@ export const LoginPage = () => {
 
             <div className="form-group">
               <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                disabled={isSubmitting}
-                autoComplete="current-password"
-                className="form-input"
-              />
+              <div className="password-input-wrapper">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isSubmitting}
+                  autoComplete="current-password"
+                  className="form-input"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '👁️‍🗨️' : '👁️'}
+                </button>
+              </div>
             </div>
 
             <button
@@ -125,6 +137,11 @@ export const LoginPage = () => {
             <p className="demo-text">
               Demo: Use any valid account or check the console
             </p>
+            <div className="login-links">
+              <a href="#forgot-password" className="forgot-link">Forgot password?</a>
+              <span className="separator">•</span>
+              <a href="/signup" className="signup-link">Don't have an account?</a>
+            </div>
           </div>
         </div>
       </div>

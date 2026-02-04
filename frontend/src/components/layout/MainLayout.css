@@ -18,20 +18,34 @@
   .app-wrapper {
     flex-direction: column;
     min-height: calc(100vh - 70px);
+    width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
   }
 
   .main-content {
     margin-left: 0;
-    padding: 16px;
+    padding: 12px;
     width: 100%;
-    padding-bottom: 80px; /* space for sticky mobile bottom nav */
+    max-width: 100%;
+    padding-bottom: 80px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin: 0;
+    box-sizing: border-box;
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
-    padding: 12px;
-    padding-bottom: 72px; /* ensure content isn't obscured by bottom nav on very small screens */
+    padding: 8px;
+    padding-bottom: 72px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    box-sizing: border-box;
   }
 }
 

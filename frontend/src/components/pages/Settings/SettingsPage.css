@@ -101,6 +101,14 @@ profile-item label {
   border-color: var(--accent);
 }
 
+.form input::placeholder,
+.form textarea::placeholder,
+.form select::placeholder {
+  color: rgba(var(--text-rgb), 0.4);
+  font-size: 0.9em;
+  opacity: 1;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;
@@ -223,5 +231,61 @@ profile-item label {
   .api-table th,
   .api-table td {
     padding: 8px;
+  }
+}
+
+/* Banking & Registration specific input styles */
+.banking-form,
+.registration-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.banking-form label,
+.registration-form label {
+  font-size: 0.9em;
+  color: rgba(var(--text-rgb), 0.8);
+}
+
+.banking-form input,
+.registration-form input,
+.banking-form select,
+.registration-form select,
+.banking-form textarea,
+.registration-form textarea {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(var(--text-rgb), 0.14);
+  background: rgba(var(--card-rgb), 0.04);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset;
+  color: var(--text);
+  font-size: 0.95em;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.08s;
+}
+
+.banking-form input:focus,
+.registration-form input:focus,
+.banking-form select:focus,
+.registration-form select:focus,
+.banking-form textarea:focus,
+.registration-form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.banking-form .hint,
+.registration-form .hint {
+  font-size: 0.85em;
+  color: rgba(var(--text-rgb), 0.6);
+}
+
+@media (max-width: 768px) {
+  .banking-form input,
+  .registration-form input {
+    padding: 10px 12px;
+    font-size: 0.95em;
   }
 }

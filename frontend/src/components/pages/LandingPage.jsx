@@ -49,7 +49,7 @@ export const LandingPage = () => {
           <h1>ELON ULTRA ELONS Trading Platform</h1>
           <p>Fast, secure, and user-friendly crypto trading platform. Start with as little as $100.</p>
           <div className="hero-cta">
-            <Link to="/login" className="btn btn-primary">
+            <Link to="/signup" className="btn btn-primary">
               Get Started
             </Link>
             <Link to="/login" className="btn btn-secondary">

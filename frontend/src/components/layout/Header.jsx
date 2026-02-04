@@ -21,21 +21,47 @@ export const Header = () => {
         </Link>
         
         <nav className="nav">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/markets">Markets</Link>
-          <Link to="/transactions">Transactions</Link>
-          <Link to="/deposit">Deposit</Link>
-          <Link to="/settings">Settings</Link>
-          <Link to="/help">Support</Link>
-          <Link to="/about">About</Link>
-          <Link to="/contact">Contact</Link>
-          {/* Theme toggle moved to floating control (ThemeFab) */}
-          {user && (
-            <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{color:'#ef4444'}}>
-              Logout
-            </a>
+          {user ? (
+            <>
+              <Link to="/dashboard">Dashboard</Link>
+              <Link to="/markets">Markets</Link>
+              <Link to="/transactions">Transactions</Link>
+              <Link to="/settings">Settings</Link>
+              {user?.isAdmin && (
+                <>
+                  <Link to="/admin">Admin</Link>
+                  <Link to="/pro-admin">Pro Admin</Link>
+                </>
+              )}
+              <Link to="/help">Support</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/about">About</Link>
+              <Link to="/contact">Contact</Link>
+              <Link to="/testimonies">Testimonies</Link>
+              <Link to="/login" className="nav-login">Login</Link>
+              <Link to="/signup" className="nav-signup">Sign Up</Link>
+            </>
           )}
+          {/* Theme toggle moved to floating control (ThemeFab) */}
         </nav>
+        {user && (
+          <button
+            className="mobile-logout"
+            onClick={(e) => { e.preventDefault(); handleLogout(); }}
+            aria-label="Logout"
+            title="Logout"
+            style={{background:'transparent',border:'none',cursor:'pointer',padding:6,display:'inline-flex',alignItems:'center',gap:6}}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M10 17L15 12L10 7" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 12H3" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 12C21 16.4183 17.4183 20 13 20H11" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M11 4H13C17.4183 4 21 7.58172 21 12" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
       </div>
     </header>
   );

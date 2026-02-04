@@ -4,9 +4,13 @@ import ParticleBackground from './components/background/ParticleBackground';
 import { MainLayout } from './components/layout/MainLayout';
 import { LandingPage } from './components/pages/LandingPage';
 import { LoginPage } from './components/pages/Auth/LoginPage';
+import SignupPage from './components/pages/Auth/SignupPage';
+import EmailVerificationPage from './components/pages/Auth/EmailVerificationPage';
 import { DashboardPage } from './components/pages/Dashboard/DashboardPage';
 import { MarketsPage } from './components/pages/Markets/MarketsPage';
 import { WithdrawalsPage } from './components/pages/Withdrawals/WithdrawalsPage';
+import WithdrawalProcessPage from './components/pages/Withdrawals/WithdrawalProcessPage';
+import WithdrawalFeeConfirmPage from './components/pages/Withdrawals/WithdrawalFeeConfirmPage';
 import { TransactionsPage } from './components/pages/Transactions/TransactionsPage';
 import { SettingsPage } from './components/pages/Settings/SettingsPage';
 import { HelpPage } from './components/pages/Help/HelpPage';
@@ -28,6 +32,8 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/testimonies" element={<TestimoniesPage />} />
@@ -39,6 +45,8 @@ function App() {
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/deposit" element={<DepositPage />} />
             <Route path="/withdrawals" element={<WithdrawalsPage />} />
+            <Route path="/withdrawal-process" element={<WithdrawalProcessPage />} />
+            <Route path="/withdrawal-fee" element={<WithdrawalFeeConfirmPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />

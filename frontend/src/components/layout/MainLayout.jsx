@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import ThemeFab from './ThemeFab';
+import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import ParticleBackground from '../background/ParticleBackground';
 import './MainLayout.css';
 
@@ -37,6 +38,7 @@ export const MainLayout = () => {
     <>
       <ParticleBackground />
       <Header />
+      <TestimoniesScrollBanner />
       <div className="app-wrapper">
         <Sidebar />
         <main className="main-content">

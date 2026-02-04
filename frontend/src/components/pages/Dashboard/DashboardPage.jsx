@@ -88,7 +88,7 @@ export const DashboardPage = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1>Dashboard</h1>
         <div style={{ fontSize: '14px', color: 'var(--muted)' }}>
-          Welcome, <span style={{ color: 'var(--accent)', fontWeight: '600' }}>{user?.email || 'User'}</span>
+          Welcome, <span style={{ color: 'var(--accent)', fontWeight: '600' }}>{user?.name || user?.email || 'User'}</span>
         </div>
       </div>
 

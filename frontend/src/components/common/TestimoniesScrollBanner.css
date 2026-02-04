@@ -1,0 +1,130 @@
+.testimonies-banner {
+  width: 100%;
+  padding: 8px 12px;
+  position: sticky;
+  top: 60px;
+  z-index: 150;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: rgba(251, 191, 36, 0.05);
+  border-radius: 0;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-top: none;
+}
+
+.testimonies-banner-content {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  align-items: center;
+  will-change: transform;
+  animation: scroll-left 45s linear infinite;
+}
+
+.testimonies-banner:hover .testimonies-banner-content {
+  animation-play-state: paused;
+}
+
+.testimonies-banner-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 12px 18px;
+  background: rgba(251, 191, 36, 0.2);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+  color: #e0e7ff;
+  border: 1.5px solid rgba(251, 191, 36, 0.6);
+  min-width: 280px;
+  max-width: 380px;
+}
+
+.testimonies-banner-item strong {
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.testimonies-banner-item-text {
+  margin: 0;
+  font-style: italic;
+  line-height: 1.3;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .testimonies-banner {
+    padding: 6px 8px;
+    min-height: 32px;
+    margin-bottom: 12px;
+  }
+
+  .testimonies-banner-content {
+    gap: 18px;
+    animation: scroll-left 35s linear infinite;
+  }
+
+  .testimonies-banner-item {
+    padding: 10px 14px;
+    font-size: 12px;
+    min-width: 240px;
+    max-width: 300px;
+    border-radius: 5px;
+  }
+
+  .testimonies-banner-item strong {
+    font-size: 11px;
+  }
+
+  .testimonies-banner-item-text {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .testimonies-banner {
+    padding: 4px 6px;
+    min-height: 28px;
+    margin-bottom: 8px;
+  }
+
+  .testimonies-banner-content {
+    gap: 12px;
+    animation: scroll-left 30s linear infinite;
+  }
+
+  .testimonies-banner-item {
+    padding: 8px 10px;
+    font-size: 10px;
+    min-width: 200px;
+    max-width: 250px;
+  }
+
+  .testimonies-banner-item strong {
+    font-size: 10px;
+  }
+
+  .testimonies-banner-item-text {
+    font-size: 10px;
+  }
+}

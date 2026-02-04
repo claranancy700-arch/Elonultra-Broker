@@ -92,6 +92,34 @@
   width: 100%;
 }
 
+.nav-login {
+  color: var(--accent) !important;
+  border: 1px solid var(--accent);
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 12px !important;
+}
+
+.nav-login:hover::after {
+  width: 0;
+}
+
+.nav-signup {
+  background: var(--accent);
+  color: white !important;
+  padding: 6px 14px;
+  border-radius: 6px;
+  margin-left: 8px !important;
+}
+
+.nav-signup:hover {
+  opacity: 0.9;
+}
+
+.nav-signup:hover::after {
+  width: 0;
+}
+
 .theme-toggle {
   background: transparent;
   border: none;
@@ -106,6 +134,11 @@
 
 .theme-toggle:hover {
   color: var(--accent);
+}
+
+/* hide the mobile-only logout by default; show on small screens */
+.mobile-logout {
+  display: none;
 }
 
 @media (max-width: 768px) {
@@ -131,6 +164,15 @@
   /* hide header nav on mobile - navigation provided by bottom nav */
   .nav {
     display: none !important;
+  }
+
+  /* show the mobile logout icon when nav is hidden */
+  .mobile-logout {
+    display: inline-flex;
+    margin-left: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
   }
 
   .nav a {

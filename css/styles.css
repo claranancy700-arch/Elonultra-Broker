@@ -6,8 +6,8 @@ html[data-theme="light"]{--bg:#ffffff;--card:#f8f9fa;--border:#e5e7eb;--muted:#6
 /* Dark Theme (default) */
 html[data-theme="dark"]{--bg:#1a0f2e;--card:#2d1b47;--border:#3d2a5a;--muted:#9a8fb5;--text:#f1f5f9;--accent:#e84d5c;--accent-light:#f08070;--accent-muted:#a84b7c;--success:#10b981;--danger:#ef4444;--warn:#f08070;--bg-rgb:26,15,46;--card-rgb:45,27,71;--border-rgb:61,42,90;--text-rgb:241,245,249;--accent-rgb:232,77,92;--accent-light-rgb:240,128,112}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh;width:100%;overflow-x:hidden}
+html{scroll-behavior:smooth;width:100%;height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh;width:100%;overflow-x:hidden;overflow-y:auto}
 
 html[data-theme="light"] body {
   background: var(--bg);
@@ -205,9 +205,22 @@ textarea{resize:vertical;min-height:120px}
   
   /* Mobile header menu toggle - HIDDEN */
   .site-header .menu-toggle { display:none !important; }
-  /* Larger tap targets for buttons on mobile */
-  .btn { padding:10px 14px; }
-  .btn-small { padding:8px 10px; font-size:14px }
+  /* Mobile logout button (visible when nav is hidden) */
+  .mobile-logout { display: none; align-items: center; justify-content: center; }
+  /* Reduce buttons by 55% on mobile - more usable sizing */
+  .btn { 
+    padding: 6px 10px; 
+    font-size: 11px;
+    height: auto;
+  }
+  .btn-small { 
+    padding: 4px 7px; 
+    font-size: 10px;
+  }
+  .btn-danger, .btn-success, .btn-secondary {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
   /* Reduce card padding on mobile to reduce scroll */
   .card { padding:12px }
   /* Tighter table cell spacing for small screens */
@@ -305,6 +318,9 @@ textarea{resize:vertical;min-height:120px}
   .testimonies-banner-item-text {
     font-size: 11px;
   }
+
+  /* Show mobile logout icon when nav is hidden */
+  .mobile-logout { display: inline-flex !important; margin-left: 8px; }
 }
 
 /* Hide old theme toggle button in header */
