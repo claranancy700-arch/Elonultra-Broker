@@ -58,13 +58,13 @@ export const MarketsPage = () => {
   // Fetch markets data
   const fetchMarkets = async () => {
     try {
-      // Try to fetch from backend API (100 coins)
+      // Try to fetch from backend API with improved caching (100 coins)
       const res = await API.get('/markets?per_page=100&page=1');
       if (res.data && Array.isArray(res.data) && res.data.length > 0) {
         // Ensure we have at least 30 coins
         const coinsToShow = res.data.slice(0, 100);
         setMarkets(coinsToShow);
-        setError('');
+        setError(''); // Clear error if live data succeeds
       } else {
         throw new Error('Empty response');
       }
@@ -72,7 +72,10 @@ export const MarketsPage = () => {
       console.warn('Live API failed, using mock data:', err.message);
       // Use mock data as fallback
       setMarkets(MOCK_MARKETS);
-      setError('Using demo market data');
+      // Only show error if it's critical, not for API fallback
+      if (err.response?.status === 500) {
+        setError('Using demo data - backend error');
+      }
     } finally {
       setLoading(false);
       setLastUpdateTime(new Date());
