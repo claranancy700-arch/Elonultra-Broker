@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './WithdrawalsPage.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import API from '../../../services/api';
 
 export const WithdrawalsPage = () => {

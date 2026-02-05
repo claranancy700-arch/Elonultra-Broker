@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './MarketsPageAdvanced.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import { useNavigate } from 'react-router-dom';
 
 // Mock market data

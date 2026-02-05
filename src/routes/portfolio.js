@@ -4,28 +4,41 @@ const db = require('../db');
 const { verifyToken } = require('../middleware/auth');
 
 /**
- * Helper: Fetch live prices from CoinGecko with fallback
+ * Helper: Fetch live prices and 24h changes from CoinGecko with fallback
  */
-async function fetchLivePrices() {
-  let prices = { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 };
+async function fetchLivePricesAndChanges() {
+  let pricesData = {
+    prices: { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 },
+    changes_24h: { 'BTC': 2.5, 'ETH': 1.8, 'USDT': 0.1, 'USDC': 0.05, 'XRP': -1.2, 'ADA': 0.3 }
+  };
   try {
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd';
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=true&include_last_updated_at=false';
     const res = await fetch(url, { timeout: 10000 });
     if (res.ok) {
       const data = await res.json();
-      prices = {
-        'BTC': data.bitcoin?.usd || 45000,
-        'ETH': data.ethereum?.usd || 2500,
-        'USDT': data.tether?.usd || 1.0,
-        'USDC': data['usd-coin']?.usd || 1.0,
-        'XRP': data.ripple?.usd || 2.5,
-        'ADA': data.cardano?.usd || 0.8,
+      pricesData = {
+        prices: {
+          'BTC': data.bitcoin?.usd || 45000,
+          'ETH': data.ethereum?.usd || 2500,
+          'USDT': data.tether?.usd || 1.0,
+          'USDC': data['usd-coin']?.usd || 1.0,
+          'XRP': data.ripple?.usd || 2.5,
+          'ADA': data.cardano?.usd || 0.8,
+        },
+        changes_24h: {
+          'BTC': data.bitcoin?.usd_24h_change || 2.5,
+          'ETH': data.ethereum?.usd_24h_change || 1.8,
+          'USDT': data.tether?.usd_24h_change || 0.1,
+          'USDC': data['usd-coin']?.usd_24h_change || 0.05,
+          'XRP': data.ripple?.usd_24h_change || -1.2,
+          'ADA': data.cardano?.usd_24h_change || 0.3,
+        }
       };
     }
   } catch (err) {
     console.warn('[Portfolio] CoinGecko fetch failed, using fallback prices:', err.message);
   }
-  return prices;
+  return pricesData;
 }
 
 /**
@@ -48,13 +61,14 @@ router.get('/', verifyToken, async (req, res) => {
 
     const balance = parseFloat(userRes.rows[0].balance) || 0;
     const portfolio = portfolioRes.rows[0] || {};
-    const prices = await fetchLivePrices();
+    const { prices, changes_24h } = await fetchLivePricesAndChanges();
 
     console.log(`[Portfolio API] User ${userId}: balance=${balance}, portfolio exists=${!!portfolioRes.rows.length}`);
 
     // Build positions array with live prices
     const positions = [];
     let totalValue = 0;
+    let change24hWeightedSum = 0;
 
     const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
     const columns = ['btc_balance', 'eth_balance', 'usdt_balance', 'usdc_balance', 'xrp_balance', 'ada_balance'];
@@ -70,10 +84,19 @@ router.get('/', verifyToken, async (req, res) => {
           amount: parseFloat(amount.toFixed(8)),
           price: parseFloat(price.toFixed(2)),
           value: parseFloat(value.toFixed(2)),
+          change_24h: changes_24h[coin] || 0,
         });
         totalValue += value;
       }
     });
+
+    // Calculate weighted 24h change
+    if (totalValue > 0) {
+      positions.forEach(pos => {
+        const weight = pos.value / totalValue;
+        change24hWeightedSum += pos.change_24h * weight;
+      });
+    }
 
     // Sort by value descending
     positions.sort((a, b) => b.value - a.value);
@@ -82,10 +105,11 @@ router.get('/', verifyToken, async (req, res) => {
       balance: parseFloat(balance.toFixed(2)),
       total_value: parseFloat(totalValue.toFixed(2)),
       positions,
+      change_24h: parseFloat(change24hWeightedSum.toFixed(2)),
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`[Portfolio API] User ${userId}: returning ${positions.length} positions, total=$${response.total_value}`);
+    console.log(`[Portfolio API] User ${userId}: returning ${positions.length} positions, total=$${response.total_value}, 24h_change=${response.change_24h}%`);
     res.json(response);
   } catch (err) {
     console.error('[Portfolio API] Error:', err.message);

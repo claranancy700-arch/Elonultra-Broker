@@ -1,6 +1,5 @@
 import React from 'react';
 import './HelpPage.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import Icon from '../../icons/Icon';
 
 export const HelpPage = () => {

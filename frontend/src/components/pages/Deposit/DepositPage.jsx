@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './DepositPage.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import API from '../../../services/api';
 import Icon from '../../icons/Icon';
 

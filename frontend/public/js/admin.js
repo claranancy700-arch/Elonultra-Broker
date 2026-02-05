@@ -382,7 +382,7 @@ async function loadGrowthTrades() {
   }
 }
 
-// Trigger balance growth simulator manually for selected user
+// Trigger balance growth manually for selected user
 async function triggerGrowthNow() {
   const key = adminKeyInput.value.trim();
   if (!key) return alert('Admin key required');
@@ -720,7 +720,7 @@ if (sendPromptBtn) {
     try {
       const res = await fetch(baseApi + '/admin/prompts', { 
         method: 'POST', 
-        headers: { 'Content-Type':'application/json', 'x-admin-key': key }, 
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key }, 
         body: JSON.stringify({ userIds, message }) 
       });
       const j = await res.json(); 
@@ -990,7 +990,7 @@ async function loadDeposits() {
         <td>
           <button onclick="editTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;margin-right:2px">Edit</button>
           ${t.status !== 'completed' ? `<button onclick="approveTransaction('${t.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;margin-right:2px">Approve</button>` : ''}
-          <button onclick="deleteTransaction('${t.id}')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
+          <button onclick="deleteTransaction('${t.id}', 'deposit')" style="padding:2px 4px;font-size:11px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Delete</button>
         </td>
       </tr>`;
     }).join('');
@@ -1139,7 +1139,7 @@ async function loadAdminDeposits() {
 
       return `<tr>
         <td>${new Date(d.created_at).toLocaleDateString()}</td>
-        <td>${d.user_id}</td>
+        <td>${d.user_id || d.user || '—'}</td>
         <td>${d.currency}</td>
         <td>$${parseFloat(d.amount).toFixed(2)}</td>
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${statusColor};color:white">${d.status}</span></td>
@@ -1238,10 +1238,10 @@ async function deleteWithdrawal(withdrawalId) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'delete failed');
     alert('✅ Withdrawal deleted');
-    await loadWithdrawals();
+    fetchTransactions(); // Refresh
   } catch (err) {
     console.error('Delete withdrawal error:', err);
-    alert('❌ Failed to delete withdrawal: ' + err.message);
+    alert('Failed to delete: ' + err.message);
   }
 }
 
@@ -1321,5 +1321,3 @@ window.addEventListener('adminKeyLoaded', () => {
 });
 
 })();
-
-

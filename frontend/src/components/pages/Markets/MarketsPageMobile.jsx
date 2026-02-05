@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './MarketsPageMobile.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import API from '../../../services/api';
 import { useNavigate } from 'react-router-dom';
 

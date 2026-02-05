@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './TransactionsPage.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 import { Link } from 'react-router-dom';
 import API from '../../../services/api';
 

@@ -1,4 +1,4 @@
-/* CoinMarketCap-inspired Portfolio Tracker - Light Theme */
+/* CoinMarketCap-inspired Portfolio Tracker - Light/Dark Theme */
 :root {
   --bg: #f8f9fa;
   --bg-alt: #f3f4f6;
@@ -11,6 +11,20 @@
   --success: #10b981;
   --danger: #ef4444;
   --transition: all 0.2s ease;
+}
+
+/* Dark Theme Support */
+html[data-theme="dark"] {
+  --bg: #1a0f2e;
+  --bg-alt: #2d1b47;
+  --panel: #3d2a5a;
+  --border: #4a3a6a;
+  --text: #f1f5f9;
+  --text-muted: #9a8fb5;
+  --accent: #e84d5c;
+  --accent-light: #f08070;
+  --success: #10b981;
+  --danger: #ef4444;
 }
 
 * {

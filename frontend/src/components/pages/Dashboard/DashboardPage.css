@@ -260,7 +260,7 @@ tbody tr:last-child td {
   background: rgba(var(--accent-rgb), 0.85);
   backdrop-filter: blur(10px);
   color: #fff;
-  padding: 10px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   text-decoration: none;

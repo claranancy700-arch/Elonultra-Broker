@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import API from '../../../services/api';
 import './SettingsPage.css';
-import MobileBottomNav from '../Dashboard/MobileBottomNav';
 
 export const SettingsPage = () => {
   const { user } = useAuth();

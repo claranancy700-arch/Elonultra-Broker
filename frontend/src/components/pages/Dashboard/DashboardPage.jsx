@@ -3,7 +3,6 @@ import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
 import MobilePortfolioCarousel from './MobilePortfolioCarousel';
 import MobileActionButtons from './MobileActionButtons';
-import MobileBottomNav from './MobileBottomNav';
 import './DashboardPage.css';
 
 export const DashboardPage = () => {
@@ -65,14 +64,7 @@ export const DashboardPage = () => {
     setTradeForm({ asset: '', amount: '', orderType: 'buy' });
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-page">
-        <div className="panel">Loading dashboard...</div>
-      </div>
-    );
-  }
-
+  // Don't show loading overlay - render page with empty state instead
   if (error) {
     return (
       <div className="dashboard-page">
@@ -108,8 +100,12 @@ export const DashboardPage = () => {
 
         <div className="card">
           <div className="card-title">24h Change</div>
-          <div className="card-value">+$0.00</div>
-          <div className="card-change positive">+0%</div>
+          <div className="card-value" style={{ color: portfolio?.change_24h >= 0 ? 'var(--accent-light)' : '#ff4444' }}>
+            {portfolio?.change_24h >= 0 ? '+' : ''}{portfolio?.change_24h?.toFixed(2) ?? '0.00'}%
+          </div>
+          <div className={`card-change ${portfolio?.change_24h >= 0 ? 'positive' : 'negative'}`}>
+            {portfolio?.change_24h >= 0 ? '+' : ''}{(portfolio?.change_24h_value ?? 0).toFixed(2)} USD
+          </div>
         </div>
 
         <div className="card">
@@ -128,12 +124,12 @@ export const DashboardPage = () => {
       {/* Your Holdings Table */}
       <div className="table-wrapper">
         <div className="table-header">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>Your Holdings</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+            <h3 style={{ flex: 1 }}>Your Holdings</h3>
             <button 
               type="button" 
               className="btn btn-secondary" 
-              style={{ fontSize: '12px', padding: '6px 12px' }}
+              style={{ fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}
               onClick={() => toggleCollapse('holdings')}
             >
               {collapseStates.holdings ? 'See Less' : 'See More'}
@@ -196,12 +192,12 @@ export const DashboardPage = () => {
       {activeTab === 'recent-trades' && (
         <div className="tab-content active">
           <div className="table-header">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Recent Trades</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+              <h3 style={{ flex: 1 }}>Recent Trades</h3>
               <button 
                 type="button" 
                 className="btn btn-secondary" 
-                style={{ fontSize: '12px', padding: '6px 12px' }}
+                style={{ fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}
                 onClick={() => toggleCollapse('trades')}
               >
                 {collapseStates.trades ? 'See Less' : 'See More'}

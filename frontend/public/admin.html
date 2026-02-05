@@ -586,6 +586,20 @@
     <div class="container">Admin Console</div>
   </footer>
 
+  <!-- Force admin tools to use the Express API on port 5001 in local dev -->
+  <script>
+    (function() {
+      var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
+      var isLocal = host === 'localhost' || host === '127.0.0.1';
+      if (!window.__apiBase) {
+        window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
+      }
+      if (!document.documentElement.getAttribute('data-theme')) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+
   <script src="/js/portfolio.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/animations.js"></script>
@@ -593,24 +607,14 @@
   <script src="/js/dashboard.js"></script>
   <script src="/js/main.js"></script>
 
-  <!-- Force admin tools to use the Express API on port 5001 in local dev -->
-  <script>
-    (function() {
-      var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
-      var isLocal = host === 'localhost' || host === '127.0.0.1';
-      if (!window.__apiBase) {
-        // On localhost: full URL with :5001 AND /api
-        // On Render: just the origin with /api (https://domain.com/api)
-        window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
-      }
-    })();
-  </script>
-
   <script src="/js/auth.js"></script>
   <script src="/js/testimonies.js"></script>
   <script src="/js/admin-testimonies.js"></script>
   <script src="/js/admin-transactions.js"></script>
   <script src="/js/admin.js"></script>
+  <script src="/js/theme-switcher.js"></script>
+  <script src="/js/testimonies.js"></script>
+  <script src="/js/scrolling-banner.js"></script>
   
   <!-- Mobile Navigation & Testimonies Modal -->
   <script>
@@ -650,7 +654,7 @@
       try {
         if (typeof AuthService !== 'undefined' && AuthService && AuthService.isAuthenticated()) {
           const user = await AuthService.fetchUserProfile();
-          document.getElementById('user-name').textContent = user.name || user.email;
+          document.getElementById('user-name').textContent = user.name;
         } else {
           document.getElementById('user-name').textContent = 'Not logged in';
         }
@@ -833,7 +837,6 @@
       });
     }
   </script>
-  <script src="js/theme-switcher.js?v=2.0.1"></script>
-  <script src="js/scrolling-banner.js?v=2.0.1"></script>
+
 </body>
 </html>

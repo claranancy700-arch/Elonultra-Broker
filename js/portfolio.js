@@ -68,9 +68,9 @@
     getTotalValue: getTotalValue,
     getAssetOnlyValue: getAssetOnlyValue,
     setAssets: (assets) => {
-      // Expect assets as array [{symbol, name, amount, value}]
+      // Expect assets as array [{symbol, name, amount, value, change_24h}]
       if (!Array.isArray(assets)) return;
-      portfolioAssets = assets.map(a => ({ symbol: a.symbol, name: a.name || a.symbol, amount: Number(a.amount)||0, value: Number(a.value)||0, allocation: 0 }));
+      portfolioAssets = assets.map(a => ({ symbol: a.symbol, name: a.name || a.symbol, amount: Number(a.amount)||0, value: Number(a.value)||0, change_24h: Number(a.change_24h) || 0, allocation: 0 }));
       savePortfolio();
     },
     addAsset: (asset) => {
@@ -259,13 +259,17 @@
           return;
         }
         
-        // Update each asset value = amount * price
+        // Update each asset value = amount * price and fetch 24h change
         let total = 0;
         for (const a of portfolioAssets) {
           const sym = (a.symbol || '').toUpperCase();
           const id = map[sym];
-          const price = id && prices[id] && prices[id].usd ? Number(prices[id].usd) : (Number(a.price) || 0);
+          const priceData = id && prices[id] ? prices[id] : {};
+          const price = priceData.usd ? Number(priceData.usd) : (Number(a.price) || 0);
+          const change24h = priceData.change_24h !== undefined ? Number(priceData.change_24h) : 0;
+          
           a.price = price;
+          a.change_24h = change24h;  // Store the 24h change
           a.value = (Number(a.amount) || 0) * price;
           total += a.value;
         }
