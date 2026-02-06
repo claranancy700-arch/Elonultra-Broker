@@ -128,8 +128,6 @@ export const HelpPage = () => {
           </div>
         </section>
       </div>
-
-      <MobileBottomNav />
     </div>
   );
 };

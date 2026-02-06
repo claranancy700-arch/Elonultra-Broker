@@ -252,8 +252,6 @@ export const MarketsPage = () => {
           </div>
         </div>
       )}
-
-      <MobileBottomNav />
     </div>
   );
 };

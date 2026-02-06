@@ -7,7 +7,7 @@ import { LoginPage } from './components/pages/Auth/LoginPage';
 import SignupPage from './components/pages/Auth/SignupPage';
 import EmailVerificationPage from './components/pages/Auth/EmailVerificationPage';
 import { DashboardPage } from './components/pages/Dashboard/DashboardPage';
-import { MarketsPage } from './components/pages/Markets/MarketsPage';
+import { MarketsPage as MarketsPageNew } from './components/pages/Markets/MarketsPageNew';
 import { WithdrawalsPage } from './components/pages/Withdrawals/WithdrawalsPage';
 import WithdrawalProcessPage from './components/pages/Withdrawals/WithdrawalProcessPage';
 import WithdrawalFeeConfirmPage from './components/pages/Withdrawals/WithdrawalFeeConfirmPage';
@@ -41,7 +41,7 @@ function App() {
           {/* Protected routes */}
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/markets" element={<MarketsPage />} />
+            <Route path="/markets" element={<MarketsPageNew />} />
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/deposit" element={<DepositPage />} />
             <Route path="/withdrawals" element={<WithdrawalsPage />} />

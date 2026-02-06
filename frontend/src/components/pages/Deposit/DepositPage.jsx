@@ -223,8 +223,6 @@ export const DepositPage = () => {
           <p><Icon name="lock" className="icon-inline" /> <strong>Secure:</strong> Your transactions are encrypted. We never store payment details.</p>
         </div>
       </div>
-
-      <MobileBottomNav />
     </div>
   );
 };

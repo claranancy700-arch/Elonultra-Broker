@@ -624,8 +624,6 @@ export const SettingsPage = () => {
           {loading ? 'Processing...' : 'Delete Account'}
         </button>
       </div>
-
-      <MobileBottomNav />
     </div>
   );
 };

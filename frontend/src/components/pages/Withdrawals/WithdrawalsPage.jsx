@@ -90,8 +90,6 @@ export const WithdrawalsPage = () => {
           </div>
         </form>
       </div>
-
-      <MobileBottomNav />
     </div>
   );
 };

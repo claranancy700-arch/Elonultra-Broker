@@ -166,8 +166,6 @@ export const TransactionsPage = () => {
           )}
         </>
       )}
-
-      <MobileBottomNav />
     </div>
   );
 };
