@@ -81,12 +81,42 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   try {
     // start daily job (24h)
     const { startPriceUpdater } = require('./jobs/priceUpdater');
-    const { startTradeSimulator } = require('./jobs/tradeSimulator');
     const { startTestimoniesGenerator } = require('./jobs/testimoniesGenerator');
     startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });
     startTestimoniesGenerator({ intervalMs: 24 * 60 * 60 * 1000 });
-    // start hourly trade simulator (Monday-Friday)
-    startTradeSimulator();
+
+    // Simulator selection - use SIMULATOR env var to choose which simulator to run.
+    // Values: 'trade' | 'balance' | 'portfolio' | 'user' | 'none'
+    // If SIMULATOR is not set, prefer balance simulator when BALANCE_GROWTH_ENABLED is true.
+    const SIMULATOR = (process.env.SIMULATOR && process.env.SIMULATOR.toLowerCase())
+      || ((process.env.BALANCE_GROWTH_ENABLED === 'true' || process.env.BALANCE_GROWTH_ENABLED === '1') ? 'balance' : 'none');
+
+    console.log('[Server] Selected simulator:', SIMULATOR);
+
+    try {
+      if (SIMULATOR === 'trade') {
+        const { startTradeSimulator } = require('./jobs/tradeSimulator');
+        startTradeSimulator();
+        console.log('[Server] Trade simulator started');
+      } else if (SIMULATOR === 'balance') {
+        const { initializeScheduler } = require('./jobs/balanceGrowthSimulator');
+        initializeScheduler();
+        console.log('[Server] Balance growth simulator started');
+      } else if (SIMULATOR === 'portfolio') {
+        const { startPortfolioSimulator } = require('./jobs/portfolioSimulator');
+        startPortfolioSimulator();
+        console.log('[Server] Portfolio simulator started');
+      } else if (SIMULATOR === 'user') {
+        const { startUserTradeSimulator } = require('./jobs/userTradeSimulator');
+        startUserTradeSimulator();
+        console.log('[Server] User trade simulator started');
+      } else {
+        console.log('[Server] No simulator started (SIMULATOR set to none or not recognized)');
+      }
+    } catch (err) {
+      console.error('[Server] Failed to start selected simulator:', err && err.message ? err.message : err);
+    }
+
     console.log('Background jobs started');
   } catch (err) {
     console.error('Background jobs error:', err.message || err);

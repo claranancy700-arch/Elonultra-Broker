@@ -81,7 +81,9 @@ async function allocatePortfolioForUser(userId, balanceUsd, { client = null } = 
       [userId, btc, eth, usdt, usdc, xrp, ada, usdValue]
     );
 
-    await c.query('UPDATE users SET portfolio_value=$1, updated_at=NOW() WHERE id=$2', [usdValue, userId]);
+    // CRITICAL: Keep balance = portfolio value so they always match
+    // Total Portfolio Value = Total Asset Holdings = User Balance
+    await c.query('UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW() WHERE id=$2', [usdValue, userId]);
 
     if (ownedClient) await c.query('COMMIT');
     return { allocation, usd_value: usdValue };

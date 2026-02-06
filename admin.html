@@ -79,6 +79,19 @@
       .table-wrapper th, .table-wrapper td { padding:6px 8px; }
       .cards-grid { grid-template-columns:1fr !important; }
     }
+    /* Additional mobile optimizations for admin view */
+    @media (max-width:900px) {
+      .testimonies-banner-content { animation: none !important; }
+      .testimonies-banner { padding:6px 8px; }
+      .testimonies-modal-content, .users-modal-content { width:100% !important; max-width:100% !important; border-radius:8px; padding:12px; box-sizing:border-box; }
+      .users-modal-content { max-height: 90vh; overflow-y:auto; }
+      .card button, .card .btn, .btn { width:100%; }
+      #users-list-btn, #load-users, #sim-start, #sim-pause { width:100%; }
+    }
+    @media (max-width:640px) {
+      .users-modal-content, .testimonies-modal-content { max-width:100%; width:100%; height:100vh; border-radius:0; margin:0; }
+      .testimonies-banner { display:none; }
+    }
   </style>
 </head>
 <body>

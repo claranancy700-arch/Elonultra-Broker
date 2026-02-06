@@ -55,7 +55,7 @@ router.post('/credit', async (req, res) => {
       // If USD, update users.balance, otherwise update portfolio balance column
       const cryptoColumns = { BTC: 'btc_balance', ETH: 'eth_balance', USDT: 'usdt_balance', USDC: 'usdc_balance' };
       if (curr === 'USD') {
-        await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
+        await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
       } else if (cryptoColumns[curr]) {
         const col = cryptoColumns[curr];
         // Upsert into portfolio (create row if missing)
@@ -166,7 +166,7 @@ router.post('/users/:id/set-balance', async (req, res) => {
       const cur = await client.query('SELECT COALESCE(balance,0) as balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
       const oldBalance = cur.rows.length ? parseFloat(cur.rows[0].balance) : 0;
 
-      await client.query('UPDATE users SET balance = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
+      await client.query('UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
 
       // If balance decreased, record trading loss if applicable
       try { await recordLossIfApplicable(client, userId, oldBalance, amt); } catch (e) { console.warn('[PRO-admin] failed to record loss', e && e.message ? e.message : e); }

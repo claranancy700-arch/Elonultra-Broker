@@ -119,9 +119,9 @@ async function executeTrade(trade) {
     // Calculate final balance with consistent boost
     const finalBalance = lockedBalance + (lockedBalance * trade.boostPercent);
 
-    // Update user balance atomically
+    // Update user balance and portfolio_value (keep them in sync)
     await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
       [finalBalance, trade.userId]
     );
 

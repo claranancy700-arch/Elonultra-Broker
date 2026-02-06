@@ -115,6 +115,9 @@ html[data-theme="light"] .mobile-bottom-nav {
   max-width: 50px;
 }
 
+/* Show icons only (no labels) on mobile bottom nav */
+.nav-label { display: none; }
+
 /* Hide on desktop */
 @media (min-width: 769px) {
   .mobile-bottom-nav {

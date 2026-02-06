@@ -56,8 +56,9 @@ async function updatePortfolioValues() {
       }
 
       // Update portfolio.usd_value and users.portfolio_value
+      // CRITICAL: Keep balance = portfolio_value so they always match
       await db.query('UPDATE portfolio SET usd_value = $1, updated_at = NOW() WHERE user_id = $2', [total, row.user_id]);
-      await db.query('UPDATE users SET portfolio_value = $1, updated_at = NOW() WHERE id = $2', [total, row.user_id]);
+      await db.query('UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2', [total, row.user_id]);
     }
     console.log('Portfolio valuation updated for', p.rows.length, 'users');
   } catch (err) {

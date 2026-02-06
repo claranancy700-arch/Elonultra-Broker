@@ -50,10 +50,9 @@
 	}
 
 	function getTotalValue(){
+		// Total Portfolio Value = total asset holdings only (not including cash balance)
 		const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
-		const base = (derived > 0) ? derived : (totalPortfolioValue || 0);
-		// Include available balance so 'Total Portfolio Value' reflects balance changes immediately
-		return base + (Number(availableBalance) || 0);
+		return (derived > 0) ? derived : (totalPortfolioValue || 0);
 	}
 
 	function getAssetOnlyValue(){

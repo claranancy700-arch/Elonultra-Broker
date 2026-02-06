@@ -2,7 +2,7 @@
 **Implementation Complete** ✅
 
 ## Overview
-Added admin capability to clear all trade history for all users while maintaining balance integrity and keeping the balance growth simulator in perfect sync.
+Added admin capability to clear all trade history for all users while maintaining balance integrity and keeping the canonical balance growth simulator (balanceGrowthSimulator) in perfect sync.
 
 ## How It Works
 

@@ -143,8 +143,8 @@ router.post('/users/:id/balance/update', async (req, res) => {
 
     const oldBalance = parseFloat(current.rows[0].balance);
 
-    // Update balance and optionally tax_id
-    let updateQuery = 'UPDATE users SET balance=$1, updated_at=NOW()';
+    // Update balance and portfolio_value (keep them in sync), and optionally tax_id
+    let updateQuery = 'UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW()';
     const params = [newBalance];
     let paramIndex = 2;
     
@@ -302,7 +302,7 @@ router.post('/deposits/:id/approve', async (req, res) => {
     }
 
     await client.query('UPDATE transactions SET status=\'completed\', reference=\'deposit\', updated_at=NOW() WHERE id=$1', [txId]);
-    await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
+    await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
 
     // Get updated balance for portfolio allocation
     const balanceRes = await client.query('SELECT balance FROM users WHERE id=$1', [row.user_id]);
@@ -356,8 +356,8 @@ router.post('/deposits/:id/complete', async (req, res) => {
 
     // Update transaction status to completed
     await client.query('UPDATE transactions SET status=\'completed\', updated_at=NOW() WHERE id=$1', [txId]);
-    // Credit user balance
-    await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
+    // Credit user balance and portfolio_value
+    await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at=NOW() WHERE id=$2', [row.amount, row.user_id]);
 
     // Check if this is first completed deposit to enable simulator
     const first = await client.query('SELECT COUNT(*)::int AS cnt FROM transactions WHERE user_id=$1 AND type=\'deposit\' AND status=\'completed\'', [row.user_id]);
@@ -467,7 +467,7 @@ router.post('/credit', async (req, res) => {
       // If USD, update users.balance, otherwise update portfolio balance column
       const cryptoColumns = { BTC: 'btc_balance', ETH: 'eth_balance', USDT: 'usdt_balance', USDC: 'usdc_balance' };
       if (curr === 'USD') {
-        await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
+        await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
         
         // Get updated balance and reallocate portfolio
         const balanceRes = await client.query('SELECT balance FROM users WHERE id=$1', [uid]);
@@ -601,7 +601,7 @@ router.post('/users/:id/set-balance', async (req, res) => {
     if (!ures.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'user not found' }); }
     const oldBalance = Number(ures.rows[0].balance) || 0;
 
-    await client.query('UPDATE users SET balance = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
+    await client.query('UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
     await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt, 'USD', 'completed', 'admin-set-balance']);
 
     // Reallocate portfolio based on new balance
@@ -1063,7 +1063,7 @@ router.post('/withdrawals/:id/fail', async (req, res) => {
     // Refund only if not already completed
     if (w.status !== 'completed') {
       const refund = Number(w.amount || 0) + Number(w.fee_amount || 0);
-      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
+      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
     }
 
     const upd = await client.query(
@@ -1123,7 +1123,7 @@ router.delete('/withdrawals/:id', async (req, res) => {
     const w = wRes.rows[0];
     if (w.status !== 'completed') {
       const refund = Number(w.amount || 0) + Number(w.fee_amount || 0);
-      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
+      await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at=NOW() WHERE id=$2', [refund, w.user_id]);
     }
 
     // Delete associated trades first using SAVEPOINT to recover from errors

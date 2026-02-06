@@ -10,7 +10,7 @@ const MobileBottomNav = () => {
     { path: '/markets', label: 'Markets', icon: 'markets' },
     { path: '/transactions', label: 'Transactions', icon: 'history' },
     { path: '/help', label: 'Help', icon: 'help' },
-    { path: '/settings', label: 'Settings', icon: 'settings' },
+    { path: '/settings', label: 'Account', icon: 'account' },
   ];
 
   const getIcon = (iconName) => {
@@ -38,11 +38,11 @@ const MobileBottomNav = () => {
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
         );
-      case 'settings':
+      case 'account':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6m-17.78 7.78l4.24-4.24m2.12-2.12l4.24-4.24"></path>
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path>
+            <path d="M12 14c-4 0-6 2-6 4v2h12v-2c0-2-2-4-6-4z"></path>
           </svg>
         );
       case 'help':

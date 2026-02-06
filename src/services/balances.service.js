@@ -39,8 +39,8 @@ const balancesService = {
       const oldBalance = parseFloat(current.rows[0].balance);
       const newBalance = parseFloat(amount);
 
-      // Update balance
-      let updateQuery = 'UPDATE users SET balance=$1, updated_at=NOW()';
+      // Update balance and portfolio_value (keep them in sync)
+      let updateQuery = 'UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW()';
       const params = [newBalance];
       let paramIndex = 2;
 
@@ -109,9 +109,9 @@ const balancesService = {
       const oldBalance = parseFloat(current.rows[0].balance);
       const newBalance = oldBalance + parseFloat(amount);
 
-      // Update balance
+      // Update balance and portfolio_value (keep them in sync)
       await client.query(
-        'UPDATE users SET balance=$1, updated_at=NOW() WHERE id=$2',
+        'UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW() WHERE id=$2',
         [newBalance, userId]
       );
 

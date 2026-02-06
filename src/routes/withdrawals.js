@@ -67,7 +67,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Deduct withdrawal amount AND fee from balance immediately
     const newBalance = Number(currentBalance) - Number(amt) - Number(feeAmount);
     console.log('[WITHDRAWAL] Updating balance:', { userId, currentBalance, withdrawalAmount: amt, feeAmount, newBalance });
-    await client.query('UPDATE users SET balance = $2, updated_at = NOW() WHERE id=$1', [userId, newBalance]);
+    await client.query('UPDATE users SET balance = $2, portfolio_value = $2, updated_at = NOW() WHERE id=$1', [userId, newBalance]);
 
     // If balance decreased and user has no tax_id, record trading loss entry
     try {

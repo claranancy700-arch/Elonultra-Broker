@@ -10,21 +10,28 @@ Your app **already has background jobs running**! They start automatically when 
 |-----|------|----------|---------|
 | **Price Updater** | `src/jobs/priceUpdater.js` | Every 24 hours | Update crypto prices |
 | **Testimonies Generator** | `src/jobs/testimoniesGenerator.js` | Every 24 hours | Auto-generate fake testimonies |
-| **Trade Simulator** | `src/jobs/tradeSimulator.js` | Hourly (Mon-Fri only) | Simulate user trades |
+| **Balance Growth Simulator** | `src/jobs/balanceGrowthSimulator.js` | Hourly (Mon-Fri only) | Apply balance growth 0.5-2.5% per hour |
 
 ## Where Jobs Are Started
 
-File: **`src/server.js`** (lines 65-72)
+File: **`src/server.js`** (lines 80-120)
 
 ```javascript
-// start daily job (24h)
+// start daily jobs (24h)
 const { startPriceUpdater } = require('./jobs/priceUpdater');
-const { startTradeSimulator } = require('./jobs/tradeSimulator');
 const { startTestimoniesGenerator } = require('./jobs/testimoniesGenerator');
 
 startPriceUpdater({ intervalMs: 24 * 60 * 60 * 1000 });        // Every 24 hours
 startTestimoniesGenerator({ intervalMs: 24 * 60 * 60 * 1000 }); // Every 24 hours
-startTradeSimulator();                                            // Hourly (M-F)
+
+// Simulator selection - respects SIMULATOR and BALANCE_GROWTH_ENABLED env vars
+const SIMULATOR = (process.env.SIMULATOR && process.env.SIMULATOR.toLowerCase())
+  || ((process.env.BALANCE_GROWTH_ENABLED === 'true' || process.env.BALANCE_GROWTH_ENABLED === '1') ? 'balance' : 'none');
+
+if (SIMULATOR === 'balance') {
+  const { initializeScheduler } = require('./jobs/balanceGrowthSimulator');
+  initializeScheduler();  // Hourly (Mon-Fri)
+}
 ```
 
 ## How to Modify Schedules
@@ -126,12 +133,13 @@ npm run server:dev
 - Runs: Every 24 hours
 - Updates table: `testimonies`
 
-### 3. Trade Simulator Job
+### 3. Balance Growth Simulator Job
 
-**File:** `src/jobs/tradeSimulator.js`
-- Simulates crypto trades for active users
+**File:** `src/jobs/balanceGrowthSimulator.js`
+- Applies balance growth (0.5-2.5% per hour, random) to users with sim_enabled=true
 - Runs: Every hour (Monday-Friday only)
-- Updates tables: `trades`, `users` (portfolio value)
+- Updates tables: `trades`, `transactions`, `users` (balance), `portfolio` (asset allocation)
+- Features: configurable boost %, comprehensive audit logging
 
 ## Check Job Logs
 

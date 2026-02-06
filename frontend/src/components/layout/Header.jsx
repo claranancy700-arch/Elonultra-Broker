@@ -26,7 +26,7 @@ export const Header = () => {
               <Link to="/dashboard">Dashboard</Link>
               <Link to="/markets">Markets</Link>
               <Link to="/transactions">Transactions</Link>
-              <Link to="/settings">Settings</Link>
+              <Link to="/settings">Account</Link>
               {user?.isAdmin && (
                 <>
                   <Link to="/admin">Admin</Link>

@@ -133,9 +133,9 @@ async function processUserBalance(userId, currentBalance) {
       [userId, tradeType, asset, tradeAmount, tradePrice, tradeTotal, freshBalance, newBalance]
     );
 
-    // Update user balance
+    // Update user balance and portfolio_value (keep them in sync)
     await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
       [newBalance, userId]
     );
 

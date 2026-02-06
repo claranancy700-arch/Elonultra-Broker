@@ -155,9 +155,9 @@ async function updatePortfolio(userId, allocation, newBalance) {
     await client.query('SELECT id FROM portfolio WHERE user_id = $1 FOR UPDATE', [userId]);
     const oldBalance = userRes.rows.length ? parseFloat(userRes.rows[0].balance) : 0;
 
-    // Update user balance
+    // Update user balance and portfolio_value (keep them in sync)
     await client.query(
-      'UPDATE users SET balance = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
       [newBalance, userId]
     );
 
