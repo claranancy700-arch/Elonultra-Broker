@@ -12,7 +12,7 @@
 	];
 
 	let portfolioAssets = DEFAULT_ASSETS;
-	let availableBalance = 5000;
+	let availableBalance = 0;
 	let totalPortfolioValue = 0;
 
 	function loadFromStorage(){
@@ -50,15 +50,26 @@
 	}
 
 	function getTotalValue(){
-		// Total Portfolio Value = total asset holdings only (not including cash balance)
-		const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
-		return (derived > 0) ? derived : (totalPortfolioValue || 0);
+        // Total Portfolio Value = sum of asset holdings ONLY (excluding cash-like stablecoins & excluding balance)
+        // UI has separate cards for Balance and Total, so don't add them together
+        const CASH_SYMBOLS = ['USDC','USDT','USD','CASH'];
+        const derived = portfolioAssets.reduce((sum, a) => {
+            const sym = (a.symbol || '').toUpperCase();
+            if (CASH_SYMBOLS.includes(sym)) return sum; // Skip stablecoins (they're "cash" assets)
+            return sum + (Number(a.value) || 0);
+        }, 0);
+        return (derived > 0) ? derived : (totalPortfolioValue || 0);
 	}
 
 	function getAssetOnlyValue(){
-		// Return only the asset value without balance (for admin panel displays)
-		const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
-		return (derived > 0) ? derived : (totalPortfolioValue || 0);
+        // Return only the asset value without balance and excluding cash-like stablecoins
+        const CASH_SYMBOLS = ['USDC','USDT','USD','CASH'];
+        const derived = portfolioAssets.reduce((sum, a) => {
+            const sym = (a.symbol || '').toUpperCase();
+            if (CASH_SYMBOLS.includes(sym)) return sum;
+            return sum + (Number(a.value) || 0);
+        }, 0);
+        return (derived > 0) ? derived : (totalPortfolioValue || 0);
 	}
 
 	const portfolio = {
@@ -104,10 +115,6 @@
 		setBalance: (balance) => {
 			const prev = availableBalance;
 			const newBalance = Number(balance) || 0;
-			if (prev === newBalance) {
-				console.log('[CBPortfolio.setBalance] No change:', newBalance);
-				return; // Skip if no change
-			}
 			availableBalance = newBalance;
 			console.log('[CBPortfolio.setBalance]', prev, '→', newBalance);
 			saveBalance();
@@ -119,7 +126,7 @@
 				savePortfolio();
 				saveTotal();
 			}
-			// Dispatch event SYNCHRONOUSLY so UI listeners react immediately
+			// Dispatch event SYNCHRONOUSLY so UI listeners react immediately even if value did not change
 			try {
 				window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: newBalance } }));
 			} catch (e) { console.warn('Failed to dispatch balance.updated event', e); }
@@ -140,17 +147,13 @@
 				const serverBal = typeof j.user?.balance !== 'undefined' ? Number(j.user.balance) : null;
 				if (serverBal !== null) {
 					console.log('[Portfolio.syncBalance] Server balance:', serverBal, 'Local balance:', availableBalance);
-					if (serverBal !== availableBalance) {
-						console.log('[Portfolio.syncBalance] Balance changed:', availableBalance, '→', serverBal);
-						const prev = availableBalance;
-						availableBalance = serverBal;
-						saveBalance();
-						// IMPORTANT: Dispatch event FIRST so UI listeners can react
-						window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: availableBalance } }));
-						// Then refresh prices asynchronously (don't wait for it)
-						if (typeof portfolio.refreshPrices === 'function') {
-							portfolio.refreshPrices().catch(e => console.warn('refreshPrices failed', e));
-						}
+					// Centralize balance handling through setBalance to ensure consistent save/dispatch behavior
+					try {
+						portfolio.setBalance(serverBal);
+					} catch (e) { console.warn('portfolio.setBalance failed', e); }
+					// Then refresh prices asynchronously (don't wait for it)
+					if (typeof portfolio.refreshPrices === 'function') {
+						portfolio.refreshPrices().catch(e => console.warn('refreshPrices failed', e));
 					}
 				}
 			} catch (err) {

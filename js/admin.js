@@ -305,6 +305,10 @@ async function loadUserDetails(id, key){
           if (assetsList.length > 0) {
             window.CBPortfolio.setAssets(assetsList);
           }
+          // If server provided a portfolio total value, prefer it as a fallback when price fetch fails
+          if (typeof p.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
+            window.CBPortfolio.setTotalValue(Number(p.portfolio_value) || 0);
+          }
           // refresh prices for preview and then re-render dashboard preview if available
           try{
             if (typeof window.CBPortfolio.refreshPrices === 'function') {

@@ -162,23 +162,12 @@ async function loadUserRecentTrades(){
   try{
     if (typeof AuthService === 'undefined' || !AuthService.isAuthenticated()) return;
     const headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${AuthService.getToken()}` }, AuthService.getAuthHeader());
-    // Fetch both real trades (including loss entries) and simulated/admin trades, then merge
+    // Fetch ONLY simulator trades (is_simulated=true), exclude admin adjustments and losses
     const apiBase = (AuthService.API_BASE || '/api');
-    const [realResp, simResp] = await Promise.all([
-      fetch(`${apiBase}/trades?limit=15&isSimulated=false`, { headers }),
-      fetch(`${apiBase}/trades?limit=15&isSimulated=true`, { headers })
-    ]);
-    if (!realResp.ok && !simResp.ok) throw new Error('Trades API returned errors');
-    const realJson = realResp.ok ? await realResp.json() : { trades: [] };
-    const simJson = simResp.ok ? await simResp.json() : { trades: [] };
-    const realTrades = Array.isArray(realJson.trades) ? realJson.trades : [];
-    const simTrades = Array.isArray(simJson.trades) ? simJson.trades : [];
-    // Merge and sort by created_at desc, prefer realTrades first when timestamps equal
-    const trades = [...realTrades, ...simTrades].sort((a,b) => {
-      const ta = new Date(a.created_at || 0).getTime();
-      const tb = new Date(b.created_at || 0).getTime();
-      return tb - ta;
-    }).slice(0,15);
+    const resp = await fetch(`${apiBase}/trades?limit=15&isSimulated=true`, { headers });
+    if (!resp.ok) throw new Error('Trades API returned error');
+    const json = await resp.json();
+    const trades = Array.isArray(json.trades) ? json.trades : [];
     if (!trades.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades yet</td></tr>';
       return;
@@ -186,15 +175,8 @@ async function loadUserRecentTrades(){
 
     tbody.innerHTML = trades.map(t => {
       const date = t.created_at ? new Date(t.created_at).toLocaleString() : (t.created_at || '');
-      // Handle different trade types
-      let typeLabel = '';
-      if (t.type === 'loss' || t.status === 'loss') {
-        typeLabel = '⚠️ Loss';
-      } else if (t.is_simulated) {
-        typeLabel = 'Trade';
-      } else {
-        typeLabel = (t.type || '').toUpperCase();
-      }
+      // All displayed trades are simulator trades
+      const typeLabel = (t.type || 'Trade').toUpperCase();
       return `
         <tr>
           <td>${date}</td>

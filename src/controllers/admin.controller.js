@@ -100,7 +100,8 @@ const adminController = {
         return response.badRequest(res, 'Invalid amount');
       }
 
-      const result = await balancesService.setBalance(userId, amount, reason, tax_id);
+      // Prevent admin adjustments from creating transactional logs: skipLog=true
+      const result = await balancesService.setBalance(userId, amount, reason, tax_id, true);
       if (!result) {
         return response.notFound(res, 'User not found');
       }

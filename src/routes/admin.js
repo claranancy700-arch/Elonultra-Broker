@@ -162,12 +162,7 @@ router.post('/users/:id/balance/update', async (req, res) => {
     // If balance decreased, record trading loss if applicable
     try { await recordLossIfApplicable(client, uid, oldBalance, newBalance); } catch (e) { console.warn('[admin] failed to record loss', e && e.message ? e.message : e); }
 
-    // Log transaction for audit
-    await client.query(
-      `INSERT INTO transactions (user_id, type, amount, currency, status, reference)
-       VALUES ($1, 'adjustment', $2, 'USD', 'completed', $3)`,
-      [uid, newBalance - oldBalance, `admin: ${reason}`]
-    );
+    // Admin adjustment logging suppressed by policy (do not write adjustment transactions)
 
     await client.query('COMMIT');
 
@@ -602,7 +597,7 @@ router.post('/users/:id/set-balance', async (req, res) => {
     const oldBalance = Number(ures.rows[0].balance) || 0;
 
     await client.query('UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id=$2', [amt, userId]);
-    await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt, 'USD', 'completed', 'admin-set-balance']);
+    // Admin-set balance: do not create an 'adjustment' transaction record
 
     // Reallocate portfolio based on new balance
     try { await allocatePortfolioForUser(userId, amt, { client }); } catch (e) { console.warn('portfolio allocate failed', e.message||e); }

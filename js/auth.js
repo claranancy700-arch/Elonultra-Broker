@@ -69,16 +69,21 @@ const AuthService = {
 
     const data = await response.json();
     console.log('fetchUserProfile response:', data);
-    this.setUser(data.user);
+    // Support both { user: {...} } and { data: { user: {...} } } shapes
+    const userPayload = (data && (data.user || (data.data && data.data.user))) || data;
+    this.setUser(userPayload.user || userPayload);
     // Sync balance and portfolio if provided by server
     try {
-      if (data.user && typeof window !== 'undefined' && window.CBPortfolio) {
-        if (typeof data.user.balance !== 'undefined') {
-          console.log('Setting balance from server:', data.user.balance);
-          window.CBPortfolio.setBalance(Number(data.user.balance) || 0);
+    // Sync balance and portfolio if provided by server
+    try {
+      const serverUser = data && (data.user || (data.data && data.data.user)) || data.user || null;
+      if (serverUser && typeof window !== 'undefined' && window.CBPortfolio) {
+        if (typeof serverUser.balance !== 'undefined') {
+          console.log('Setting balance from server:', serverUser.balance);
+          window.CBPortfolio.setBalance(Number(serverUser.balance) || 0);
         }
-        if (typeof data.user.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
-          window.CBPortfolio.setTotalValue(Number(data.user.portfolio_value) || 0);
+        if (typeof serverUser.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
+          window.CBPortfolio.setTotalValue(Number(serverUser.portfolio_value) || 0);
         }
         if (data.portfolio) {
           // Convert portfolio object to assets array expected by CBPortfolio

@@ -37,6 +37,12 @@ const BalanceSync = (() => {
         currentBalance = Number(balance);
         lastSyncTime = Date.now();
         console.log('[BalanceSync] Fetched from API:', currentBalance);
+        // Centralize balance update through CBPortfolio so UI updates via events
+        try {
+          if (typeof window !== 'undefined' && window.CBPortfolio && typeof window.CBPortfolio.setBalance === 'function') {
+            window.CBPortfolio.setBalance(currentBalance);
+          }
+        } catch (e) { console.warn('[BalanceSync] Failed to set CBPortfolio balance', e); }
         return currentBalance;
       }
 

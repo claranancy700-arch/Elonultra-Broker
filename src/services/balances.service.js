@@ -21,7 +21,7 @@ const balancesService = {
   /**
    * Update user balance (admin override)
    */
-  async setBalance(userId, amount, reason = 'admin override', taxId = null) {
+  async setBalance(userId, amount, reason = 'admin override', taxId = null, skipLog = false) {
     const client = await db.getClient();
     try {
       await client.query('BEGIN');
@@ -55,12 +55,14 @@ const balancesService = {
 
       await client.query(updateQuery, params);
 
-      // Log transaction
-      await client.query(
-        `INSERT INTO transactions (user_id, type, amount, currency, status, reference)
-         VALUES ($1, 'adjustment', $2, 'USD', 'completed', $3)`,
-        [userId, newBalance - oldBalance, `admin: ${reason}`]
-      );
+      // Log transaction unless explicitly skipped (admin adjustments should not be logged when skipLog=true)
+      if (!skipLog) {
+        await client.query(
+          `INSERT INTO transactions (user_id, type, amount, currency, status, reference)
+           VALUES ($1, 'adjustment', $2, 'USD', 'completed', $3)`,
+          [userId, newBalance - oldBalance, `admin: ${reason}`]
+        );
+      }
 
       await client.query('COMMIT');
 

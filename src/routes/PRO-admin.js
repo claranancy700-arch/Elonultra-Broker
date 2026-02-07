@@ -171,7 +171,7 @@ router.post('/users/:id/set-balance', async (req, res) => {
       // If balance decreased, record trading loss if applicable
       try { await recordLossIfApplicable(client, userId, oldBalance, amt); } catch (e) { console.warn('[PRO-admin] failed to record loss', e && e.message ? e.message : e); }
 
-      await client.query('INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())', [userId, 'adjustment', amt - oldBalance, 'USD', 'completed', 'admin-set-balance']);
+      // Do not log admin 'adjustment' transactions for set-balance operations
       try { await client.query('INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)', [provided, 'set-balance', JSON.stringify({ userId, amount: amt })]); } catch(ea){ console.warn('Failed to write audit', ea.message||ea); }
       await client.query('COMMIT');
       try { sse.emit(userId, 'profile_update', { userId, type: 'set-balance', balance: amt }); } catch(e){/*ignore*/}

@@ -17,10 +17,10 @@ async function seedUsers() {
       if (existingUser.rows.length === 0) {
         // Hash password
         const hash = await bcrypt.hash(user.password, 10);
-        // Insert user
+        // Insert user with $0 initial balance - only deposits add funds
         const result = await db.query(
-          'INSERT INTO users(name, email, password_hash, balance) VALUES($1, $2, $3, $4) RETURNING id, email',
-          [user.name, user.email, hash, 5000 + Math.random() * 10000]
+          'INSERT INTO users(name, email, password_hash, balance, portfolio_value) VALUES($1, $2, $3, 0, 0) RETURNING id, email, balance',
+          [user.name, user.email, hash]
         );
         console.log(`✓ Created user: ${result.rows[0].email} (ID: ${result.rows[0].id})`);
 

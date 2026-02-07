@@ -12,7 +12,7 @@
   ];
 
   let portfolioAssets = DEFAULT_ASSETS;
-  let availableBalance = 5000;
+  let availableBalance = 0;
   let totalPortfolioValue = 0;
 
   function loadFromStorage(){
@@ -50,14 +50,25 @@
   }
 
   function getTotalValue(){
-    // Total Portfolio Value = total asset holdings only (not including cash balance)
-    const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+    // Total Portfolio Value = sum of asset holdings ONLY (excluding cash-like stablecoins & excluding balance)
+    // UI has separate cards for Balance and Total, so don't add them together
+    const CASH_SYMBOLS = ['USDC','USDT','USD','CASH'];
+    const derived = portfolioAssets.reduce((sum, a) => {
+      const sym = (a.symbol || '').toUpperCase();
+      if (CASH_SYMBOLS.includes(sym)) return sum; // Skip stablecoins (they're "cash" assets)
+      return sum + (Number(a.value) || 0);
+    }, 0);
     return (derived > 0) ? derived : (totalPortfolioValue || 0);
   }
 
   function getAssetOnlyValue(){
-    // Return only the asset value without balance (for admin panel displays)
-    const derived = portfolioAssets.reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+    // Return only the asset value without balance and excluding cash-like stablecoins
+    const CASH_SYMBOLS = ['USDC','USDT','USD','CASH'];
+    const derived = portfolioAssets.reduce((sum, a) => {
+      const sym = (a.symbol || '').toUpperCase();
+      if (CASH_SYMBOLS.includes(sym)) return sum;
+      return sum + (Number(a.value) || 0);
+    }, 0);
     return (derived > 0) ? derived : (totalPortfolioValue || 0);
   }
 
@@ -104,10 +115,6 @@
     setBalance: (balance) => {
       const prev = availableBalance;
       const newBalance = Number(balance) || 0;
-      if (prev === newBalance) {
-        console.log('[CBPortfolio.setBalance] No change:', newBalance);
-        return; // Skip if no change
-      }
       availableBalance = newBalance;
       console.log('[CBPortfolio.setBalance]', prev, '→', newBalance);
       saveBalance();
