@@ -28,12 +28,19 @@
 		try{
 			const storedBal = localStorage.getItem(BALANCE_KEY);
 			if (storedBal !== null) {
+				const prev = availableBalance;
 				availableBalance = parseFloat(storedBal);
+				try {
+					window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: availableBalance } }));
+				} catch (e) { console.warn('Failed to dispatch balance.updated', e); }
 			}
 		}catch(e){ console.error('Failed to parse balance:', e); }
 		try{
 			const storedTotal = localStorage.getItem(TOTAL_KEY);
-			if(storedTotal) totalPortfolioValue = parseFloat(storedTotal);
+			if(storedTotal) {
+				totalPortfolioValue = parseFloat(storedTotal);
+				try { window.dispatchEvent(new CustomEvent('portfolio.total.updated', { detail: { total: totalPortfolioValue } })); } catch(e) { /* ignore */ }
+			}
 		}catch(e){ console.error('Failed to parse portfolio total:', e); }
 	}
 
@@ -285,19 +292,58 @@
 				console.log('Updated total portfolio value:', totalPortfolioValue);
 				savePortfolio();
 				saveTotal();
+				try {
+					window.dispatchEvent(new CustomEvent('portfolio.total.updated', { detail: { total: totalPortfolioValue } }));
+				} catch (e) { /* ignore */ }
 			} catch (err) {
 				console.warn('refreshPrices error', err);
 			}
 		}
 	};
 
-	// Only load from storage if user is already authenticated (not on fresh page load)
-	// This prevents loading old user data when a new user logs in
-	if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
-		loadFromStorage();
-	}
+	// Load cached portfolio & balance immediately so UI can display cached balance
+	// quickly while authentication/server sync completes.
+	loadFromStorage();
   
 	window.CBPortfolio = portfolio;
+
+	// Ensure we pull latest balance immediately after user login/auth completes.
+	// Strategy: if AuthService is already authenticated, sync now. Otherwise
+	// poll briefly and listen for common auth events to trigger sync as soon
+	// as authentication happens (prevents UI delay after login).
+	(function ensureAuthSync(){
+		try {
+			if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
+				portfolio.syncBalance().catch(e => console.warn('Initial syncBalance failed', e));
+				return;
+			}
+			// Poll for auth completion for a short window
+			let attempts = 0;
+			const maxAttempts = 40; // ~10s at 250ms
+			const iv = setInterval(() => {
+				attempts++;
+				try {
+					if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
+						clearInterval(iv);
+						portfolio.syncBalance().catch(e => console.warn('Polled syncBalance failed', e));
+					}
+					if (attempts >= maxAttempts) clearInterval(iv);
+				} catch (e) { /* ignore */ }
+			}, 250);
+
+			// Listen for common auth events in case the app dispatches them
+			const handler = () => { portfolio.syncBalance().catch(e => console.warn('Event syncBalance failed', e)); };
+			window.addEventListener('auth.login', handler);
+			window.addEventListener('user.login', handler);
+			window.addEventListener('auth.changed', handler);
+			// Remove listeners after a short timeout to avoid leaks
+			setTimeout(() => {
+				window.removeEventListener('auth.login', handler);
+				window.removeEventListener('user.login', handler);
+				window.removeEventListener('auth.changed', handler);
+			}, 15000);
+		} catch (e) { /* ignore */ }
+	})();
 	// Start background balance watcher (SSE + periodic poll)
 	try { if (window.CBPortfolio && typeof window.CBPortfolio.startBalanceWatcher === 'function') window.CBPortfolio.startBalanceWatcher(); } catch(e) { console.warn('Failed to start balance watcher', e); }
 })(window);
