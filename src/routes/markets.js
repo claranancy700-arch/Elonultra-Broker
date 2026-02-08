@@ -9,21 +9,25 @@ let marketCache = {
 };
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
+const CMC_API_KEY = process.env.CMC_API_KEY;
 const COINGECKO_BACKUP = true; // Use CoinGecko as fallback
 
 // Retry logic for API calls
-async function fetchWithRetry(url, maxRetries = 3, timeout = 8000) {
+async function fetchWithRetry(url, maxRetries = 3, timeout = 8000, customHeaders = {}) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+      const headers = {
+        'User-Agent': 'Elon-Ultra-Broker/1.0',
+        'Accept': 'application/json',
+        ...customHeaders,
+      };
+
       const response = await fetch(url, {
         signal: controller.signal,
-        headers: {
-          'User-Agent': 'Elon-Ultra-Broker/1.0',
-          'Accept': 'application/json',
-        },
+        headers,
       });
 
       clearTimeout(timeoutId);
@@ -91,6 +95,46 @@ async function fetchFromPolygon() {
   return mapped;
 }
 
+// Fetch from CoinMarketCap (pro-api.coinmarketcap.com)
+async function fetchFromCoinMarketCap(per_page = 100, page = 1) {
+  if (!CMC_API_KEY) {
+    console.warn('[Markets] CMC API key not configured');
+    throw new Error('CMC API key not configured');
+  }
+
+  console.log('[Markets] Fetching from CoinMarketCap...');
+
+  // CMC cryptocurrency listings endpoint with quotes in USD
+  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${per_page}&start=${(page - 1) * per_page + 1}&convert=USD`;
+
+  const response = await fetchWithRetry(url, 3, 8000, {
+    'X-CMC_PRO_API_KEY': CMC_API_KEY,
+  });
+  const data = await response.json();
+
+  if (!data.data || data.data.length === 0) {
+    throw new Error('CoinMarketCap returned no data');
+  }
+
+  // Map CMC format to our format
+  return data.data.map((coin, index) => {
+    const quote = coin.quote?.USD || {};
+    
+    return {
+      id: coin.slug || coin.symbol.toLowerCase(),
+      symbol: (coin.symbol || '').toUpperCase(),
+      name: coin.name,
+      price: quote.price || 0,
+      change_24h: quote.percent_change_24h || 0,
+      high_24h: quote.price || 0, // CMC doesn't provide 24h high/low in basic endpoint
+      low_24h: quote.price || 0,
+      volume_24h: quote.volume_24h || 0,
+      market_cap: quote.market_cap || 0,
+      market_cap_rank: coin.cmc_rank || index + 1,
+    };
+  });
+}
+
 // Fetch from CoinGecko (fallback)
 async function fetchFromCoinGecko(per_page = 100, page = 1) {
   console.log('[Markets] Fetching from CoinGecko...');
@@ -139,26 +183,34 @@ router.get('/', async (req, res) => {
     let dataSource = 'unknown';
 
     try {
-      // Try CoinGecko first (more reliable public endpoint)
-      mapped = await fetchFromCoinGecko(per_page, page);
-      dataSource = 'CoinGecko (primary)';
-    } catch (geckoErr) {
-      console.warn('[Markets] CoinGecko failed:', geckoErr.message);
+      // Try CoinMarketCap first (primary)
+      mapped = await fetchFromCoinMarketCap(per_page, page);
+      dataSource = 'CoinMarketCap (primary)';
+    } catch (cmcErr) {
+      console.warn('[Markets] CoinMarketCap failed:', cmcErr.message);
 
-      // Try Polygon.io as fallback
       try {
-        mapped = await fetchFromPolygon(per_page);
-        dataSource = 'Polygon.io (fallback)';
-      } catch (polygonErr) {
-        console.error('[Markets] Polygon.io also failed:', polygonErr.message);
+        // Try CoinGecko as fallback
+        mapped = await fetchFromCoinGecko(per_page, page);
+        dataSource = 'CoinGecko (fallback)';
+      } catch (geckoErr) {
+        console.warn('[Markets] CoinGecko failed:', geckoErr.message);
 
-        // Try to return cached data even if expired
-        if (marketCache.data) {
-          console.log('[Markets] Returning expired cache');
-          return res.json(marketCache.data);
+        // Try Polygon.io as fallback
+        try {
+          mapped = await fetchFromPolygon(per_page);
+          dataSource = 'Polygon.io (fallback)';
+        } catch (polygonErr) {
+          console.error('[Markets] Polygon.io also failed:', polygonErr.message);
+
+          // Try to return cached data even if expired
+          if (marketCache.data) {
+            console.log('[Markets] Returning expired cache');
+            return res.json(marketCache.data);
+          }
+
+          throw polygonErr;
         }
-
-        throw polygonErr;
       }
     }
 

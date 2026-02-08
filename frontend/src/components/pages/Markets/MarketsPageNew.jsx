@@ -189,6 +189,17 @@ export const MarketsPage = () => {
       {!loading && (
         <div className="mp-table-wrapper">
           <table className="mp-table">
+            <colgroup>
+              <col style={{ width: '90px' }} />
+              <col style={{ width: '220px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '140px' }} />
+              <col style={{ width: '160px' }} />
+              <col style={{ width: '110px' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th onClick={() => handleSort('symbol')} className="th-sortable">
