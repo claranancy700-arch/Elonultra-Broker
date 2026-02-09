@@ -56,10 +56,23 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await response.json();
+      // If the server returned non-JSON (HTML error page), avoid unhandled parse error
+      const contentType = response.headers.get('content-type') || '';
+      let data = null;
+
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Capture raw text (useful when an HTML error page is returned)
+        const text = await response.text();
+        console.error('Non-JSON response during signup:', text);
+        // Surface a concise message for the user while keeping the raw text in the console
+        setError(`Unexpected server response (status ${response.status}). Check console for details.`);
+        return;
+      }
 
       if (!response.ok) {
-        setError(data.message || 'Signup failed');
+        setError(data.message || data.error || 'Signup failed');
         return;
       }
 
@@ -68,6 +81,7 @@ export default function SignupPage() {
         navigate('/login');
       }, 1500);
     } catch (err) {
+      console.error('Signup network/error:', err);
       setError(err.message || 'Network error during signup');
     }
   };
