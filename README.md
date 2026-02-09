@@ -1,4 +1,4 @@
-# ELON ULTRA ELONS — Frontend
+# ELON-ULTRA — Frontend
 
 Quick dev setup and commands for the frontend.
 

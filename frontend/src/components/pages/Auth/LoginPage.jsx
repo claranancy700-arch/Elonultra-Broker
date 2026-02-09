@@ -65,7 +65,7 @@ export const LoginPage = () => {
       <div className="login-container">
         <div className="login-card">
           <div className="login-header">
-            <h1>ELON ULTRA ELONS</h1>
+            <h1>ELON-ULTRA</h1>
             <p className="login-subtitle">Login to your account</p>
           </div>
 

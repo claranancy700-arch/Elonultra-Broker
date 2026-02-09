@@ -208,7 +208,7 @@
       {
         client_name: 'John Smith',
         title: 'CEO, Tech Ventures',
-        content: 'ELON ULTRA ELONS has completely transformed my crypto trading experience. The platform is intuitive, secure, and I have increased my portfolio by 85% since joining.',
+        content: 'ELON-ULTRA has completely transformed my crypto trading experience. The platform is intuitive, secure, and I have increased my portfolio by 85% since joining.',
         rating: 5
       },
       {
@@ -220,7 +220,7 @@
       {
         client_name: 'Michael Chen',
         title: 'Hedge Fund Manager',
-        content: 'The real-time data and low fees make ELON ULTRA ELONS my go-to platform. Professional-grade tools at an unbeatable price point.',
+        content: 'The real-time data and low fees make ELON-ULTRA my go-to platform. Professional-grade tools at an unbeatable price point.',
         rating: 5
       }
     ];

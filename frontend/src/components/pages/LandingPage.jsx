@@ -32,7 +32,7 @@ export const LandingPage = () => {
       <header className="site-header">
         <div className="container">
           <Link to="/" className="brand">
-            <span style={{ display: 'block' }}>ELON ULTRA ELONS</span>
+            <span style={{ display: 'block' }}>ELON-ULTRA</span>
           </Link>
           <nav className="nav">
             <Link to="/">Home</Link>
@@ -47,7 +47,7 @@ export const LandingPage = () => {
 
       <main className="hero">
         <section className="hero-section">
-          <h1>ELON ULTRA ELONS Trading Platform</h1>
+          <h1>ELON-ULTRA Trading Platform</h1>
           <p>Fast, secure, and user-friendly crypto trading platform. Start with as little as $100.</p>
           <div className="hero-cta">
             <Link to="/signup" className="btn btn-primary">
@@ -106,7 +106,7 @@ export const LandingPage = () => {
 
       <footer className="site-footer">
         <div className="container">
-          &copy; 2025 ELON ULTRA ELONS — Professional Crypto Trading
+          &copy; 2025 ELON-ULTRA — Professional Crypto Trading
         </div>
       </footer>
     </div>

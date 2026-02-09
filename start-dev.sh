@@ -4,7 +4,7 @@
 
 echo ""
 echo "========================================"
-echo " Elon Ultra Elons - React SPA Dev Mode"
+echo " Elon-Ultra - React SPA Dev Mode"
 echo "========================================"
 echo ""
 echo "Starting backend (port 5001) and frontend (port 5173)..."

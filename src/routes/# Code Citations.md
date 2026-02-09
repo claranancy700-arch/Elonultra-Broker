@@ -121,7 +121,7 @@ https://github.com/postgres/postgres/blob/92641d8d651e685b49a6e2842d306aa5fe7ba5
 # host          DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 # hostssl       DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 # hostnossl     DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
-# hostgssenc    DATABASE  USER  ADDRESS  METHOD  [OPTIONS
+# hostgssenc    DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 ```
 
 
@@ -146,7 +146,7 @@ https://github.com/samuelclay/NewsBlur/blob/f552d6f2c715871ade4f403c8a7be6e34b70
 # host          DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 # hostssl       DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 # hostnossl     DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
-# hostgssenc    DATABASE  USER  ADDRESS  METHOD  [OPTIONS
+# hostgssenc    DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
 ```
 
 

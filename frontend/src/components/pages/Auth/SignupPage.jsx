@@ -76,7 +76,7 @@ export default function SignupPage() {
     <div className="signup-container">
       <div className="signup-card">
         <h1>Create Your Account</h1>
-        <p className="subtitle">Join thousands of traders on ELON ULTRA ELONS</p>
+        <p className="subtitle">Join thousands of traders on ELON-ULTRA</p>
 
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}

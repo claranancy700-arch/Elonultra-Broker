@@ -2,7 +2,7 @@
   "name": "elon-ultra-elon",
   "version": "0.1.0",
   "private": true,
-  "description": "Static frontend for ELON ULTRA ELONS",
+  "description": "Static frontend for ELON-ULTRA",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run frontend:dev\"",
     "dev:server": "npm run server:dev",

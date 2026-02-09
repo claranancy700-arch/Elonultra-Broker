@@ -95,17 +95,17 @@ async function fetchFromPolygon() {
   return mapped;
 }
 
-// Fetch from CoinMarketCap (pro-api.coinmarketcap.com)
+// Fetch from CoinMarketCap (free API: api.coinmarketcap.com)
 async function fetchFromCoinMarketCap(per_page = 100, page = 1) {
   if (!CMC_API_KEY) {
     console.warn('[Markets] CMC API key not configured');
     throw new Error('CMC API key not configured');
   }
 
-  console.log('[Markets] Fetching from CoinMarketCap...');
+  console.log('[Markets] Fetching from CoinMarketCap (free API)...');
 
-  // CMC cryptocurrency listings endpoint with quotes in USD
-  const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${per_page}&start=${(page - 1) * per_page + 1}&convert=USD`;
+  // CMC free API cryptocurrency listings endpoint with quotes in USD
+  const url = `https://api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=${per_page}&start=${(page - 1) * per_page + 1}&convert=USD`;
 
   const response = await fetchWithRetry(url, 3, 8000, {
     'X-CMC_PRO_API_KEY': CMC_API_KEY,
@@ -183,7 +183,7 @@ router.get('/', async (req, res) => {
     let dataSource = 'unknown';
 
     try {
-      // Try CoinMarketCap first (primary)
+      // Try CoinMarketCap first (primary - free API)
       mapped = await fetchFromCoinMarketCap(per_page, page);
       dataSource = 'CoinMarketCap (primary)';
     } catch (cmcErr) {

@@ -7,7 +7,7 @@ export const AboutPage = () => {
     <div className="about-page">
       <section className="about-hero">
         <div className="container">
-          <h1>About ELON ULTRA ELONS</h1>
+          <h1>About ELON-ULTRA</h1>
           <p className="subtitle">Empowering traders with cutting-edge technology and financial tools</p>
         </div>
       </section>
@@ -17,7 +17,7 @@ export const AboutPage = () => {
           <div className="about-section">
             <h2>Our Mission</h2>
             <p>
-              At ELON ULTRA ELONS, we believe that everyone should have access to professional-grade 
+              At ELON-ULTRA, we believe that everyone should have access to professional-grade 
               cryptocurrency trading tools. Our platform combines advanced technology with user-friendly 
               interfaces to make digital asset trading accessible to traders of all experience levels.
             </p>
@@ -56,7 +56,7 @@ export const AboutPage = () => {
           <div className="about-section">
             <h2>Our Story</h2>
             <p>
-              Founded in 2024, ELON ULTRA ELONS was created by a team of cryptocurrency enthusiasts and 
+              Founded in 2024, ELON-ULTRA was created by a team of cryptocurrency enthusiasts and 
               fintech experts. We saw the need for a platform that combines powerful tools with exceptional 
               customer service. Today, we serve thousands of traders worldwide and continue to innovate every day.
             </p>

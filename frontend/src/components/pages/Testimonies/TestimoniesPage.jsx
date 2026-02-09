@@ -67,7 +67,7 @@ export const TestimoniesPage = () => {
       <section className="testimonies-hero">
         <div className="container">
           <h1>What Our Traders Say</h1>
-          <p className="subtitle">Real experiences from real traders using ELON ULTRA ELONS</p>
+          <p className="subtitle">Real experiences from real traders using ELON-ULTRA</p>
         </div>
       </section>
 
@@ -127,7 +127,7 @@ export const TestimoniesPage = () => {
       <section className="cta-section">
         <div className="container">
           <h2>Ready to Start Trading?</h2>
-          <p>Join thousands of traders who trust ELON ULTRA ELONS</p>
+          <p>Join thousands of traders who trust ELON-ULTRA</p>
           <div className="cta-buttons">
             <a href="/login" className="btn btn-primary">Create Account</a>
             <a href="/dashboard" className="btn btn-secondary">Go to Dashboard</a>

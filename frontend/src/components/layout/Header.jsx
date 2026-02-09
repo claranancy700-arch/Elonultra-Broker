@@ -17,7 +17,7 @@ export const Header = () => {
       <div className="container">
         <Link to="/" className="brand">
           <img src="/images/elon-logo-v2.svg" alt="EUE" className="brand-logo" />
-          <span style={{display:'block'}}>ELON ULTRA ELONS</span>
+          <span style={{display:'block'}}>ELON-ULTRA</span>
         </Link>
         
         <nav className="nav">
