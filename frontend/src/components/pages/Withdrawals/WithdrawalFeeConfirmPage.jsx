@@ -44,7 +44,8 @@ export default function WithdrawalFeeConfirmPage() {
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/api/withdrawals/confirm-fee', {
+      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+      const response = await fetch(API_BASE + '/withdrawals/confirm-fee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

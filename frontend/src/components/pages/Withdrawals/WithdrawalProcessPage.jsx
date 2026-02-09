@@ -77,7 +77,8 @@ export default function WithdrawalProcessPage() {
     setError('');
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/api/withdrawals/process', {
+      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+      const response = await fetch(API_BASE + '/withdrawals/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

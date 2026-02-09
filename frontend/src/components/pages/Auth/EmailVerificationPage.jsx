@@ -32,7 +32,8 @@ export default function EmailVerificationPage() {
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/auth/send-verification', {
+      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+      const response = await fetch(API_BASE + '/auth/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
@@ -63,7 +64,8 @@ export default function EmailVerificationPage() {
     }
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + '/auth/verify-email', {
+      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+      const response = await fetch(API_BASE + '/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
