@@ -134,9 +134,6 @@ export const LoginPage = () => {
           </form>
 
           <div className="login-footer">
-            <p className="demo-text">
-              Demo: Use any valid account or check the console
-            </p>
             <div className="login-links">
               <a href="#forgot-password" className="forgot-link">Forgot password?</a>
               <span className="separator">•</span>
