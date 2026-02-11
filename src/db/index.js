@@ -18,7 +18,9 @@ async function initializeDatabase() {
 
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 30000, // Increased from 5s to 30s for Render.com remote DB
+      idleTimeoutMillis: 30000,
+      max: 20, // Connection pool size
     });
 
     // Test the connection with a simple query

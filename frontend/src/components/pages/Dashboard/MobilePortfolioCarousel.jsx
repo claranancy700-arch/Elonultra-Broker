@@ -24,7 +24,7 @@ const ChartIcon = () => (
 );
 
 // SVG Pie Chart Component using holdings value (fallback to amount*price)
-const PieChart = ({ positions = [] }) => {
+const PieChart = ({ positions = [], compact = false }) => {
   if (!positions || positions.length === 0) return <div style={{ color: 'var(--muted)', fontSize: 12 }}>No holdings</div>;
 
   const vals = positions.map((p) => ({
@@ -55,6 +55,19 @@ const PieChart = ({ positions = [] }) => {
 
   const top = slices.reduce((m, s) => (s.pct > (m.pct || 0) ? s : m), {});
 
+  if (compact) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: '100%', maxWidth: 96, maxHeight: 96 }}>
+          {slices.map((s, i) => (
+            <path key={i} d={s.d} fill={s.color} opacity="0.95" />
+          ))}
+          <circle cx="50" cy="50" r="18" fill="rgba(var(--card-rgb), 0.85)" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', height: '100%' }}>
       <svg width="96" height="96" viewBox="0 0 100 100" style={{ flexShrink: 0 }}>
@@ -79,13 +92,13 @@ const PieChart = ({ positions = [] }) => {
 
 const MobilePortfolioCarousel = ({ portfolio }) => {
   const [index, setIndex] = useState(0);
-  const startY = useRef(null);
-  const deltaY = useRef(0);
+  const startX = useRef(null);
+  const deltaX = useRef(0);
   const wheelTimeout = useRef(null);
   const containerRef = useRef(null);
-  const [slideHeight, setSlideHeight] = useState(212); // default card height + gap
+  const [slideWidth, setSlideWidth] = useState(340); // default card width + gap
 
-  const slides = [0, 1, 2];
+  const slides = [0, 1]; // 2 horizontal cards
 
   useEffect(() => {
     const compute = () => {
@@ -94,8 +107,8 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
       if (card) {
         const rect = card.getBoundingClientRect();
         const style = window.getComputedStyle(card);
-        const marginBottom = parseFloat(style.marginBottom) || 0;
-        setSlideHeight(Math.round(rect.height + marginBottom));
+        const marginRight = parseFloat(style.marginRight) || 0;
+        setSlideWidth(Math.round(rect.width + marginRight));
       }
     };
     compute();
@@ -107,24 +120,24 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
   }, []);
 
   const handleTouchStart = (e) => {
-    startY.current = e.touches[0].clientY;
-    deltaY.current = 0;
+    startX.current = e.touches[0].clientX;
+    deltaX.current = 0;
   };
 
   const handleTouchMove = (e) => {
-    if (startY.current == null) return;
-    deltaY.current = e.touches[0].clientY - startY.current;
+    if (startX.current == null) return;
+    deltaX.current = e.touches[0].clientX - startX.current;
     // prevent page scroll while interacting with carousel
-    if (Math.abs(deltaY.current) > 10) e.preventDefault();
+    if (Math.abs(deltaX.current) > 10) e.preventDefault();
   };
 
   const handleTouchEnd = () => {
-    const d = deltaY.current;
+    const d = deltaX.current;
     const threshold = 40;
     if (d < -threshold) setIndex((i) => (i + 1) % slides.length);
     else if (d > threshold) setIndex((i) => (i - 1 + slides.length) % slides.length);
-    startY.current = null;
-    deltaY.current = 0;
+    startX.current = null;
+    deltaX.current = 0;
   };
 
   const handleWheel = (e) => {
@@ -135,18 +148,18 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
       wheelTimeout.current = null;
     }, 200);
 
-    if (e.deltaY > 10) setIndex((i) => (i + 1) % slides.length);
-    else if (e.deltaY < -10) setIndex((i) => (i - 1 + slides.length) % slides.length);
+    if (e.deltaX > 10) setIndex((i) => (i + 1) % slides.length);
+    else if (e.deltaX < -10) setIndex((i) => (i - 1 + slides.length) % slides.length);
   };
 
   const cardData = (i) => {
-    // For now show same data on all three cards (can be customized per slide)
-    return {
-      total: portfolio?.total_value ?? 0,
-      balance: portfolio?.balance ?? 0,
-      change24: portfolio?.change_24h ?? 0,
-      positions: portfolio?.positions?.length ?? 0,
-    };
+    // Map portfolio fields to values used by legacy mobile card
+    const total = portfolio?.total_value ?? 0;
+    const balance = portfolio?.balance ?? 0;
+    const change24 = portfolio?.change_24h ?? 0;
+    const positions = portfolio?.positions?.length ?? 0;
+
+    return { total, balance, change24, positions };
   };
 
   return (
@@ -158,79 +171,96 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
     >
-      <div className="carousel-inner" style={{ transform: `translateY(-${index * slideHeight}px)` }}>
+      <div className="carousel-inner" style={{ transform: `translateX(-${index * slideWidth}px)` }}>
         {slides.map((s, i) => {
           const data = cardData(i);
           const offset = i - index;
-          const translateY = Math.abs(offset) * 4; /* subtle vertical offset for stacking effect */
-          const shadowOpacity = Math.max(0.04, 0.12 - Math.abs(offset) * 0.03); /* deeper shadow for front cards */
+          const translateX = Math.abs(offset) * 4; /* subtle horizontal offset for stacking effect */
+          const shadowOpacity = Math.max(0.04, 0.12 - Math.abs(offset) * 0.03);
           const zIndex = 300 - Math.abs(offset) * 5;
-          
-          // Card 1: Balance with 24h change
-          if (i === 0) {
-            const isPositive = data.change24 >= 0;
-            return (
-              <div
-                key={i}
-                className={`mobile-portfolio-card carousel-card card-balance ${i === index ? 'active' : ''}`}
-                style={{ transform: `translateY(${translateY}px)`, zIndex, boxShadow: `0 ${4 + Math.abs(offset) * 2}px ${12 + Math.abs(offset) * 4}px rgba(0, 0, 0, ${shadowOpacity})` }}
+
+          // Use legacy atlas SVG as background for every slide and overlay values
+          return (
+            <div
+              key={i}
+              className={`mobile-portfolio-card carousel-card ${i === index ? 'active' : ''}`}
+              style={{ transform: `translateX(${translateX}px)`, zIndex, boxShadow: `0 ${4 + Math.abs(offset) * 2}px ${12 + Math.abs(offset) * 4}px rgba(0, 0, 0, ${shadowOpacity})` }}
+            >
+              {/* Credit card background SVG - glassy layer */}
+              <svg 
+                className="credit-card-bg" 
+                viewBox="0 0 1004.0031 630.93097" 
+                preserveAspectRatio="xMidYMid slice" 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: 0.42,
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                  filter: 'brightness(1.45) contrast(1.1)'
+                }}
               >
-                <div className="card-content card-balance-content">
-                  <div className="balance-section">
-                    <div className="balance-label">Account Balance</div>
-                    <div className="balance-large">${data.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-                  </div>
-                  <div className="change-section">
-                    <div className={`change-badge ${isPositive ? 'positive' : 'negative'}`}>
-                      <span className="change-arrow">{isPositive ? '↑' : '↓'}</span>
-                      <span className="change-value">{Math.abs(data.change24)}%</span>
+                <image href="/images/basicCreditCard.svg" width="1004.0031" height="630.93097" x="0" y="0" />
+              </svg>
+
+              <div className="card-content" style={{ position: 'relative', zIndex: 10 }}>
+                {i === 0 ? (
+                  <div className="card-balance-modern">
+                    <div className="balance-header">
+                      <div className="card-title balance-label">Total Balance</div>
+                      <div className="balance-icon"><WalletIcon /></div>
                     </div>
-                    <div className="change-label">24h Change</div>
+                    <div className="balance-amount metallic">${data.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                    <div className={`change-badge metallic ${data.change24 >= 0 ? 'positive' : 'negative'}`} style={{ marginTop: 12 }}>
+                      <span className="change-arrow">{data.change24 >= 0 ? '▲' : '▼'}</span>
+                      <span className="change-text">{data.change24 >= 0 ? '+' : ''}{data.change24}%</span>
+                      <span className="change-label">24h</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {i === 1 ? (
+                      <div className="card-portfolio-two-col">
+                        <div className="portfolio-left">
+                          <div className="card-title">Portfolio Value</div>
+                          <div className="portfolio-value metallic">${data.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+
+                          <div className="card-title" style={{ marginTop: 12 }}>Positions</div>
+                          <div className="portfolio-positions metallic">{data.positions}</div>
+                        </div>
+
+                        <div className="portfolio-right">
+                          <PieChart positions={portfolio?.positions || []} compact />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <div className="card-title">Portfolio Value</div>
+                          <div className="card-value" style={{ fontSize: 20 }}>${data.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div>
+                          <div className="card-title">Balance</div>
+                          <div className="card-value" style={{ fontSize: 20 }}>${data.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div>
+                          <div className="card-title">24h Change</div>
+                          <div className={`card-value ${data.change24 >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: 16 }}>{data.change24 >= 0 ? '+' : ''}{data.change24}%</div>
+                        </div>
+                        <div>
+                          <div className="card-title">Positions</div>
+                          <div className="card-value" style={{ fontSize: 20 }}>{data.positions}</div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            );
-          }
-          
-          // Card 2: Portfolio Value and Positions with enhanced layout
-          if (i === 1) {
-            return (
-              <div
-                key={i}
-                className={`mobile-portfolio-card carousel-card card-portfolio ${i === index ? 'active' : ''}`}
-                style={{ transform: `translateY(${translateY}px)`, zIndex, boxShadow: `0 ${4 + Math.abs(offset) * 2}px ${12 + Math.abs(offset) * 4}px rgba(0, 0, 0, ${shadowOpacity})` }}
-              >
-                <div className="card-content card-portfolio-content">
-                  <div className="portfolio-stat portfolio-main">
-                    <div className="portfolio-icon"><PortfolioIcon /></div>
-                    <div className="portfolio-label">Total Value</div>
-                    <div className="portfolio-value">${data.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                  </div>
-                  <div className="portfolio-divider"></div>
-                  <div className="portfolio-stat portfolio-secondary">
-                    <div className="portfolio-icon"><ChartIcon /></div>
-                    <div className="portfolio-label">Active Positions</div>
-                    <div className="portfolio-value">{data.positions}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-          
-          // Card 3: Holdings Distribution with SVG Pie Chart
-          if (i === 2) {
-            return (
-              <div
-                key={i}
-                className={`mobile-portfolio-card carousel-card card-chart ${i === index ? 'active' : ''}`}
-                style={{ transform: `translateY(${translateY}px)`, zIndex, boxShadow: `0 ${4 + Math.abs(offset) * 2}px ${12 + Math.abs(offset) * 4}px rgba(0, 0, 0, ${shadowOpacity})` }}
-              >
-                <div className="card-content card-chart-content">
-                  <PieChart positions={portfolio?.positions || []} />
-                </div>
-              </div>
-            );
-          }
+            </div>
+          );
         })}
       </div>
 
