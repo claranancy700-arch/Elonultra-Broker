@@ -28,9 +28,18 @@ router.post('/signup', async (req, res) => {
   try {
     const hashed = await bcryptjs.hash(password, 10);
     const result = await db.query(
-      'INSERT INTO users(name,email,password_hash) VALUES($1,$2,$3) RETURNING id,email',
-      [name || null, email, hashed]
+      'INSERT INTO users(name,email,password_hash,balance) VALUES($1,$2,$3,$4) RETURNING id,email,balance',
+      [name || null, email, hashed, 0]
     );
+    // Explicitly create empty portfolio for new user to ensure sync
+    try {
+      await db.query(
+        'INSERT INTO portfolio(user_id,btc_balance,eth_balance,usdt_balance,usdc_balance,xrp_balance,ada_balance) VALUES($1,0,0,0,0,0,0) ON CONFLICT (user_id) DO NOTHING',
+        [result.rows[0].id]
+      );
+    } catch (e) {
+      console.warn('Portfolio creation on signup failed (non-critical):', e.message);
+    }
     res.status(201).json({ success: true, user: result.rows[0] });
   } catch (err) {
     console.error('Signup error:', err);
@@ -90,23 +99,24 @@ router.get('/me', verifyToken, async (req, res) => {
   const userId = req.userId;
 
   try {
-    const { rows } = await db.query('SELECT id, name, email, phone, fullName, COALESCE(balance,0) as balance, created_at FROM users WHERE id=$1', [
-      userId,
+    let portfolio = null;
+    
+    // Fetch user and portfolio in parallel to speed up response time
+    const [userResult, portfolioResult] = await Promise.all([
+      db.query('SELECT id, name, email, phone, fullName, COALESCE(balance,0) as balance, sim_enabled, sim_paused, created_at FROM users WHERE id=$1', [userId]),
+      // Try to fetch portfolio in parallel, but don't fail if it doesn't exist
+      db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio WHERE user_id=$1', [userId])
+        .catch(e => ({ rows: [] }))
     ]);
 
+    const rows = userResult.rows;
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     const user = rows[0];
-
-    // Fetch portfolio holdings if table exists
-    let portfolio = null;
-    try {
-      const p = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio WHERE user_id=$1', [userId]);
-      if (p && p.rows && p.rows.length) portfolio = p.rows[0];
-    } catch (e) {
-      // ignore if portfolio table is missing
+    if (portfolioResult && portfolioResult.rows && portfolioResult.rows.length) {
+      portfolio = portfolioResult.rows[0];
     }
 
     res.json({ success: true, user, portfolio });

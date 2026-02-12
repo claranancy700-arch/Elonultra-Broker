@@ -69,7 +69,7 @@ async function ensureSchema() {
       name VARCHAR(255),
       email VARCHAR(255) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
-      balance NUMERIC(18,2) NOT NULL DEFAULT 0,
+      balance NUMERIC(20,8) NOT NULL DEFAULT 0,
       sim_enabled BOOLEAN NOT NULL DEFAULT FALSE,
       sim_paused  BOOLEAN NOT NULL DEFAULT FALSE,
       sim_next_run_at TIMESTAMPTZ,
@@ -79,7 +79,7 @@ async function ensureSchema() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(18,2) NOT NULL DEFAULT 0;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(20,8) NOT NULL DEFAULT 0;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_enabled BOOLEAN NOT NULL DEFAULT FALSE;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_paused BOOLEAN NOT NULL DEFAULT FALSE;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_next_run_at TIMESTAMPTZ;`);

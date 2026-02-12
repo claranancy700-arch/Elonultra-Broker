@@ -61,7 +61,7 @@ router.get('/deposits', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/transactions/deposit - create a deposit request (pending until admin approval)
+// POST /api/transactions/deposit - create a deposit request and immediately credit balance
 router.post('/deposit', verifyToken, async (req, res) => {
   const userId = req.userId;
   const { amount, method } = req.body;
@@ -69,23 +69,59 @@ router.post('/deposit', verifyToken, async (req, res) => {
   const amt = parseFloat(amount);
   if (!amt || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
+  let client;
   try {
+    client = await db.getClient();
+    await client.query('BEGIN');
+    
     const reference = `deposit-request-${Date.now()}`;
 
-    const result = await db.query(
+    // Create deposit transaction record
+    const txResult = await client.query(
       'INSERT INTO transactions(user_id, type, amount, currency, status, reference) VALUES($1,$2,$3,$4,$5,$6) RETURNING id, created_at',
-      [userId, 'deposit', amt, (method || 'USD'), 'pending', reference]
+      [userId, 'deposit', amt, (method || 'USD'), 'completed', reference]
     );
+    
+    // CRITICAL: Immediately credit user balance when deposit is recorded
+    // This ensures balance is not zero for funded users
+    const balRes = await client.query(
+      'SELECT COALESCE(balance,0) as balance FROM users WHERE id=$1 FOR UPDATE',
+      [userId]
+    );
+    
+    if (!balRes.rows.length) {
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const oldBalance = parseFloat(balRes.rows[0].balance);
+    const newBalance = oldBalance + amt;
+    
+    // Update user balance and portfolio_value to keep them in sync
+    await client.query(
+      'UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW() WHERE id=$2',
+      [newBalance, userId]
+    );
+    
+    await client.query('COMMIT');
+    client.release();
 
     return res.status(201).json({
       success: true,
-      id: result.rows[0].id,
-      created_at: result.rows[0].created_at,
-      status: 'pending',
+      id: txResult.rows[0].id,
+      created_at: txResult.rows[0].created_at,
+      status: 'completed',
+      balance: newBalance,
+      message: `Deposit of $${amt} credited to your account`
     });
   } catch (err) {
-    console.error('Deposit request record error:', err.message || err);
-    return res.status(500).json({ error: 'Failed to create deposit request' });
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+      client.release();
+    }
+    console.error('Deposit request error:', err.message || err);
+    return res.status(500).json({ error: 'Failed to process deposit' });
   }
 });
 
