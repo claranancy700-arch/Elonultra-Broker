@@ -178,7 +178,7 @@ export default function WithdrawalProcessPage() {
                 min="0"
               />
               <small className="form-hint">
-                Available balance will be checked during processing
+                Available Balance will be checked during processing
               </small>
             </div>
           </div>

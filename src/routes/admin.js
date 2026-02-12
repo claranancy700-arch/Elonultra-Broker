@@ -318,7 +318,7 @@ router.post('/deposits/:id/approve', async (req, res) => {
       );
     }
 
-    // Allocate portfolio based on total balance (not just deposit amount)
+    // Allocate portfolio based on Available Balance (not just deposit amount)
     try { await allocatePortfolioForUser(row.user_id, newBalance, { client }); } catch (e) { console.warn('portfolio allocate failed', e.message||e); }
 
     await client.query('COMMIT');
@@ -685,10 +685,11 @@ router.get('/users/:id/portfolio', async (req, res) => {
     if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
 
     // Get user balance and portfolio with live prices
-    const userRes = await db.query('SELECT balance FROM users WHERE id = $1', [userId]);
+    const userRes = await db.query('SELECT balance, portfolio_value FROM users WHERE id = $1', [userId]);
     if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
 
-    const userBalance = parseFloat(userRes.rows[0].balance) || 0;
+    let userBalance = parseFloat(userRes.rows[0].balance) || 0;
+    const portfolioValue = parseFloat(userRes.rows[0].portfolio_value) || 0;
     const portfolioRes = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id = $1', [userId]);
     const portfolio = portfolioRes.rows[0] || {};
 
@@ -724,12 +725,34 @@ router.get('/users/:id/portfolio', async (req, res) => {
       }
     });
 
+    // CRITICAL FIX: Ensure balance syncs with portfolio_value
+    // These should ALWAYS be equal and represent total account value
+    if (userBalance !== portfolioValue) {
+      // Mismatch detected - use the non-zero value
+      const correctBalance = Math.max(userBalance, portfolioValue);
+      console.log(`[Admin Portfolio SYNC] ⚠️  Mismatch for user ${userId}: balance=${userBalance}, portfolio_value=${portfolioValue}, using=${correctBalance}`);
+      
+      try {
+        // Set both to the correct value
+        await db.query(
+          'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
+          [correctBalance, userId]
+        );
+        userBalance = correctBalance;
+        console.log(`[Admin Portfolio SYNC] ✓ Fixed user ${userId}: both now = $${correctBalance.toFixed(2)}`);
+      } catch (err) {
+        console.warn('[Admin Portfolio SYNC] ⚠️  Could not persist fix:', err.message);
+        // Still use corrected in response
+        userBalance = correctBalance;
+      }
+    }
+
     const totalPortfolioValue = userBalance + assetsValue;
 
     return res.json({ 
       success: true, 
       assets,
-      balance: userBalance,
+      balance: parseFloat(userBalance.toFixed(2)),
       assetsValue: parseFloat(assetsValue.toFixed(2)),
       totalValue: parseFloat(totalPortfolioValue.toFixed(2))
     });

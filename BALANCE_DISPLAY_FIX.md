@@ -1,7 +1,7 @@
 # Balance & Portfolio Display Issue - FIXED ✅
 
 ## Issue Summary
-Users were seeing confusing balance displays where "Available Balance" and "Total Balance" appeared to be crisscrossing or one was monopolizing values.
+Users were seeing confusing balance displays where "Available Balance" and "Available Balance" appeared to be crisscrossing or one was monopolizing values.
 
 ## Root Cause Analysis
 There were **4 critical issues** causing users to see $0 balances:
@@ -24,7 +24,7 @@ There were **4 critical issues** causing users to see $0 balances:
 - **Problem:** Deposits were inserted as "pending" but never auto-approved
   - Users had to wait for admin to manually approve deposits
   - Balance stayed $0 until admin called `/api/admin/deposits/:id/approve`
-- **Impact:** Funded users saw $0 available balance
+- **Impact:** Funded users saw $0 Available Balance
 - **Fix:** Deposits now immediately credit balance when recorded
   - Takes new route: `POST /api/transactions/deposit`
   - Atomically updates `users.balance` in same transaction
@@ -33,7 +33,7 @@ There were **4 critical issues** causing users to see $0 balances:
 
 ### 4. ❌ Portfolio Return Value Confusion
 - **Problem:** API returned `total_value` = holdings ONLY (excluding cash)
-  - Frontend showed this as "Total Balance" but it excluded cash balance!
+  - Frontend showed this as "Available Balance" but it excluded cash balance!
   - When balance changed, the "Total" didn't update to reflect full account value
 - **Impact:** Crisscrossing appearance - values seemed to move between cards
 - **Fix:** Updated API to return full account value breakdown:
@@ -62,7 +62,7 @@ There were **4 critical issues** causing users to see $0 balances:
 ## Result
 Now users see:
 - **Available Balance:** USD cash account balance (from `users.balance`)
-- **Total Balance:** Full account value = Available Balance + Holdings
+- **Available Balance:** Full account value = Available Balance + Holdings
 - **Holdings:** Individual positions with live prices
 
 Example:

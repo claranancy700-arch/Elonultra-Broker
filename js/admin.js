@@ -663,7 +663,7 @@ if (editBalanceBtn) {
   editBalanceBtn.addEventListener('click', async () => {
     const uid = document.getElementById('credit-user-id').value;
     if (!uid) return alert('Select a user first');
-    const val = prompt('Set new available balance (USD):');
+    const val = prompt('Set new Available Balance (USD):');
     const amt = parseFloat(val);
     if (isNaN(amt)) return alert('Invalid amount');
     const key = adminKeyInput.value.trim();

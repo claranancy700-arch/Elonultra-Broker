@@ -65,7 +65,7 @@ router.get('/', verifyToken, async (req, res) => {
 
   try {
     // Get user balance and portfolio
-    const userRes = await db.query('SELECT balance FROM users WHERE id = $1', [userId]);
+    const userRes = await db.query('SELECT balance, portfolio_value FROM users WHERE id = $1', [userId]);
     const portfolioRes = await db.query(
       'SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio WHERE user_id = $1',
       [userId]
@@ -75,15 +75,16 @@ router.get('/', verifyToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const balance = parseFloat(userRes.rows[0].balance) || 0;
+    let balance = parseFloat(userRes.rows[0].balance) || 0;
+    const portfolio_value_db = parseFloat(userRes.rows[0].portfolio_value) || 0;
     const portfolio = portfolioRes.rows[0] || {};
     const { prices, changes_24h } = await fetchLivePricesAndChanges();
 
-    console.log(`[Portfolio API] User ${userId}: balance=${balance}, portfolio exists=${!!portfolioRes.rows.length}`);
+    console.log(`[Portfolio API] User ${userId}: balance=${balance}, portfolio_value=${portfolio_value_db}, portfolio exists=${!!portfolioRes.rows.length}`);
 
     // Build positions array with live prices
     const positions = [];
-    let totalValue = 0;
+    let totalHoldingsValue = 0;
     let change24hWeightedSum = 0;
 
     const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
@@ -102,14 +103,14 @@ router.get('/', verifyToken, async (req, res) => {
           value: parseFloat(value.toFixed(2)),
           change_24h: changes_24h[coin] || 0,
         });
-        totalValue += value;
+        totalHoldingsValue += value;
       }
     });
 
     // Calculate weighted 24h change
-    if (totalValue > 0) {
+    if (totalHoldingsValue > 0) {
       positions.forEach(pos => {
-        const weight = pos.value / totalValue;
+        const weight = pos.value / totalHoldingsValue;
         change24hWeightedSum += pos.change_24h * weight;
       });
     }
@@ -117,13 +118,36 @@ router.get('/', verifyToken, async (req, res) => {
     // Sort by value descending
     positions.sort((a, b) => b.value - a.value);
 
-    // Calculate full account value: balance (cash) + holdings
-    const fullAccountValue = balance + totalValue;
+    // CRITICAL FIX: Ensure balance syncs with portfolio_value
+    // These should ALWAYS be equal and represent total account value
+    if (balance !== portfolio_value_db) {
+      // Mismatch detected - use the non-zero value
+      const correctBalance = Math.max(balance, portfolio_value_db);
+      console.log(`[Portfolio SYNC] ⚠️  Mismatch detected for user ${userId}:`);
+      console.log(`   balance=${balance}, portfolio_value=${portfolio_value_db}, using=${correctBalance}`);
+      
+      try {
+        // Set both to the correct value
+        await db.query(
+          'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
+          [correctBalance, userId]
+        );
+        balance = correctBalance;
+        console.log(`[Portfolio SYNC] ✓ Fixed user ${userId}: both now = $${correctBalance.toFixed(2)}`);
+      } catch (err) {
+        console.warn('[Portfolio SYNC] ⚠️  Could not persist fix:', err.message);
+        // Still use corrected balance in response
+        balance = correctBalance;
+      }
+    }
+
+    // Calculate account value
+    let totalAccountValue = balance + totalHoldingsValue;
 
     const response = {
-      balance: parseFloat(balance.toFixed(2)),                    // Available cash balance
-      assets_value: parseFloat(totalValue.toFixed(2)),            // Value of all holdings
-      total_value: parseFloat(fullAccountValue.toFixed(2)),       // FULL account value: cash + holdings
+      balance: parseFloat(balance.toFixed(2)),                     // User's Available Balance
+      assets_value: parseFloat(totalHoldingsValue.toFixed(2)),     // Value of holdings
+      total_value: parseFloat(totalAccountValue.toFixed(2)),       // Total account value = balance + holdings
       positions,
       change_24h: parseFloat(change24hWeightedSum.toFixed(2)),
       timestamp: new Date().toISOString(),
@@ -135,7 +159,6 @@ router.get('/', verifyToken, async (req, res) => {
     console.error('[Portfolio API] Error:', err.message);
     res.status(500).json({ error: 'Failed to fetch portfolio' });
   }
-});
 
 /**
  * POST /api/portfolio/allocate - Force immediate portfolio allocation

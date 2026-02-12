@@ -394,7 +394,7 @@ export const DashboardPage = () => {
       <h1>Dashboard</h1>
 
       <div className="dashboard-grid">
-        <Card title="Total Balance">
+        <Card title="Available Balance">
           <div className="balance-value">
             ${balance?.total?.toFixed(2) || '0.00'}
           </div>

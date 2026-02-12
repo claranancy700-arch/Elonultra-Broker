@@ -15,7 +15,6 @@ import { TransactionsPage } from './components/pages/Transactions/TransactionsPa
 import { SettingsPage } from './components/pages/Settings/SettingsPage';
 import { HelpPage } from './components/pages/Help/HelpPage';
 import { AdminPage } from './components/pages/Admin/AdminPage';
-import { ProAdminPage } from './components/pages/ProAdmin/ProAdminPage';
 import { AboutPage } from './components/pages/About/AboutPage';
 import { ContactPage } from './components/pages/Contact/ContactPage';
 import { TestimoniesPage } from './components/pages/Testimonies/TestimoniesPage';
@@ -50,7 +49,6 @@ function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/pro-admin" element={<ProAdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
