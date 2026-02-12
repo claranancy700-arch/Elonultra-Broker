@@ -43,6 +43,22 @@ async function fetchLivePricesAndChanges() {
 
 /**
  * GET /api/portfolio - User's portfolio with live prices
+ * 
+ * Response structure:
+ * - balance: Available cash in USD (users.balance field)
+ * - assets_value: Total value of all cryptocurrency holdings at current prices
+ * - total_value: Full account value = balance + assets_value (what user should see as "Total")
+ * - positions: Array of individual holdings with live prices
+ * - change_24h: Weighted average 24h price change across holdings
+ * 
+ * Example: User with $1000 cash and $5000 in BTC:
+ * {
+ *   balance: 1000,           // Available cash
+ *   assets_value: 5000,      // Holdings value
+ *   total_value: 6000,       // Full account = cash + holdings
+ *   positions: [{ coin, amount, price, value, change_24h }],
+ *   change_24h: 2.5          // Weighted change
+ * }
  */
 router.get('/', verifyToken, async (req, res) => {
   const userId = req.userId;
@@ -101,15 +117,19 @@ router.get('/', verifyToken, async (req, res) => {
     // Sort by value descending
     positions.sort((a, b) => b.value - a.value);
 
+    // Calculate full account value: balance (cash) + holdings
+    const fullAccountValue = balance + totalValue;
+
     const response = {
-      balance: parseFloat(balance.toFixed(2)),
-      total_value: parseFloat(totalValue.toFixed(2)),
+      balance: parseFloat(balance.toFixed(2)),                    // Available cash balance
+      assets_value: parseFloat(totalValue.toFixed(2)),            // Value of all holdings
+      total_value: parseFloat(fullAccountValue.toFixed(2)),       // FULL account value: cash + holdings
       positions,
       change_24h: parseFloat(change24hWeightedSum.toFixed(2)),
       timestamp: new Date().toISOString(),
     };
 
-    console.log(`[Portfolio API] User ${userId}: returning ${positions.length} positions, total=$${response.total_value}, 24h_change=${response.change_24h}%`);
+    console.log(`[Portfolio API] User ${userId}: balance=$${response.balance}, holdings=$${response.assets_value}, total=$${response.total_value}, 24h_change=${response.change_24h}%`);
     res.json(response);
   } catch (err) {
     console.error('[Portfolio API] Error:', err.message);

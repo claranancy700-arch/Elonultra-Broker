@@ -30,7 +30,7 @@
   backdrop-filter: blur(var(--blur-amount));
   -webkit-backdrop-filter: blur(var(--blur-amount));
   box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08), 0 12px 32px rgba(var(--accent-rgb), 0.08);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,6 +82,7 @@ html[data-theme="light"] .carousel-card {
 .carousel-card .card-content {
   width: 100%;
   color: var(--text);
+  overflow: visible;
 }
 
 .carousel-card .card-row {
@@ -331,13 +332,14 @@ html[data-theme="light"] .carousel-card {
 }
 
 .portfolio-right {
-  width: 120px;
+  flex: 0 0 auto;
+  min-width: 180px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Contain the pie cleanly inside a clipped round viewport */
-  overflow: hidden;
+  /* Allow floatings coins to show */
+  overflow: visible;
   border-radius: 12px;
   padding: 6px;
   box-sizing: border-box;
@@ -357,8 +359,8 @@ html[data-theme="light"] .carousel-card {
   margin-top: 6px;
 }
 
-/* Ensure PieChart is a compact size and centered; keep internal SVG scaled to fit */
-.portfolio-right svg { display: block; width: 88px; height: 88px; max-width: 100%; max-height: 100%; }
+/* Ensure chart is properly sized and centered */
+.portfolio-right svg { display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; }
 .portfolio-right svg > * { vector-effect: non-scaling-stroke; }
 
 
@@ -451,5 +453,49 @@ html[data-theme="light"] .carousel-card {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes float-futuristic {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  25% {
+    transform: translateY(-3px) scale(1.005);
+  }
+  50% {
+    transform: translateY(-1px) scale(1);
+  }
+  75% {
+    transform: translateY(-3px) scale(1.005);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes coin-float {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(0.5px) translateY(-1px);
+    opacity: 0.8;
   }
 }
