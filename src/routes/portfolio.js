@@ -159,6 +159,7 @@ router.get('/', verifyToken, async (req, res) => {
     console.error('[Portfolio API] Error:', err.message);
     res.status(500).json({ error: 'Failed to fetch portfolio' });
   }
+});
 
 /**
  * POST /api/portfolio/allocate - Force immediate portfolio allocation
