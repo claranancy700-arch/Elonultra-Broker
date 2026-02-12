@@ -395,10 +395,10 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
                 {i === 0 ? (
                   <div className="card-balance-modern">
                     <div className="balance-header">
-                      <div className="card-title balance-label">Total Balance</div>
+                      <div className="card-title balance-label">Available Balance</div>
                       <div className="balance-icon"><WalletIcon /></div>
                     </div>
-                    <div className="balance-amount metallic">${data.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                    <div className="balance-amount metallic">${data.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
                     <div className={`change-badge metallic ${data.change24 >= 0 ? 'positive' : 'negative'}`} style={{ marginTop: 12 }}>
                       <span className="change-arrow">{data.change24 >= 0 ? '▲' : '▼'}</span>
                       <span className="change-text">{data.change24 >= 0 ? '+' : ''}{data.change24}%</span>

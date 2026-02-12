@@ -803,10 +803,10 @@
     if(!msg) return showMessage('Enter message', 'error')
     const key = getAdminKey()
     if(!key) return showMessage('Admin key required', 'error')
-    fetch(`${apiBase}/admin/send-prompt`, {
+    fetch(`${apiBase}/admin/prompts`, {
       method: 'POST',
       headers: {'Content-Type':'application/json', 'x-admin-key':key},
-      body: JSON.stringify({message: msg, userIds: userIds ? userIds.split(',').map(x => x.trim()) : null})
+      body: JSON.stringify({message: msg, userIds: userIds ? userIds.split(',').map(x => parseInt(x.trim(), 10)).filter(n => !isNaN(n)) : null})
     })
       .then(r => r.ok ? Promise.resolve() : Promise.reject())
       .then(() => { showMessage('✓ Prompt sent', 'success'); promptMessageEl.value = ''; promptUserIdsEl.value = '' })

@@ -301,6 +301,11 @@ async function loadUserDetails(id, key){
           // Set balance to user's cash balance
           const userBalance = Number(u.balance) || 0;
           window.CBPortfolio.setBalance(userBalance);
+          // Update the available-balance display element
+          const availableBalanceEl = document.getElementById('available-balance');
+          if (availableBalanceEl) {
+            availableBalanceEl.textContent = '$' + userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
           // Set assets AFTER setting balance
           if (assetsList.length > 0) {
             window.CBPortfolio.setAssets(assetsList);
