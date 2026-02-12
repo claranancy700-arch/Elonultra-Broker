@@ -165,11 +165,12 @@ function openDepositForm(){
       }
     }catch(e){/*ignore and fallback*/}
 
-    // Fallback to localStorage
+    // Fallback to localStorage - Store as PENDING, do NOT update balance until admin approval
     const tx = loadTransactions();
-    tx.unshift({id:Date.now(),type:'deposit',date:now,method,amount,status:'Completed',txid: 'DEP'+Math.random().toString(36).slice(2,10)});
+    tx.unshift({id:Date.now(),type:'deposit',date:now,method,amount,status:'pending',txid: 'DEP'+Math.random().toString(36).slice(2,10)});
     saveTransactions(tx);
-    applyBalanceChange(amount);
+    // DO NOT apply balance change - wait for admin approval
+    // applyBalanceChange(amount);
     renderDeposits();
     renderBalancesUI();
   });

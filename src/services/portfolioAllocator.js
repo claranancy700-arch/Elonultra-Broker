@@ -81,9 +81,9 @@ async function allocatePortfolioForUser(userId, balanceUsd, { client = null } = 
       [userId, btc, eth, usdt, usdc, xrp, ada, usdValue]
     );
 
-    // CRITICAL: Keep balance = portfolio value so they always match
-    // Total Portfolio Value = Total Asset Holdings = User Balance
-    await c.query('UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW() WHERE id=$2', [usdValue, userId]);
+    // NOTE: Do NOT update users.balance here! The caller (deposit/admin route) manages user balance.
+    // The portfolio allocation only affects how the balance is represented in coin holdings.
+    // This prevents overwriting the balance and losing user funds.
 
     if (ownedClient) await c.query('COMMIT');
     return { allocation, usd_value: usdValue };

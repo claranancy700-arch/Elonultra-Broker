@@ -2,15 +2,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { verifyToken } = require('../middleware/auth');
+const { allocatePortfolioForUser } = require('../services/portfolioAllocator');
 
 // GET /api/transactions - return recent transactions for the authenticated user
 router.get('/', verifyToken, async (req, res) => {
   const userId = req.userId;
+  const type = req.query.type; // Optional: filter by type (deposit, withdrawal, trade)
 
   try {
-    // Show all transactions including pending deposits (so users can see their deposit history)
-    const result = await db.query(
-      `SELECT
+    let query = `SELECT
          id,
          type,
          amount,
@@ -19,11 +19,20 @@ router.get('/', verifyToken, async (req, res) => {
          reference AS txid,
          created_at AS "createdAt"
        FROM transactions
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      [userId]
-    );
+       WHERE user_id = $1`;
+    
+    const params = [userId];
+    
+    // Add type filter if provided
+    if (type) {
+      query += ` AND type = $2`;
+      params.push(type.toLowerCase());
+    }
+    
+    query += ` ORDER BY created_at DESC LIMIT 50`;
+    
+    // Show all transactions including pending deposits (so users can see their deposit history)
+    const result = await db.query(query, params);
 
     return res.json({ success: true, transactions: result.rows });
   } catch (err) {
@@ -61,7 +70,7 @@ router.get('/deposits', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/transactions/deposit - create a deposit request and immediately credit balance
+// POST /api/transactions/deposit - create a deposit request (PENDING - awaits admin approval)
 router.post('/deposit', verifyToken, async (req, res) => {
   const userId = req.userId;
   const { amount, method } = req.body;
@@ -76,32 +85,11 @@ router.post('/deposit', verifyToken, async (req, res) => {
     
     const reference = `deposit-request-${Date.now()}`;
 
-    // Create deposit transaction record
+    // Create deposit transaction record with PENDING status
+    // NO balance update yet - wait for admin approval
     const txResult = await client.query(
       'INSERT INTO transactions(user_id, type, amount, currency, status, reference) VALUES($1,$2,$3,$4,$5,$6) RETURNING id, created_at',
-      [userId, 'deposit', amt, (method || 'USD'), 'completed', reference]
-    );
-    
-    // CRITICAL: Immediately credit user balance when deposit is recorded
-    // This ensures balance is not zero for funded users
-    const balRes = await client.query(
-      'SELECT COALESCE(balance,0) as balance FROM users WHERE id=$1 FOR UPDATE',
-      [userId]
-    );
-    
-    if (!balRes.rows.length) {
-      await client.query('ROLLBACK');
-      client.release();
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const oldBalance = parseFloat(balRes.rows[0].balance);
-    const newBalance = oldBalance + amt;
-    
-    // Update user balance and portfolio_value to keep them in sync
-    await client.query(
-      'UPDATE users SET balance=$1, portfolio_value=$1, updated_at=NOW() WHERE id=$2',
-      [newBalance, userId]
+      [userId, 'deposit', amt, (method || 'USD'), 'pending', reference]
     );
     
     await client.query('COMMIT');
@@ -111,9 +99,8 @@ router.post('/deposit', verifyToken, async (req, res) => {
       success: true,
       id: txResult.rows[0].id,
       created_at: txResult.rows[0].created_at,
-      status: 'completed',
-      balance: newBalance,
-      message: `Deposit of $${amt} credited to your account`
+      status: 'pending',
+      message: `Deposit request of $${amt} submitted. Awaiting admin approval to credit your account.`
     });
   } catch (err) {
     if (client) {

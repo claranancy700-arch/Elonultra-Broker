@@ -5,7 +5,7 @@ const { verifyToken } = require('../middleware/auth');
 const { recordLossIfApplicable } = require('../services/balanceChanges');
 const sse = require('../sse/broadcaster');
 
-// POST: Request a new withdrawal (adds 30% fee requirement)
+// POST: Request a new withdrawal (adds 30% fee requirement, PENDING until admin approval)
 router.post('/', verifyToken, async (req, res) => {
   const { amount, crypto_type, crypto_address } = req.body;
   const userId = req.userId;
@@ -37,7 +37,7 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Lock user balance and ensure sufficient funds
+    // Lock user balance and validate sufficient funds (but DON'T deduct yet)
     const balRes = await client.query('SELECT COALESCE(balance,0) AS balance FROM users WHERE id=$1 FOR UPDATE', [userId]);
     if (!balRes.rows.length) {
       await client.query('ROLLBACK');
@@ -48,13 +48,14 @@ router.post('/', verifyToken, async (req, res) => {
     const feeAmount = amt * 0.3; // 30% fee calculated from requested amount
     const totalRequired = amt + feeAmount;
     
+    // Validate user has sufficient funds, but don't deduct yet
     if (currentBalance < totalRequired) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + 30% fee), Available: $${currentBalance.toFixed(2)}` });
     }
     const balanceSnapshot = currentBalance;
 
-    console.log('[WITHDRAWAL] Creating withdrawal:', { userId, amt, crypto_type, feeAmount });
+    console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount });
     const withdrawalResult = await client.query(
       `INSERT INTO withdrawals(user_id, amount, crypto_type, crypto_address, status, balance_snapshot, fee_amount, fee_status)
        VALUES($1, $2, $3, $4, $5, $6, $7, 'required')
@@ -62,29 +63,20 @@ router.post('/', verifyToken, async (req, res) => {
       [userId, amt, crypto_type.toUpperCase(), crypto_address, 'pending', balanceSnapshot, feeAmount]
     );
 
-    console.log('[WITHDRAWAL] Withdrawal created, ID:', withdrawalResult.rows[0].id);
+    console.log('[WITHDRAWAL] Withdrawal request created, ID:', withdrawalResult.rows[0].id);
 
-    // Deduct withdrawal amount AND fee from balance immediately
-    const newBalance = Number(currentBalance) - Number(amt) - Number(feeAmount);
-    console.log('[WITHDRAWAL] Updating balance:', { userId, currentBalance, withdrawalAmount: amt, feeAmount, newBalance });
-    await client.query('UPDATE users SET balance = $2, portfolio_value = $2, updated_at = NOW() WHERE id=$1', [userId, newBalance]);
-
-    // If balance decreased and user has no tax_id, record trading loss entry
-    try {
-      await recordLossIfApplicable(client, userId, currentBalance, newBalance);
-    } catch (e) { console.warn('[withdrawal] failed to record loss', e && e.message ? e.message : e); }
-
-    console.log('[WITHDRAWAL] Recording transaction');
+    // Create transaction record with PENDING status
+    console.log('[WITHDRAWAL] Recording transaction (PENDING)');
     await client.query(
       'INSERT INTO transactions(user_id, type, amount, currency, status, reference, created_at) VALUES($1,$2,$3,$4,$5,$6,NOW())',
       [userId, 'withdrawal', amt, crypto_type.toUpperCase(), 'pending', `withdrawal-${withdrawalResult.rows[0].id}`]
     );
 
-    await client.query('COMMIT');
-    console.log('[WITHDRAWAL] ✓ Committed successfully');
+    // NOTE: Balance is NOT deducted here - it will be deducted when admin approves
+    // This allows the withdrawal to be cancelled without balance loss if admin rejects it
 
-    // Emit profile update to user's SSE stream so clients update immediately
-    try { sse.emit(userId, 'profile_update', { userId, balance: newBalance, type: 'withdrawal' }); } catch(e){ /* ignore */ }
+    await client.query('COMMIT');
+    console.log('[WITHDRAWAL] ✓ Withdrawal request created successfully (awaiting admin approval)');
 
     const withdrawal = withdrawalResult.rows[0];
     res.status(201).json({
@@ -98,6 +90,7 @@ router.post('/', verifyToken, async (req, res) => {
         fee_amount: withdrawal.fee_amount,
         fee_status: withdrawal.fee_status,
         balance_snapshot: withdrawal.balance_snapshot,
+        message: `Withdrawal request of $${amt} submitted. Awaiting admin approval to process.`
       },
     });
   } catch (err) {

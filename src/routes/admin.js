@@ -973,7 +973,7 @@ router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
   }
 });
 
-// POST /api/admin/withdrawals/:id/approve - approve withdrawal (complete and confirm fee)
+// POST /api/admin/withdrawals/:id/approve - approve withdrawal (deduct balance and confirm fee)
 router.post('/withdrawals/:id/approve', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
@@ -990,6 +990,34 @@ router.post('/withdrawals/:id/approve', async (req, res) => {
     try {
       await client.query('BEGIN');
 
+      // Lock withdrawal row and get details
+      const wRes = await client.query(
+        'SELECT id, user_id, amount, fee_amount, status FROM withdrawals WHERE id=$1 FOR UPDATE',
+        [id]
+      );
+
+      if (!wRes.rows.length) {
+        await client.query('ROLLBACK');
+        console.warn('[APPROVE WITHDRAWAL] Withdrawal not found:', id);
+        return res.status(404).json({ error: 'Withdrawal not found' });
+      }
+
+      const w = wRes.rows[0];
+
+      // Only deduct balance if not already completed
+      if (w.status !== 'completed') {
+        const totalDeduct = Number(w.amount || 0) + Number(w.fee_amount || 0);
+        console.log('[APPROVE WITHDRAWAL] Deducting balance:', { userId: w.user_id, amount: w.amount, fee: w.fee_amount, total: totalDeduct });
+        await client.query('UPDATE users SET balance = COALESCE(balance,0) - $1, portfolio_value = COALESCE(portfolio_value,0) - $1, updated_at = NOW() WHERE id=$2', [totalDeduct, w.user_id]);
+        
+        // Record loss if applicable
+        const balRes = await client.query('SELECT COALESCE(balance,0) as balance FROM users WHERE id=$1', [w.user_id]);
+        const newBalance = Number(balRes.rows[0].balance) || 0;
+        const oldBalance = newBalance + totalDeduct;
+        try { await recordLossIfApplicable(client, w.user_id, oldBalance, newBalance); } catch (e) { console.warn('[approve withdrawal] failed to record loss', e && e.message ? e.message : e); }
+      }
+
+      // Update withdrawal status
       const result = await client.query(
         `UPDATE withdrawals
            SET fee_status='confirmed',
@@ -1002,13 +1030,7 @@ router.post('/withdrawals/:id/approve', async (req, res) => {
         [id, approvedBy]
       );
 
-      if (!result.rows.length) {
-        await client.query('ROLLBACK');
-        console.warn('[APPROVE WITHDRAWAL] Withdrawal not found:', id);
-        return res.status(404).json({ error: 'Withdrawal not found' });
-      }
-
-      // Keep transactions table in sync (created with reference withdrawal-<id>)
+      // Keep transactions table in sync
       await client.query(
         "UPDATE transactions SET status='completed', updated_at=NOW() WHERE type='withdrawal' AND reference = $1",
         [`withdrawal-${id}`]

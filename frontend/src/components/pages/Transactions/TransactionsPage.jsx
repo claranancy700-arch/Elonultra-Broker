@@ -19,9 +19,11 @@ export const TransactionsPage = () => {
           API.get('/transactions?type=withdrawal'),
           API.get('/trades')
         ]);
-        setDeposits(depRes.data || []);
-        setWithdrawals(withRes.data || []);
-        setTrades(tradeRes.data || []);
+        // Extract transactions from the success response structure
+        setDeposits(depRes.data?.transactions || []);
+        setWithdrawals(withRes.data?.transactions || []);
+        // Trades endpoint returns trades directly
+        setTrades(tradeRes.data?.trades || []);
       } catch (err) {
         console.error('Failed to fetch transaction data', err);
       } finally {

@@ -1,0 +1,371 @@
+# Apply Missing Tables NOW - Step by Step
+
+## 🚀 Method 1: Using pgAdmin 4 (Easiest)
+
+### Steps:
+
+1. **Open pgAdmin 4** → Your database → **Query Tool** (top button)
+
+2. **Copy the entire SQL from here:**
+   [SQL Script Content Below]
+
+3. **Paste into Query Tool**
+
+4. **Click Execute (▶️ button or F5)**
+
+5. **Watch for "Query returned successfully"**
+
+---
+
+## SQL MIGRATION SCRIPT
+```sql
+-- Add Missing Tables to Elon-backend-db
+-- Run this migration to enhance database functionality
+
+-- 1. USER KYC/VERIFICATION TABLE
+CREATE TABLE public.user_kyc (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL UNIQUE,
+    verification_status character varying(50) DEFAULT 'pending',
+    document_type character varying(50),
+    document_number character varying(255),
+    first_name character varying(255),
+    last_name character varying(255),
+    date_of_birth date,
+    nationality character varying(100),
+    address character varying(500),
+    city character varying(100),
+    state character varying(100),
+    postal_code character varying(20),
+    country character varying(100),
+    document_front_url character varying(500),
+    document_back_url character varying(500),
+    selfie_url character varying(500),
+    submitted_at timestamp without time zone,
+    verified_at timestamp without time zone,
+    rejected_reason text,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_user_kyc_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT kyc_status_check CHECK (verification_status IN ('pending', 'verified', 'rejected', 'expired'))
+);
+
+CREATE INDEX idx_user_kyc_status ON public.user_kyc(verification_status);
+CREATE INDEX idx_user_kyc_user_id ON public.user_kyc(user_id);
+
+-- 2. API KEYS TABLE
+CREATE TABLE public.api_keys (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL,
+    key_hash character varying(255) NOT NULL UNIQUE,
+    key_name character varying(255) NOT NULL,
+    is_active boolean DEFAULT true,
+    last_used_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now(),
+    expires_at timestamp without time zone,
+    CONSTRAINT fk_api_keys_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_api_keys_user_id ON public.api_keys(user_id);
+CREATE INDEX idx_api_keys_key_hash ON public.api_keys(key_hash);
+CREATE INDEX idx_api_keys_active ON public.api_keys(is_active);
+
+-- 3. DEPOSIT ADDRESSES TABLE
+CREATE TABLE public.deposit_addresses (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL,
+    crypto_type character varying(20) NOT NULL,
+    address character varying(255) NOT NULL UNIQUE,
+    label character varying(100),
+    is_active boolean DEFAULT true,
+    balance numeric(18,8) DEFAULT 0,
+    total_received numeric(18,8) DEFAULT 0,
+    created_at timestamp without time zone DEFAULT now(),
+    last_activity_at timestamp without time zone,
+    CONSTRAINT fk_deposit_addresses_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT crypto_type_check CHECK (crypto_type IN ('BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'))
+);
+
+CREATE INDEX idx_deposit_addresses_user_id ON public.deposit_addresses(user_id);
+CREATE INDEX idx_deposit_addresses_crypto_type ON public.deposit_addresses(crypto_type);
+CREATE INDEX idx_deposit_addresses_address ON public.deposit_addresses(address);
+CREATE INDEX idx_deposit_addresses_active ON public.deposit_addresses(is_active);
+
+-- 4. PRICE HISTORY TABLE
+CREATE TABLE public.price_history (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    crypto_type character varying(20) NOT NULL,
+    price_usd numeric(20,8) NOT NULL,
+    market_cap numeric(30,2),
+    volume_24h numeric(30,2),
+    change_24h numeric(10,4),
+    timestamp timestamp without time zone NOT NULL,
+    created_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT price_check CHECK (price_usd > 0)
+);
+
+CREATE INDEX idx_price_history_crypto_type ON public.price_history(crypto_type);
+CREATE INDEX idx_price_history_timestamp ON public.price_history(timestamp DESC);
+CREATE INDEX idx_price_history_crypto_timestamp ON public.price_history(crypto_type, timestamp DESC);
+
+-- 5. NOTIFICATIONS TABLE
+CREATE TABLE public.notifications (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL,
+    notification_type character varying(50) NOT NULL,
+    title character varying(255) NOT NULL,
+    message text NOT NULL,
+    is_read boolean DEFAULT false,
+    read_at timestamp without time zone,
+    data jsonb,
+    action_url character varying(500),
+    created_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_notifications_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT notification_type_check CHECK (notification_type IN ('transaction', 'withdrawal', 'deposit', 'trade', 'alert', 'system', 'promotion'))
+);
+
+CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON public.notifications(is_read);
+CREATE INDEX idx_notifications_created_at ON public.notifications(created_at DESC);
+CREATE INDEX idx_notifications_user_read ON public.notifications(user_id, is_read);
+
+-- 6. SESSIONS TABLE
+CREATE TABLE public.sessions (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL,
+    session_token character varying(255) NOT NULL UNIQUE,
+    ip_address character varying(45),
+    user_agent text,
+    device_type character varying(50),
+    is_active boolean DEFAULT true,
+    last_activity_at timestamp without time zone,
+    created_at timestamp without time zone DEFAULT now(),
+    expires_at timestamp without time zone NOT NULL,
+    CONSTRAINT fk_sessions_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_sessions_user_id ON public.sessions(user_id);
+CREATE INDEX idx_sessions_token ON public.sessions(session_token);
+CREATE INDEX idx_sessions_active ON public.sessions(is_active);
+CREATE INDEX idx_sessions_expires_at ON public.sessions(expires_at);
+
+-- 7. CRYPTO EXCHANGE RATES TABLE
+CREATE TABLE public.exchange_rates (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    from_currency character varying(20) NOT NULL,
+    to_currency character varying(20) NOT NULL,
+    rate numeric(20,8) NOT NULL,
+    source character varying(100),
+    timestamp timestamp without time zone NOT NULL,
+    created_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT exchange_rate_check CHECK (rate > 0)
+);
+
+CREATE INDEX idx_exchange_rates_pair ON public.exchange_rates(from_currency, to_currency);
+CREATE INDEX idx_exchange_rates_timestamp ON public.exchange_rates(timestamp DESC);
+CREATE UNIQUE INDEX idx_exchange_rates_latest ON public.exchange_rates(from_currency, to_currency, timestamp DESC);
+
+-- 8. FEE CONFIGURATION TABLE
+CREATE TABLE public.fee_config (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    fee_type character varying(50) NOT NULL UNIQUE,
+    percentage_fee numeric(10,4) DEFAULT 0,
+    flat_fee numeric(18,8) DEFAULT 0,
+    minimum_amount numeric(18,8) DEFAULT 0,
+    maximum_amount numeric(18,8),
+    currency character varying(10) DEFAULT 'USD',
+    is_active boolean DEFAULT true,
+    description text,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT fee_type_check CHECK (fee_type IN ('withdrawal', 'trading', 'deposit')),
+    CONSTRAINT fee_check CHECK ((percentage_fee >= 0) AND (flat_fee >= 0))
+);
+
+CREATE INDEX idx_fee_config_active ON public.fee_config(is_active);
+
+-- 9. USER SETTINGS TABLE
+CREATE TABLE public.user_settings (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer NOT NULL UNIQUE,
+    theme character varying(50) DEFAULT 'dark',
+    language character varying(10) DEFAULT 'en',
+    two_factor_enabled boolean DEFAULT false,
+    two_factor_method character varying(50),
+    email_notifications boolean DEFAULT true,
+    push_notifications boolean DEFAULT true,
+    sms_notifications boolean DEFAULT false,
+    withdrawal_notifications boolean DEFAULT true,
+    trading_notifications boolean DEFAULT true,
+    security_alerts boolean DEFAULT true,
+    marketing_emails boolean DEFAULT false,
+    timezone character varying(50) DEFAULT 'UTC',
+    currency_display character varying(10) DEFAULT 'USD',
+    show_portfolio_value boolean DEFAULT true,
+    auto_logout_minutes integer DEFAULT 15,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_user_settings_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+    CONSTRAINT theme_check CHECK (theme IN ('dark', 'light', 'auto')),
+    CONSTRAINT two_factor_method_check CHECK (two_factor_method IS NULL OR two_factor_method IN ('email', 'sms', 'authenticator'))
+);
+
+CREATE INDEX idx_user_settings_user_id ON public.user_settings(user_id);
+
+-- 10. AUDIT LOG TABLE (Enhanced)
+CREATE TABLE public.audit_logs (
+    id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id integer,
+    admin_id integer,
+    action character varying(100) NOT NULL,
+    entity_type character varying(50),
+    entity_id integer,
+    old_values jsonb,
+    new_values jsonb,
+    ip_address character varying(45),
+    user_agent text,
+    status character varying(50) DEFAULT 'success',
+    error_message text,
+    created_at timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_audit_logs_user_id FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_audit_logs_admin_id FOREIGN KEY (admin_id) REFERENCES public.users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_audit_logs_user_id ON public.audit_logs(user_id);
+CREATE INDEX idx_audit_logs_admin_id ON public.audit_logs(admin_id);
+CREATE INDEX idx_audit_logs_entity ON public.audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
+CREATE INDEX idx_audit_logs_action ON public.audit_logs(action);
+```
+
+---
+
+## 📋 Step-by-Step in pgAdmin 4
+
+### Step 1: Open Query Tool
+- Find your database in the left panel
+- Right-click → **Query Tool**
+- Or click **Query** menu → **Query Tool**
+
+### Step 2: Select All Text Above
+- Select everything from the SQL script above starting with `-- Add Missing Tables`
+
+### Step 3: Copy & Paste
+```
+Ctrl+C (copy)
+Ctrl+V (paste into pgAdmin)
+```
+
+### Step 4: Execute
+- Click the **▶️ Execute** button (or F5)
+- Watch the output panel at bottom
+
+### Step 5: Success Check
+Look for message: **"Query returned successfully"**
+
+If you see errors, they'll show in the output.
+
+---
+
+## 🔄 Method 2: Using PowerShell Terminal (Alternative)
+
+If you have PostgreSQL CLI installed:
+
+```powershell
+# Navigate to your project
+cd "c:\tyle\Elon U"
+
+# Run the migration
+psql -U postgres -d "Elon-backend-db" -f add_missing_tables.sql
+```
+
+You'll be prompted for the postgres password.
+
+---
+
+## ✅ Verify Tables Were Added
+
+After running, execute this query:
+
+```sql
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+ORDER BY table_name;
+```
+
+Should show **18 tables** now (8 original + 10 new):
+
+1. admin_audit
+2. api_keys
+3. audit_logs
+4. contacts
+5. deposit_addresses
+6. exchange_rates
+7. fee_config
+8. notifications
+9. portfolio
+10. price_history
+11. sessions
+12. testimonies
+13. trades
+14. transactions
+15. user_kyc
+16. user_settings
+17. users
+18. withdrawals
+
+---
+
+## 🚨 If Something Goes Wrong
+
+### Error: "foreign key violation"
+- This shouldn't happen, but if it does, the migration is safe - no data affected
+
+### Error: "table already exists"
+- The table was already created - no problem, you can ignore
+
+### No output message
+- Migration succeeded! Run the verification query above
+
+---
+
+## ⏭️ After Migration
+
+Once tables are added:
+
+1. **Restart your backend** 
+   ```bash
+   npm run dev
+   ```
+
+2. **Initialize fees** (optional but recommended):
+   ```sql
+   INSERT INTO public.fee_config (fee_type, percentage_fee, flat_fee, is_active, description)
+   VALUES 
+     ('withdrawal', 0.5, 0, true, 'Withdrawal fee 0.5%'),
+     ('trading', 0.1, 0, true, 'Trading fee 0.1%'),
+     ('deposit', 0, 0, true, 'Deposit fee (free)');
+   ```
+
+3. **Create default user settings** for existing users:
+   ```sql
+   INSERT INTO public.user_settings (user_id)
+   SELECT id FROM public.users
+   ON CONFLICT DO NOTHING;
+   ```
+
+---
+
+## ✨ You're Done!
+
+Database now has **18 complete, production-ready tables** with all the features you need for:
+- ✅ User KYC verification
+- ✅ API key management
+- ✅ Multiple deposit addresses
+- ✅ Historical price tracking
+- ✅ User notifications
+- ✅ Session management
+- ✅ User settings/preferences
+- ✅ Complete audit logging
+

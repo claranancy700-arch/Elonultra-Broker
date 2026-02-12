@@ -30,7 +30,7 @@ export const DashboardPage = () => {
       try {
         const [pRes, tRes] = await Promise.all([
           API.get('/portfolio'),
-          API.get('/transactions'),
+          API.get('/transactions?type=trade'),
         ]);
 
         if (!mounted) return;
