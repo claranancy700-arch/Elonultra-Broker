@@ -3,53 +3,107 @@ const router = express.Router();
 const db = require('../db');
 const { verifyToken } = require('../middleware/auth');
 
+// In-memory cache for portfolio prices with TTL
+let priceCache = { data: null, expiresAt: 0, withChanges: null };
+const CACHE_TTL = 120 * 1000; // 120 seconds
+const MIN_CACHE_TTL = 30 * 1000; // Keep cache for at least 30 seconds even on failure
+
+// Request throttling to prevent multiple simultaneous CoinGecko requests
+let isFetching = false;
+let fetchPromise = null;
+
 /**
  * Helper: Fetch live prices and 24h changes from CoinGecko
- * NO mock fallback - returns real prices only
+ * Falls back to cached prices if CoinGecko is unavailable
  */
 async function fetchLivePricesAndChanges() {
-  try {
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=true&include_last_updated_at=false';
-    const res = await fetch(url, { timeout: 10000 });
-    
-    if (!res.ok) {
-      throw new Error(`CoinGecko API returned ${res.status}`);
-    }
-    
-    const data = await res.json();
-    const pricesData = {
-      prices: {
-        'BTC': data.bitcoin?.usd,
-        'ETH': data.ethereum?.usd,
-        'USDT': data.tether?.usd,
-        'USDC': data['usd-coin']?.usd,
-        'XRP': data.ripple?.usd,
-        'ADA': data.cardano?.usd,
-      },
-      changes_24h: {
-        'BTC': data.bitcoin?.usd_24h_change || 0,
-        'ETH': data.ethereum?.usd_24h_change || 0,
-        'USDT': data.tether?.usd_24h_change || 0,
-        'USDC': data['usd-coin']?.usd_24h_change || 0,
-        'XRP': data.ripple?.usd_24h_change || 0,
-        'ADA': data.cardano?.usd_24h_change || 0,
-      }
-    };
-    
-    // Verify all required prices are present
-    const requiredPrices = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
-    const missingPrices = requiredPrices.filter(coin => !pricesData.prices[coin]);
-    
-    if (missingPrices.length > 0) {
-      throw new Error(`Missing prices from CoinGecko for: ${missingPrices.join(', ')}`);
-    }
-    
-    console.log('[Portfolio] Successfully fetched live prices from CoinGecko');
-    return pricesData;
-  } catch (err) {
-    console.error('[Portfolio] Failed to fetch live prices from CoinGecko:', err.message);
-    throw err; // Don't silently fail - let caller handle the error
+  const now = Date.now();
+  
+  // Check cache first
+  if (priceCache.data && now < priceCache.expiresAt) {
+    console.log('[Portfolio Cache HIT] Using cached prices');
+    return priceCache.withChanges;
   }
+
+  // If cache is stale but we're already fetching, wait for that fetch
+  if (isFetching && fetchPromise) {
+    console.log('[Portfolio Cache WAIT] Waiting for in-flight CoinGecko request...');
+    try {
+      return await fetchPromise;
+    } catch (err) {
+      console.error('[Portfolio] In-flight fetch failed, falling back to stale cache:', err.message);
+      if (priceCache.data) {
+        console.log('[Portfolio Cache STALE] Using stale cached prices');
+        return priceCache.withChanges;
+      }
+      throw err;
+    }
+  }
+
+  // Fetch from CoinGecko
+  isFetching = true;
+  fetchPromise = (async () => {
+    try {
+      const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=true&include_last_updated_at=false';
+      const res = await fetch(url, { timeout: 15000 });
+      
+      if (!res.ok) {
+        throw new Error(`CoinGecko API returned ${res.status}`);
+      }
+      
+      const data = await res.json();
+      const pricesData = {
+        prices: {
+          'BTC': data.bitcoin?.usd,
+          'ETH': data.ethereum?.usd,
+          'USDT': data.tether?.usd,
+          'USDC': data['usd-coin']?.usd,
+          'XRP': data.ripple?.usd,
+          'ADA': data.cardano?.usd,
+        },
+        changes_24h: {
+          'BTC': data.bitcoin?.usd_24h_change || 0,
+          'ETH': data.ethereum?.usd_24h_change || 0,
+          'USDT': data.tether?.usd_24h_change || 0,
+          'USDC': data['usd-coin']?.usd_24h_change || 0,
+          'XRP': data.ripple?.usd_24h_change || 0,
+          'ADA': data.cardano?.usd_24h_change || 0,
+        }
+      };
+      
+      // Verify all required prices are present
+      const requiredPrices = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
+      const missingPrices = requiredPrices.filter(coin => !pricesData.prices[coin]);
+      
+      if (missingPrices.length > 0) {
+        throw new Error(`Missing prices from CoinGecko for: ${missingPrices.join(', ')}`);
+      }
+      
+      // Cache the result
+      priceCache.data = Object.freeze(data);
+      priceCache.withChanges = pricesData;
+      priceCache.expiresAt = now + CACHE_TTL;
+      
+      console.log('[Portfolio] Successfully fetched live prices from CoinGecko');
+      return pricesData;
+    } catch (err) {
+      console.error('[Portfolio] Failed to fetch live prices from CoinGecko:', err.message);
+      
+      // Try to use stale cache if available
+      if (priceCache.data) {
+        console.log('[Portfolio] Falling back to stale cached prices');
+        priceCache.expiresAt = now + MIN_CACHE_TTL; // Extend stale cache for 30 more seconds
+        return priceCache.withChanges;
+      }
+      
+      throw err;
+    } finally {
+      isFetching = false;
+      fetchPromise = null;
+    }
+  })();
+
+  return fetchPromise;
 }
 
 /**
@@ -168,12 +222,9 @@ router.get('/', verifyToken, async (req, res) => {
     res.json(response);
   } catch (err) {
     console.error('[Portfolio API] Error:', err.message);
-    // Return specific error if it's a price-fetching issue
-    if (err.message.includes('CoinGecko') || err.message.includes('price')) {
-      res.status(503).json({ error: 'Unable to fetch live prices. Please try again later.' });
-    } else {
-      res.status(500).json({ error: 'Failed to fetch portfolio' });
-    }
+    // If we can't fetch prices and have no cache, return 503
+    // But the cache should handle most cases above
+    res.status(503).json({ error: 'Unable to fetch live prices. Using cached prices temporarily. Please try again in a moment.' });
   }
 });
 
