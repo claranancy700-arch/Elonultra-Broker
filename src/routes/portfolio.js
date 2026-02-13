@@ -4,41 +4,52 @@ const db = require('../db');
 const { verifyToken } = require('../middleware/auth');
 
 /**
- * Helper: Fetch live prices and 24h changes from CoinGecko with fallback
+ * Helper: Fetch live prices and 24h changes from CoinGecko
+ * NO mock fallback - returns real prices only
  */
 async function fetchLivePricesAndChanges() {
-  let pricesData = {
-    prices: { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 },
-    changes_24h: { 'BTC': 2.5, 'ETH': 1.8, 'USDT': 0.1, 'USDC': 0.05, 'XRP': -1.2, 'ADA': 0.3 }
-  };
   try {
     const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=true&include_last_updated_at=false';
     const res = await fetch(url, { timeout: 10000 });
-    if (res.ok) {
-      const data = await res.json();
-      pricesData = {
-        prices: {
-          'BTC': data.bitcoin?.usd || 45000,
-          'ETH': data.ethereum?.usd || 2500,
-          'USDT': data.tether?.usd || 1.0,
-          'USDC': data['usd-coin']?.usd || 1.0,
-          'XRP': data.ripple?.usd || 2.5,
-          'ADA': data.cardano?.usd || 0.8,
-        },
-        changes_24h: {
-          'BTC': data.bitcoin?.usd_24h_change || 2.5,
-          'ETH': data.ethereum?.usd_24h_change || 1.8,
-          'USDT': data.tether?.usd_24h_change || 0.1,
-          'USDC': data['usd-coin']?.usd_24h_change || 0.05,
-          'XRP': data.ripple?.usd_24h_change || -1.2,
-          'ADA': data.cardano?.usd_24h_change || 0.3,
-        }
-      };
+    
+    if (!res.ok) {
+      throw new Error(`CoinGecko API returned ${res.status}`);
     }
+    
+    const data = await res.json();
+    const pricesData = {
+      prices: {
+        'BTC': data.bitcoin?.usd,
+        'ETH': data.ethereum?.usd,
+        'USDT': data.tether?.usd,
+        'USDC': data['usd-coin']?.usd,
+        'XRP': data.ripple?.usd,
+        'ADA': data.cardano?.usd,
+      },
+      changes_24h: {
+        'BTC': data.bitcoin?.usd_24h_change || 0,
+        'ETH': data.ethereum?.usd_24h_change || 0,
+        'USDT': data.tether?.usd_24h_change || 0,
+        'USDC': data['usd-coin']?.usd_24h_change || 0,
+        'XRP': data.ripple?.usd_24h_change || 0,
+        'ADA': data.cardano?.usd_24h_change || 0,
+      }
+    };
+    
+    // Verify all required prices are present
+    const requiredPrices = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
+    const missingPrices = requiredPrices.filter(coin => !pricesData.prices[coin]);
+    
+    if (missingPrices.length > 0) {
+      throw new Error(`Missing prices from CoinGecko for: ${missingPrices.join(', ')}`);
+    }
+    
+    console.log('[Portfolio] Successfully fetched live prices from CoinGecko');
+    return pricesData;
   } catch (err) {
-    console.warn('[Portfolio] CoinGecko fetch failed, using fallback prices:', err.message);
+    console.error('[Portfolio] Failed to fetch live prices from CoinGecko:', err.message);
+    throw err; // Don't silently fail - let caller handle the error
   }
-  return pricesData;
 }
 
 /**
@@ -157,7 +168,12 @@ router.get('/', verifyToken, async (req, res) => {
     res.json(response);
   } catch (err) {
     console.error('[Portfolio API] Error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch portfolio' });
+    // Return specific error if it's a price-fetching issue
+    if (err.message.includes('CoinGecko') || err.message.includes('price')) {
+      res.status(503).json({ error: 'Unable to fetch live prices. Please try again later.' });
+    } else {
+      res.status(500).json({ error: 'Failed to fetch portfolio' });
+    }
   }
 });
 

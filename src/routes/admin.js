@@ -693,23 +693,36 @@ router.get('/users/:id/portfolio', async (req, res) => {
     const portfolioRes = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id = $1', [userId]);
     const portfolio = portfolioRes.rows[0] || {};
 
-    // Fetch live prices from CoinGecko
-    let prices = { 'BTC': 45000, 'ETH': 2500, 'USDT': 1.0, 'USDC': 1.0, 'XRP': 2.5, 'ADA': 0.8 };
+    // Fetch live prices from CoinGecko (no mock fallback)
+    let prices = { 'BTC': 0, 'ETH': 0, 'USDT': 0, 'USDC': 0, 'XRP': 0, 'ADA': 0 };
     try {
       const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd';
       const res = await fetch(url, { timeout: 10000 });
-      if (res.ok) {
-        const data = await res.json();
-        prices = {
-          'BTC': data.bitcoin?.usd || 45000,
-          'ETH': data.ethereum?.usd || 2500,
-          'USDT': data.tether?.usd || 1.0,
-          'USDC': data['usd-coin']?.usd || 1.0,
-          'XRP': data.ripple?.usd || 2.5,
-          'ADA': data.cardano?.usd || 0.8,
-        };
+      if (!res.ok) {
+        throw new Error(`CoinGecko API returned ${res.status}`);
       }
-    } catch (err) { console.warn('[Admin Portfolio] CoinGecko fetch failed, using fallback prices'); }
+      const data = await res.json();
+      prices = {
+        'BTC': data.bitcoin?.usd,
+        'ETH': data.ethereum?.usd,
+        'USDT': data.tether?.usd,
+        'USDC': data['usd-coin']?.usd,
+        'XRP': data.ripple?.usd,
+        'ADA': data.cardano?.usd,
+      };
+      
+      // Verify all prices are present
+      const missingPrices = Object.entries(prices).filter(([_, price]) => !price).map(([coin]) => coin);
+      if (missingPrices.length > 0) {
+        throw new Error(`Missing prices from CoinGecko for: ${missingPrices.join(', ')}`);
+      }
+      
+      console.log('[Admin Portfolio] Successfully fetched live prices from CoinGecko');
+    } catch (err) {
+      console.error('[Admin Portfolio] Failed to fetch live prices from CoinGecko:', err.message);
+      // Don't silently use fallback - let caller know prices are unavailable
+      return res.status(503).json({ error: 'Unable to fetch live prices. Please try again later.' });
+    }
 
     // Build response in assets format for PRO admin (map of coin: amount)
     const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
