@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import API from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
+import { portfolioCache, fetchWithRetry } from '../../../services/portfolioCache';
 import MobilePortfolioCarousel from './MobilePortfolioCarousel';
 import MobileActionButtons from './MobileActionButtons';
 import './DashboardPage.css';
@@ -9,8 +10,9 @@ export const DashboardPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [portfolio, setPortfolio] = useState(null);
+  const [portfolioWarning, setPortfolioWarning] = useState(''); // Non-blocking warning
   const [transactions, setTransactions] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // Only for critical errors
   const [activeTab, setActiveTab] = useState('recent-trades');
   const [collapseStates, setCollapseStates] = useState({
     holdings: false,
@@ -27,18 +29,66 @@ export const DashboardPage = () => {
     async function load() {
       setLoading(true);
       setError('');
+      setPortfolioWarning('');
+
       try {
-        const [pRes, tRes] = await Promise.all([
-          API.get('/portfolio'),
-          API.get('/transactions?type=trade'),
-        ]);
+        // Try to fetch portfolio with retry logic
+        let portfolioData = null;
+        let usesCachedPortfolio = false;
+
+        try {
+          const pRes = await fetchWithRetry(() => API.get('/portfolio'), 2);
+          portfolioData = pRes.data || null;
+          // Cache the successful response
+          if (portfolioData) {
+            portfolioCache.save(portfolioData);
+          }
+        } catch (portfolioErr) {
+          console.warn('Portfolio fetch failed:', portfolioErr.message);
+          // Fall back to cached portfolio instead of failing completely
+          const cached = portfolioCache.get();
+          if (cached) {
+            console.log('Using cached portfolio as fallback');
+            portfolioData = cached;
+            usesCachedPortfolio = true;
+            
+            // Show non-blocking warning
+            const cacheAgeSeconds = Math.round(cached._cacheAge / 1000);
+            setPortfolioWarning(
+              `Portfolio data is ${cacheAgeSeconds}s old due to temporary service issues. Prices may not be current.`
+            );
+          } else {
+            // No cache available - this is a real error
+            setError(portfolioErr.response?.data?.error || 'Unable to load portfolio');
+            // Still try to load transactions
+            portfolioData = null;
+          }
+        }
 
         if (!mounted) return;
-        setPortfolio(pRes.data || null);
-        setTransactions(tRes.data?.transactions || []);
+
+        // Load transactions independently - don't let portfolio errors block them
+        try {
+          const tRes = await API.get('/transactions?type=trade');
+          if (mounted) {
+            setTransactions(tRes.data?.transactions || []);
+          }
+        } catch (txErr) {
+          console.warn('Failed to load transactions:', txErr.message);
+          // Don't fail dashboard for missing transactions either
+          if (mounted) {
+            setTransactions([]);
+          }
+        }
+
+        if (mounted) {
+          setPortfolio(portfolioData);
+        }
       } catch (err) {
         console.error('Dashboard load error', err);
-        setError(err.response?.data?.error || err.message || 'Failed to load dashboard');
+        if (mounted) {
+          setError(err.message || 'Failed to load dashboard');
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -64,12 +114,53 @@ export const DashboardPage = () => {
     setTradeForm({ asset: '', amount: '', orderType: 'buy' });
   };
 
+  // Handle retry - reload portfolio data
+  const handleRetry = async () => {
+    setLoading(true);
+    setError('');
+    setPortfolioWarning('');
+    
+    try {
+      const pRes = await fetchWithRetry(() => API.get('/portfolio'), 2);
+      const portfolioData = pRes.data || null;
+      if (portfolioData) {
+        portfolioCache.save(portfolioData);
+        setPortfolio(portfolioData);
+      }
+    } catch (err) {
+      const cached = portfolioCache.get();
+      if (cached) {
+        setPortfolio(cached);
+        setPortfolioWarning('Still using cached data. Service may be temporarily unavailable.');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Failed to reload portfolio');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Don't show loading overlay - render page with empty state instead
   if (error) {
     return (
       <div className="dashboard-page">
         <div className="panel error">
           <strong>Error:</strong> {error}
+          <button 
+            onClick={handleRetry}
+            style={{ 
+              marginLeft: '12px',
+              padding: '6px 12px',
+              background: 'var(--primary)',
+              color: 'var(--bg)',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -77,6 +168,37 @@ export const DashboardPage = () => {
 
   return (
     <div className="dashboard-page">
+      {portfolioWarning && (
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.08)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: '6px',
+          padding: '12px 14px',
+          marginBottom: '16px',
+          fontSize: '13px',
+          color: 'rgba(251, 191, 36, 0.9)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <span>⚠️ {portfolioWarning}</span>
+          <button 
+            onClick={handleRetry}
+            style={{ 
+              background: 'rgba(251, 191, 36, 0.2)',
+              color: 'rgba(251, 191, 36, 0.9)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              borderRadius: '4px',
+              padding: '4px 10px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '500'
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1>Dashboard</h1>
         <div style={{ fontSize: '14px', color: 'var(--muted)' }}>
