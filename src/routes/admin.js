@@ -513,6 +513,34 @@ router.get('/debug', (req, res) => {
   });
 });
 
+// GET /api/admin/users/:id - get single user (OPTIMIZED endpoint to avoid fetching all users)
+router.get('/users/:id', async (req, res) => {
+  try {
+    const provided = req.headers['x-admin-key'];
+    const ADMIN_KEY = getAdminKey();
+    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
+    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
+
+    console.log(`[Admin] GET /users/${userId} - Fetching single user`);
+    const q = await db.query(
+      'SELECT id, email, COALESCE(balance,0) as balance, COALESCE(portfolio_value,0) as portfolio_value, COALESCE(is_active,TRUE) AS is_active, created_at, name FROM users WHERE id=$1',
+      [userId]
+    );
+
+    if (!q.rows.length) {
+      return res.status(404).json({ error: 'user not found' });
+    }
+
+    return res.json(q.rows[0]);
+  } catch (err) {
+    console.error('Admin single user fetch error:', err.message || err);
+    return res.status(500).json({ error: 'failed to fetch user' });
+  }
+});
+
 router.get('/users', async (req, res) => {
   try {
     console.log('========================================');

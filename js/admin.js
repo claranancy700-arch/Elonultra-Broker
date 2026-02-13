@@ -213,9 +213,11 @@ if (loadUsersBtn) {
 
 async function loadUserDetails(id, key){
   try{
-    const users = await getJSON('/admin/users', { headers: { 'x-admin-key': key } });
-    const u = Array.isArray(users) ? users.find(x=>String(x.id)===String(id)) : (users && users.users ? users.users.find(x=>String(x.id)===String(id)) : null);
-    if (!u) { alert('User not found'); return; }
+    // OPTIMIZED: Fetch single user instead of all users (fixes N+1 problem)
+    console.log(`[Admin] Loading user ${id}...`);
+    const u = await getJSON(`/admin/users/${id}`, { headers: { 'x-admin-key': key } });
+    if (!u || !u.id) { alert('User not found'); return; }
+    
     if (userDetail) userDetail.innerHTML = `<div><strong>${u.email}</strong><div>ID: ${u.id}</div><div>Balance: ${formatCurrency(u.balance)}</div></div>`;
     // Set admin preview name to the selected user so the header reflects the loaded user (not the admin)
     try { document.getElementById('user-name').textContent = u.name || u.email; } catch(e) { /* ignore if missing */ }
@@ -225,108 +227,119 @@ async function loadUserDetails(id, key){
 
     await refreshSimulator(u.id, key);
 
-    const tr = await getJSON(`/admin/users/${u.id}/transactions`, { headers: { 'x-admin-key': key } });
-    if (transactionsTbody) transactionsTbody.innerHTML = tr.transactions.map(t=>{
-      const action = (t.type === 'deposit' && t.status !== 'completed')
-        ? `<button class="btn btn-small" data-approve="${t.id}">Approve</button>`
-        : '';
-      return `<tr><td>${new Date(t.created_at).toLocaleString()}</td><td>${t.type}</td><td>${t.amount}</td><td>${t.currency}</td><td>${t.status || ''}</td><td>${action}</td></tr>`;
-    }).join('');
-    if (transactionsTbody) {
-      transactionsTbody.querySelectorAll('[data-approve]').forEach(btn => {
-        btn.addEventListener('click', () => approveDeposit(btn.getAttribute('data-approve')));
+    // Load transactions in parallel (don't await sequentially)
+    const transactionsPromise = getJSON(`/admin/users/${u.id}/transactions`, { headers: { 'x-admin-key': key } })
+      .then(tr => {
+        if (transactionsTbody) transactionsTbody.innerHTML = tr.transactions.map(t=>{
+          const action = (t.type === 'deposit' && t.status !== 'completed')
+            ? `<button class="btn btn-small" data-approve="${t.id}">Approve</button>`
+            : '';
+          return `<tr><td>${new Date(t.created_at).toLocaleString()}</td><td>${t.type}</td><td>${t.amount}</td><td>${t.currency}</td><td>${t.status || ''}</td><td>${action}</td></tr>`;
+        }).join('');
+        if (transactionsTbody) {
+          transactionsTbody.querySelectorAll('[data-approve]').forEach(btn => {
+            btn.addEventListener('click', () => approveDeposit(btn.getAttribute('data-approve')));
+          });
+        }
+      })
+      .catch(e => debugWarn('Could not load transactions', e));
+
+    // Load trades in parallel
+    const tradesPromise = getJSON(`/trades?limit=10`, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}`, 'x-admin-key': key } })
+      .then(trades => {
+        const recentTradesTbody = document.getElementById('recent-trades-user');
+        if (recentTradesTbody && trades.trades && trades.trades.length > 0) {
+          // Filter trades for current user
+          const userTrades = trades.trades.filter(t => t.user_id === u.id);
+          if (userTrades.length > 0) {
+            recentTradesTbody.innerHTML = userTrades.map(t => `
+              <tr>
+                <td>${new Date(t.created_at).toLocaleString()}</td>
+                <td>${t.type || 'allocate'}</td>
+                <td><strong>${t.asset || t.coin || 'N/A'}</strong></td>
+                <td>${parseFloat(t.amount || 0).toFixed(8)}</td>
+                <td>$${parseFloat(t.price || 0).toFixed(2)}</td>
+                <td>$${parseFloat((t.amount || 0) * (t.price || 0)).toFixed(2)}</td>
+              </tr>
+            `).join('');
+          } else {
+            recentTradesTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades for this user</td></tr>';
+          }
+        }
+      })
+      .catch(e => {
+        debugWarn('Could not load recent trades', e);
+        const recentTradesTbody = document.getElementById('recent-trades-user');
+        if (recentTradesTbody) recentTradesTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Failed to load trades</td></tr>';
       });
-    }
 
-    // Load recent trades for this user
-    try {
-      const trades = await getJSON(`/trades?limit=10`, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}`, 'x-admin-key': key } });
-      const recentTradesTbody = document.getElementById('recent-trades-user');
-      if (recentTradesTbody && trades.trades && trades.trades.length > 0) {
-        // Filter trades for current user
-        const userTrades = trades.trades.filter(t => t.user_id === u.id);
-        if (userTrades.length > 0) {
-          recentTradesTbody.innerHTML = userTrades.map(t => `
-            <tr>
-              <td>${new Date(t.created_at).toLocaleString()}</td>
-              <td>${t.type || 'allocate'}</td>
-              <td><strong>${t.asset || t.coin || 'N/A'}</strong></td>
-              <td>${parseFloat(t.amount || 0).toFixed(8)}</td>
-              <td>$${parseFloat(t.price || 0).toFixed(2)}</td>
-              <td>$${parseFloat((t.amount || 0) * (t.price || 0)).toFixed(2)}</td>
-            </tr>
-          `).join('');
-        } else {
-          recentTradesTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No trades for this user</td></tr>';
-        }
-      }
-    } catch (e) {
-      debugWarn('Could not load recent trades', e);
-      const recentTradesTbody = document.getElementById('recent-trades-user');
-      if (recentTradesTbody) recentTradesTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Failed to load trades</td></tr>';
-    }
-
-    // fetch portfolio and prefill fields
-    try{
-      const p = await getJSON(`/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } });
-      // Handle both response formats: { success: true, assets: {...} } or { assets: {...} }
-      const assets = p.assets || p.portfolio || {};
-      
-      // populate dynamic portfolio input fields
-      try{
-        const container = document.getElementById('portfolio-fields');
-        if (container) container.innerHTML = '';
-        const list = getSymbolList();
-        let rowsAdded = 0;
-        list.forEach(sym => {
-          // Assets come as key-value pairs like { BTC: 1.5, ETH: 2.0 }
-          const bal = Number(assets[sym]) || 0;
-          if (bal > 0) { createAssetRow(sym, bal); rowsAdded++; }
-        });
-        if (rowsAdded === 0) createAssetRow();
-        }catch(e){ debugWarn('Failed to set portfolio input values', e); }
-      // Populate broker preview using CBPortfolio and dashboard renderers
-      try{
-        if (window.CBPortfolio) {
-          // Build assets from portfolio response (assets = p.assets or p.portfolio from above)
-          const assetsList = Object.entries(assets || {}).map(([symbol, amount]) => ({
-            symbol,
-            name: symbol,
-            amount: Number(amount) || 0,
-            value: 0
-          }));
-          
-          // IMPORTANT: Clear old portfolio data first
-          window.CBPortfolio.setAssets([]);
-          // Set balance to user's cash balance
-          const userBalance = Number(u.balance) || 0;
-          window.CBPortfolio.setBalance(userBalance);
-          // Update the available-balance display element
-          const availableBalanceEl = document.getElementById('available-balance');
-          if (availableBalanceEl) {
-            availableBalanceEl.textContent = '$' + userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          }
-          // Set assets AFTER setting balance
-          if (assetsList.length > 0) {
-            window.CBPortfolio.setAssets(assetsList);
-          }
-          // If server provided a portfolio total value, prefer it as a fallback when price fetch fails
-          if (typeof p.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
-            window.CBPortfolio.setTotalValue(Number(p.portfolio_value) || 0);
-          }
-          // refresh prices for preview and then re-render dashboard preview if available
-          try{
-            if (typeof window.CBPortfolio.refreshPrices === 'function') {
-              await window.CBPortfolio.refreshPrices();
+    // Fetch portfolio - this is critical and should complete before rendering
+    let portfolioPromise = getJSON(`/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } })
+      .then(p => {
+        console.log(`[Admin] Portfolio loaded for user ${u.id}`);
+        // Handle both response formats: { success: true, assets: {...} } or { assets: {...} }
+        const assets = p.assets || p.portfolio || {};
+        
+        // populate dynamic portfolio input fields
+        try{
+          const container = document.getElementById('portfolio-fields');
+          if (container) container.innerHTML = '';
+          const list = getSymbolList();
+          let rowsAdded = 0;
+          list.forEach(sym => {
+            // Assets come as key-value pairs like { BTC: 1.5, ETH: 2.0 }
+            const bal = Number(assets[sym]) || 0;
+            if (bal > 0) { createAssetRow(sym, bal); rowsAdded++; }
+          });
+          if (rowsAdded === 0) createAssetRow();
+          }catch(e){ debugWarn('Failed to set portfolio input values', e); }
+        
+        // Populate broker preview using CBPortfolio and dashboard renderers
+        try{
+          if (window.CBPortfolio) {
+            // Build assets from portfolio response (assets = p.assets or p.portfolio from above)
+            const assetsList = Object.entries(assets || {}).map(([symbol, amount]) => ({
+              symbol,
+              name: symbol,
+              amount: Number(amount) || 0,
+              value: 0
+            }));
+            
+            // IMPORTANT: Clear old portfolio data first
+            window.CBPortfolio.setAssets([]);
+            // Set balance to user's cash balance
+            const userBalance = Number(u.balance) || 0;
+            window.CBPortfolio.setBalance(userBalance);
+            // Update the available-balance display element
+            const availableBalanceEl = document.getElementById('available-balance');
+            if (availableBalanceEl) {
+              availableBalanceEl.textContent = '$' + userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
-          }catch(e){ debugWarn('Preview price refresh failed', e); }
-          if (window.renderPortfolioCards) window.renderPortfolioCards();
-          if (window.renderHoldings) window.renderHoldings();
-          // Also refresh the market overview so the admin preview shows live market data for the user's holdings
-          if (window.renderMarketOverview) window.renderMarketOverview();
-        }
-      }catch(e){ debugWarn('Failed to populate broker preview', e); }
-    }catch(e){ debugWarn('Could not load portfolio', e); }
+            // Set assets AFTER setting balance
+            if (assetsList.length > 0) {
+              window.CBPortfolio.setAssets(assetsList);
+            }
+            // If server provided a portfolio total value, use it (more accurate than calculating)
+            if (typeof p.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
+              window.CBPortfolio.setTotalValue(Number(p.portfolio_value) || 0);
+            }
+            
+            // OPTIMIZATION: Skip refreshPrices call here - use cached prices instead
+            // The prices were already fetched by backend /api/portfolio endpoint
+            // Only render the cards with existing price data to avoid extra API calls
+            if (window.renderPortfolioCards) window.renderPortfolioCards();
+            if (window.renderHoldings) window.renderHoldings();
+            // Skip renderMarketOverview for now - it makes another CoinGecko call
+            // if (window.renderMarketOverview) window.renderMarketOverview();
+            console.log('[Admin] Portfolio summary cards rendered (no price refresh)');
+          }
+        }catch(e){ debugWarn('Failed to populate broker preview', e); }
+      })
+      .catch(e => { debugWarn('Could not load portfolio', e); });
+
+    // Wait for all parallel tasks to complete
+    await Promise.all([transactionsPromise, tradesPromise, portfolioPromise]);
+    console.log(`[Admin] All user details loaded for ${u.id}`);
   }catch(err){
     alert('Failed to load user details: '+err.message);
   }
