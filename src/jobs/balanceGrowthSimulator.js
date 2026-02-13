@@ -142,7 +142,7 @@ async function processUserBalance(userId, currentBalance) {
     // Log transaction for audit trail
     await client.query(
       `INSERT INTO transactions (user_id, type, amount, currency, status, reference)
-       VALUES ($1, 'simulator', $2, 'USD', 'completed', $3)`,
+       VALUES ($1, 'trade', $2, 'USD', 'completed', $3)`,
       [userId, newBalance - freshBalance, `simulator: ${asset} ${tradeType} ${randomBoost.toFixed(2)}%`]
     );
 

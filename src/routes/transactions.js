@@ -17,7 +17,7 @@ router.get('/', verifyToken, async (req, res) => {
          currency AS method,
          status,
          reference AS txid,
-         created_at AS "createdAt"
+         created_at
        FROM transactions
        WHERE user_id = $1`;
     
@@ -34,7 +34,14 @@ router.get('/', verifyToken, async (req, res) => {
     // Show all transactions including pending deposits (so users can see their deposit history)
     const result = await db.query(query, params);
 
-    return res.json({ success: true, transactions: result.rows });
+    // Convert string amounts to numbers and ensure dates are ISO strings for frontend compatibility
+    const transactions = result.rows.map(t => ({
+      ...t,
+      amount: parseFloat(t.amount) || 0,
+      created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString()
+    }));
+
+    return res.json({ success: true, transactions });
   } catch (err) {
     // If transactions table does not exist or other DB error, return empty array for graceful fallback
     console.error('Transactions fetch error:', err.message || err);
@@ -63,7 +70,14 @@ router.get('/deposits', verifyToken, async (req, res) => {
       [userId]
     );
 
-    return res.json({ success: true, deposits: result.rows });
+    // Convert string amounts to numbers and ensure dates are ISO strings for frontend compatibility
+    const deposits = result.rows.map(d => ({
+      ...d,
+      amount: parseFloat(d.amount) || 0,
+      created_at: d.created_at ? new Date(d.created_at).toISOString() : new Date().toISOString()
+    }));
+
+    return res.json({ success: true, deposits });
   } catch (err) {
     console.error('Deposits fetch error:', err.message || err);
     return res.json({ success: true, deposits: [] });

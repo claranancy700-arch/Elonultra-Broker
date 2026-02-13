@@ -29,12 +29,6 @@ export const Sidebar = () => {
         <Icon name="coin" className="icon-inline" /> Transactions
       </Link>
       <Link 
-        to="/deposit" 
-        className={`sidebar-link ${isActive('/deposit') ? 'active' : ''}`}
-      >
-        <Icon name="money" className="icon-inline" /> Deposit
-      </Link>
-      <Link 
         to="/settings" 
         className={`sidebar-link ${isActive('/settings') ? 'active' : ''}`}
       >

@@ -10,6 +10,25 @@ export const TransactionsPage = () => {
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Helper to safely format dates
+  const formatDate = (dateStr) => {
+    if (!dateStr) {
+      console.warn('Missing date:', dateStr);
+      return 'N/A';
+    }
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateStr);
+        return 'N/A';
+      }
+      return date.toLocaleString();
+    } catch (err) {
+      console.warn('Date parse error:', dateStr, err.message);
+      return 'N/A';
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,16 +68,16 @@ export const TransactionsPage = () => {
           {data.length ? (
             data.map((item, idx) => (
               <tr key={idx}>
-                <td>{new Date(item.created_at || item.date).toLocaleString()}</td>
+                <td>{formatDate(item.created_at)}</td>
                 <td>{item.method || item.type || item.order_type}</td>
                 <td>{item.asset || item.symbol || 'N/A'}</td>
-                <td>{item.amount?.toFixed(2)}</td>
+                <td>{(Number(item.amount) || 0).toFixed(2)}</td>
                 <td>
                   <span className={`status ${item.status?.toLowerCase()}`}>
                     {item.status || 'pending'}
                   </span>
                 </td>
-                {columns.length > 5 && <td><code>{item.tx_id || item.id || 'N/A'}</code></td>}
+                {columns.length > 5 && <td><code>{item.txid || item.tx_id || item.id || 'N/A'}</code></td>}
               </tr>
             ))
           ) : (
@@ -146,12 +165,12 @@ export const TransactionsPage = () => {
                     {trades.length ? (
                       trades.map((t, idx) => (
                         <tr key={idx}>
-                          <td>{new Date(t.created_at || t.date).toLocaleString()}</td>
+                          <td>{formatDate(t.created_at || t.date)}</td>
                           <td>{t.order_type || t.type || 'N/A'}</td>
                           <td>{t.symbol || t.asset || 'N/A'}</td>
-                          <td>{t.amount?.toFixed(4)}</td>
-                          <td>${t.price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                          <td>${(t.amount * t.price)?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          <td>{(Number(t.amount) || 0).toFixed(4)}</td>
+                          <td>${(Number(t.price) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                          <td>${((Number(t.amount) || 0) * (Number(t.price) || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
                         </tr>
                       ))
                     ) : (

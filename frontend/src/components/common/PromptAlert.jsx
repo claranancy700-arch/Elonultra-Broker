@@ -36,6 +36,15 @@ export const PromptAlert = () => {
     API.post(`/prompts/${promptId}/read`).catch(err => console.error('Failed to mark read:', err));
   };
 
+  // Auto-dismiss prompts after 30 seconds
+  useEffect(() => {
+    const timers = prompts.map((prompt) => {
+      if (dismissed[prompt.id]) return null;
+      return setTimeout(() => handleDismiss(prompt.id), 30000);
+    });
+    return () => timers.forEach((timer) => timer && clearTimeout(timer));
+  }, [prompts, dismissed]);
+
   // Filter out dismissed prompts
   const visiblePrompts = prompts.filter((p) => !dismissed[p.id]);
 

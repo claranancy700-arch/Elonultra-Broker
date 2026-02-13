@@ -81,9 +81,18 @@ async function handleAdminTrades(req, res) {
       [...params, limit, offset]
     );
 
+    // Convert string amounts to numbers and ensure dates are ISO strings for frontend compatibility
+    const trades = result.rows.map(t => ({
+      ...t,
+      amount: parseFloat(t.amount) || 0,
+      price: parseFloat(t.price) || 0,
+      total: parseFloat(t.total) || 0,
+      created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString()
+    }));
+
     res.json({
       success: true,
-      trades: result.rows,
+      trades,
       pagination: {
         total,
         limit,
@@ -120,9 +129,18 @@ async function handleUserTrades(req, res) {
       [isSimulated, userId, limit, offset]
     );
 
+    // Convert string amounts to numbers and ensure dates are ISO strings for frontend compatibility
+    const trades = result.rows.map(t => ({
+      ...t,
+      amount: parseFloat(t.amount) || 0,
+      price: parseFloat(t.price) || 0,
+      total: parseFloat(t.total) || 0,
+      created_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString()
+    }));
+
     res.json({
       success: true,
-      trades: result.rows,
+      trades,
       pagination: {
         total,
         limit,
