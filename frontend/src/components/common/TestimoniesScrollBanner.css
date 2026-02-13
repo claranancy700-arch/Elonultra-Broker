@@ -22,7 +22,7 @@
   width: max-content;
   align-items: center;
   will-change: transform;
-  animation: scroll-left 45s linear infinite;
+  animation: scroll-left 660s linear infinite;
 }
 
 .testimonies-banner:hover .testimonies-banner-content {
@@ -81,7 +81,7 @@
 
   .testimonies-banner-content {
     gap: 18px;
-    animation: scroll-left 35s linear infinite;
+    animation: scroll-left 660s linear infinite;
   }
 
   .testimonies-banner-item {
@@ -110,7 +110,7 @@
 
   .testimonies-banner-content {
     gap: 12px;
-    animation: scroll-left 30s linear infinite;
+    animation: scroll-left 660s linear infinite;
   }
 
   .testimonies-banner-item {

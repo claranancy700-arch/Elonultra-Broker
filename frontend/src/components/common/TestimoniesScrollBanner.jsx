@@ -1,26 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import './TestimoniesScrollBanner.css';
+import API from '../../services/api';
 
 export default function TestimoniesScrollBanner() {
   const [testimonies, setTestimonies] = useState([]);
 
   useEffect(() => {
-    // Fetch testimonies from API or use demo data
-    const demoTestimonies = [
-      { id: 1, name: 'Sarah M.', rating: 5, text: 'Amazing trading platform! Easy to use and great returns' },
-      { id: 2, name: 'Michael L.', rating: 5, text: 'Fast withdrawals and excellent customer support team' },
-      { id: 3, name: 'Jessica H.', rating: 5, text: 'Perfect for beginners. Made $2,500 in first month!' },
-      { id: 4, name: 'David K.', rating: 5, text: 'Professional interface with real-time market data' },
-      { id: 5, name: 'Emma T.', rating: 5, text: 'Best crypto trading app I\'ve ever used. Highly recommend!' },
-    ];
-    setTestimonies(demoTestimonies);
+    fetchTestimonies();
   }, []);
+
+  const fetchTestimonies = async () => {
+    try {
+      const response = await API.get('/testimonies');
+      if (response.data && response.data.length > 0) {
+        // Map API response to component structure
+        const mappedTestimonies = response.data.map(t => ({
+          id: t.id,
+          name: t.client_name,
+          rating: t.rating || 5,
+          text: t.content
+        }));
+        setTestimonies(mappedTestimonies);
+      } else {
+        // Fallback if API returns empty
+        setTestimonies(getDefaultTestimonies());
+      }
+    } catch (err) {
+      console.error('Failed to fetch testimonies:', err);
+      // Use default testimonies only on error
+      setTestimonies(getDefaultTestimonies());
+    }
+  };
+
+  const getDefaultTestimonies = () => [
+    { id: 1, name: 'John Smith', rating: 5, text: 'The trading service has been honest, transparent, and consistently efficient.' },
+    { id: 2, name: 'Sarah Johnson', rating: 5, text: 'Best crypto trading platform I have used. The customer support is exceptional.' },
+    { id: 3, name: 'Michael Chen', rating: 5, text: 'The real-time data and low fees make this my go-to platform.' }
+  ];
 
   if (!testimonies.length) {
     return null;
   }
 
-  // Duplicate testimonies for seamless loop
+  // Duplicate testimonies for seamless infinite scroll loop
   const repeatedTestimonies = [...testimonies, ...testimonies];
 
   return (
