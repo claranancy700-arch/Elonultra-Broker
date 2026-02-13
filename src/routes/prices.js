@@ -1,6 +1,58 @@
 const express = require('express');
 const router = express.Router();
 
+// Fallback prices when CoinGecko is unavailable
+const FALLBACK_PRICES = {
+  bitcoin: { usd: 43500 },
+  ethereum: { usd: 2300 },
+  binancecoin: { usd: 600 },
+  ripple: { usd: 2.50 },
+  cardano: { usd: 1.15 },
+  solana: { usd: 140 },
+  polkadot: { usd: 9.50 },
+  dogecoin: { usd: 0.38 },
+  'matic-network': { usd: 1.10 },
+  'avalanche-2': { usd: 38 },
+  cosmos: { usd: 11.50 },
+  arbitrum: { usd: 1.85 },
+  optimism: { usd: 2.80 },
+  litecoin: { usd: 135 },
+  'bitcoin-cash': { usd: 530 },
+  stellar: { usd: 0.28 },
+  chainlink: { usd: 28 },
+  uniswap: { usd: 18 },
+  aave: { usd: 380 },
+  makerdao: { usd: 2800 },
+  'curve-dao-token': { usd: 1.08 },
+  synthetix: { usd: 5.50 },
+  gmx: { usd: 62 },
+  dydx: { usd: 2.50 },
+  'lido-dao': { usd: 3.80 },
+  sui: { usd: 3.50 },
+  aptos: { usd: 10.50 },
+  near: { usd: 6.50 },
+  celestia: { usd: 7.20 },
+  mantle: { usd: 0.92 },
+  'internet-computer': { usd: 14.50 },
+  'hedera-hashgraph': { usd: 0.14 },
+  jupiter: { usd: 1.20 },
+  raydium: { usd: 0.68 },
+  orca: { usd: 1.45 },
+  pepe: { usd: 0.00000897 },
+  'shiba-inu': { usd: 0.0000195 },
+  dogwifcoin: { usd: 3.50 },
+  popcatsolana: { usd: 1.28 },
+  gala: { usd: 0.095 },
+  magic: { usd: 1.35 },
+  blur: { usd: 0.58 },
+  'ethereum-name-service': { usd: 28 },
+  'render-token': { usd: 12.50 },
+  tether: { usd: 1.00 },
+  'usd-coin': { usd: 1.00 },
+  dai: { usd: 1.00 },
+  frax: { usd: 0.98 },
+};
+
 // In-memory cache for prices with more aggressive TTL
 let priceCache = { data: null, expiresAt: 0 };
 const CACHE_TTL = 120 * 1000; // 120 seconds (doubled to be safer)
@@ -172,8 +224,23 @@ router.get('/', async (req, res) => {
         return res.json(priceCache.data);
       }
 
-      // No cache available; return error
-      res.status(503).json({ error: 'Prices unavailable, please try again' });
+      // Last resort: fallback prices instead of 503 error
+      console.warn('[Fallback] CoinGecko unavailable, falling back to hardcoded prices');
+      
+      // Filter fallback prices to only requested symbols
+      const fallbackPrices = {};
+      uniqueIds.forEach(id => {
+        if (FALLBACK_PRICES[id]) {
+          fallbackPrices[id] = FALLBACK_PRICES[id];
+        }
+      });
+      
+      // Cache the fallback prices
+      priceCache.data = fallbackPrices;
+      priceCache.expiresAt = now + MIN_CACHE_TTL;
+      
+      res.set('X-Cache', 'FALLBACK');
+      return res.json(fallbackPrices);
     } finally {
       isFetching = false;
       fetchPromise = null;
@@ -188,7 +255,10 @@ router.get('/', async (req, res) => {
       return res.json(priceCache.data);
     }
 
-    res.status(500).json({ error: 'Failed to fetch prices' });
+    // Ultimate fallback: hardcoded prices
+    console.warn('[Ultimate Fallback] Using hardcoded fallback prices');
+    res.set('X-Cache', 'HARDCODED-FALLBACK');
+    return res.json(FALLBACK_PRICES);
   }
 });
 
