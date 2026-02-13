@@ -459,9 +459,9 @@ router.post('/credit', async (req, res) => {
         [uid, 'deposit', amt, curr, 'completed', reference]
       );
 
-      // If USD, update users.balance, otherwise update portfolio balance column
+      // If USD or USDT, update users.balance; otherwise update portfolio balance column
       const cryptoColumns = { BTC: 'btc_balance', ETH: 'eth_balance', USDT: 'usdt_balance', USDC: 'usdc_balance' };
-      if (curr === 'USD') {
+      if (curr === 'USD' || curr === 'USDT') {
         await client.query('UPDATE users SET balance = COALESCE(balance,0) + $1, portfolio_value = portfolio_value + $1, updated_at = NOW() WHERE id=$2', [amt, uid]);
         
         // Get updated balance and reallocate portfolio

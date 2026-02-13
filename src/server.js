@@ -1,3 +1,12 @@
+// Suppress deprecated util._extend warning (used by pg library internally)
+const originalEmit = process.emit;
+process.emit = function(event, err, ...args) {
+  if (event === 'warning' && err?.code === 'DEP0060') {
+    return;
+  }
+  return originalEmit.apply(process, [event, err, ...args]);
+};
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
