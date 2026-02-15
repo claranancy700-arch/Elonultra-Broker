@@ -30,30 +30,30 @@
 
 html[data-theme="light"] {
   --bg: #ffffff;
-  --card: #f8f9fa;
-  --border: #e5e7eb;
-  --muted: #6b7280;
-  --text: #1f2937;
-  --accent: #e63946;
-  --accent-light: #ff4757;
-  --accent-muted: #ffa850;
+  --card: #e1e5f2;
+  --border: #bfdbf7;
+  --muted: #507a8c;
+  --text: #022b3a;
+  --accent: #1f7a8c;
+  --accent-light: #4a97b0;
+  --accent-muted: #a8c5d4;
   --success: #10b981;
   --danger: #ef4444;
-  --warn: #ffdb00;
+  --warn: #bfdbf7;
   /* RGB values for rgba usage */
   --bg-rgb: 255, 255, 255;
-  --card-rgb: 248, 249, 250;
-  --border-rgb: 229, 231, 235;
-  --text-rgb: 31, 41, 55;
-  --accent-rgb: 230, 57, 70;
-  --accent-light-rgb: 255, 71, 87;
+  --card-rgb: 225, 229, 242;
+  --border-rgb: 191, 219, 247;
+  --text-rgb: 2, 43, 58;
+  --accent-rgb: 31, 122, 140;
+  --accent-light-rgb: 74, 151, 176;
 }
 
 html[data-theme="light"] {
   --bg-rgb: 255, 255, 255;
-  --card-rgb: 248, 249, 250;
-  --text-rgb: 31, 41, 55;
-  --accent-rgb: 230, 57, 70;
+  --card-rgb: 225, 229, 242;
+  --text-rgb: 2, 43, 58;
+  --accent-rgb: 31, 122, 140;
 }
 
 html[data-theme="dark"] {

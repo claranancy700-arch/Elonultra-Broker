@@ -39,54 +39,87 @@ const ParticleBackground = () => {
       );
     });
 
+    // Generate shimmering particles scattered across the canvas
+    const particles = Array.from({ length: 50 }, (_, i) => {
+      const x = Math.random() * 800;
+      const y = Math.random() * 600;
+      const size = Math.random() * 2 + 0.5;
+      const duration = Math.random() * 4000 + 3000;
+      const delay = Math.random() * 2000;
+      const opacity = Math.random() * 0.6 + 0.2;
+      
+      return (
+        <circle
+          key={`particle-${i}`}
+          cx={x}
+          cy={y}
+          r={size}
+          fill="url(#shimmerGradient)"
+          opacity={opacity}
+          style={{
+            animation: `shimmer ${duration}ms ease-in-out infinite`,
+            animationDelay: `${delay}ms`,
+          }}
+        />
+      );
+    });
+
     return (
       <svg id="particle-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" style={{ backgroundColor: 'transparent' }}>
         <defs>
-          {/* Use vivid palette from attachment: yellow, orange, darker red, coral */}
+          {/* Shimmering gradient using teal and pale-sky colors */}
+          <radialGradient id="shimmerGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#4a97b0" stopOpacity="0.8" />
+            <stop offset="70%" stopColor="#1f7a8c" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#bfdbf7" stopOpacity="0" />
+          </radialGradient>
+          
+          {/* Sun ray gradients */}
           <linearGradient id="fadeRay1" gradientUnits="userSpaceOnUse" x1="120" y1="80" x2="800" y2="80">
-            <stop offset="0%" stopColor="#FFD523" stopOpacity="0" />
-            <stop offset="20%" stopColor="#FFD523" stopOpacity="1" />
-            <stop offset="60%" stopColor="#FFA85A" stopOpacity="0.75" />
-            <stop offset="100%" stopColor="#C93A3A" stopOpacity="0" />
+            <stop offset="0%" stopColor="#bfdbf7" stopOpacity="0" />
+            <stop offset="20%" stopColor="#4a97b0" stopOpacity="0.6" />
+            <stop offset="60%" stopColor="#1f7a8c" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#507a8c" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="fadeRay2" gradientUnits="userSpaceOnUse" x1="120" y1="80" x2="800" y2="160">
-            <stop offset="0%" stopColor="#FFD523" stopOpacity="0" />
-            <stop offset="25%" stopColor="#FFA85A" stopOpacity="1" />
-            <stop offset="65%" stopColor="#C93A3A" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#FF5151" stopOpacity="0" />
+            <stop offset="0%" stopColor="#bfdbf7" stopOpacity="0" />
+            <stop offset="25%" stopColor="#1f7a8c" stopOpacity="0.5" />
+            <stop offset="65%" stopColor="#507a8c" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#4a97b0" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="fadeRay3" gradientUnits="userSpaceOnUse" x1="120" y1="80" x2="20" y2="300">
-            <stop offset="0%" stopColor="#FFD523" stopOpacity="0" />
-            <stop offset="20%" stopColor="#FFD523" stopOpacity="1" />
-            <stop offset="60%" stopColor="#FFA85A" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#C93A3A" stopOpacity="0" />
+            <stop offset="0%" stopColor="#bfdbf7" stopOpacity="0" />
+            <stop offset="20%" stopColor="#4a97b0" stopOpacity="0.5" />
+            <stop offset="60%" stopColor="#1f7a8c" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#507a8c" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="fadeRay4" gradientUnits="userSpaceOnUse" x1="120" y1="80" x2="-100" y2="120">
-            <stop offset="0%" stopColor="#FFD523" stopOpacity="0" />
-            <stop offset="25%" stopColor="#FFA85A" stopOpacity="1" />
-            <stop offset="60%" stopColor="#C93A3A" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#FF5151" stopOpacity="0" />
+            <stop offset="0%" stopColor="#bfdbf7" stopOpacity="0" />
+            <stop offset="25%" stopColor="#1f7a8c" stopOpacity="0.4" />
+            <stop offset="60%" stopColor="#507a8c" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#4a97b0" stopOpacity="0" />
           </linearGradient>
           <filter id="sunGlow">
             <feGaussianBlur in="SourceGraphic" stdDeviation="12" />
             <feComponentTransfer>
-              <feFuncA type="linear" slope="0.9" />
+              <feFuncA type="linear" slope="0.6" />
             </feComponentTransfer>
           </filter>
         </defs>
         <style>{`
           @keyframes rayRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          @keyframes rayShimmer { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+          @keyframes rayShimmer { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+          @keyframes shimmer { 
+            0%, 100% { opacity: 0.2; transform: scale(1); } 
+            50% { opacity: 0.7; transform: scale(1.3); } 
+          }
           /* very slow rotation */
           #rayContainer { animation: rayRotate 180000ms linear infinite; transform-origin: 120px 80px; filter: url(#sunGlow); }
           .ray { animation: rayShimmer 14000ms ease-in-out infinite; }
         `}</style>
 
-        <g id="rayContainer">{rays}
-          {DEBUG_FORCE_VISIBLE && (
-            <path d={`M 120,80 L 420,80 L 120,500 Z`} fill="#ff00ff" opacity={0.95} />
-          )}
-        </g>
+        <g id="rayContainer">{rays}</g>
+        {particles}
       </svg>
     );
   };

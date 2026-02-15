@@ -138,18 +138,22 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     app.use(express.static(frontendDist));
   }
 
-  // Always serve static assets (js, css, images) from root for legacy HTML files
-  // These won't conflict with React SPA routes since they're in specific directories
+  // CRITICAL: Always serve static assets from root (js, css, images) 
+  // These are needed for legacy HTML files AND for frontend/public files
+  // Do this BEFORE the catch-all to ensure assets load properly
   const webRoot = path.join(__dirname, '..');
-  app.use('/js', express.static(path.join(webRoot, 'js')));
-  app.use('/css', express.static(path.join(webRoot, 'css')));
+  app.use('/js', express.static(path.join(webRoot, 'js'), { 
+    setHeaders: (res) => res.set('Cache-Control', 'no-cache, no-store, must-revalidate') 
+  }));
+  app.use('/css', express.static(path.join(webRoot, 'css'), { 
+    setHeaders: (res) => res.set('Cache-Control', 'no-cache, no-store, must-revalidate') 
+  }));
   app.use('/images', express.static(path.join(webRoot, 'images')));
 
-  // Serve old HTML files from project root for backwards compatibility
-  // Only register legacy static files if there is NO React build present.
-  // This prevents legacy .html files (login.html, dashboard.html) from
-  // shadowing the React SPA routes when frontend/dist exists.
+  // Serve legacy HTML files from root (backward compatibility)
+  // This is ONLY if React SPA is not built
   if (!fs.existsSync(frontendDist)) {
+    console.log('⚙️  No React build found - serving legacy HTML files');
     app.use(express.static(webRoot));
   }
 

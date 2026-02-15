@@ -170,13 +170,13 @@ export const DashboardPage = () => {
     <div className="dashboard-page">
       {portfolioWarning && (
         <div style={{
-          background: 'rgba(251, 191, 36, 0.08)',
-          border: '1px solid rgba(251, 191, 36, 0.3)',
+          background: 'rgba(31, 122, 140, 0.08)',
+          border: '1px solid rgba(31, 122, 140, 0.3)',
           borderRadius: '6px',
           padding: '12px 14px',
           marginBottom: '16px',
           fontSize: '13px',
-          color: 'rgba(251, 191, 36, 0.9)',
+          color: 'rgba(31, 122, 140, 0.9)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -185,9 +185,9 @@ export const DashboardPage = () => {
           <button 
             onClick={handleRetry}
             style={{ 
-              background: 'rgba(251, 191, 36, 0.2)',
-              color: 'rgba(251, 191, 36, 0.9)',
-              border: '1px solid rgba(251, 191, 36, 0.3)',
+              background: 'rgba(31, 122, 140, 0.2)',
+              color: 'rgba(31, 122, 140, 0.9)',
+              border: '1px solid rgba(31, 122, 140, 0.3)',
               borderRadius: '4px',
               padding: '4px 10px',
               cursor: 'pointer',
@@ -222,7 +222,7 @@ export const DashboardPage = () => {
 
         <div className="card">
           <div className="card-title">24h Change</div>
-          <div className="card-value" style={{ color: portfolio?.change_24h >= 0 ? 'var(--accent-light)' : '#ff4444' }}>
+          <div className="card-value" style={{ color: portfolio?.change_24h >= 0 ? 'var(--accent-light)' : 'var(--danger)' }}>
             {portfolio?.change_24h >= 0 ? '+' : ''}{portfolio?.change_24h?.toFixed(2) ?? '0.00'}%
           </div>
           <div className={`card-change ${portfolio?.change_24h >= 0 ? 'positive' : 'negative'}`}>

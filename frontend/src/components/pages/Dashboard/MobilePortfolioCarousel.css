@@ -183,6 +183,15 @@ html[data-theme="light"] .carousel-card {
   text-shadow: 0 6px 18px rgba(107,114,128,0.12);
 }
 
+/* Light theme override for metallic - teal metallic effect */
+html[data-theme="light"] .metallic {
+  background: linear-gradient(135deg, #4a97b0 0%, #1f7a8c 50%, #0d4a5a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 8px rgba(31, 122, 140, 0.2);
+}
+
 /* Bold metallic change badge */
 .change-badge.metallic {
   display: inline-flex;
