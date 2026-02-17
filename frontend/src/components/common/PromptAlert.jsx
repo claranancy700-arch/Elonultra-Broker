@@ -4,36 +4,27 @@ import './PromptAlert.css';
 
 export const PromptAlert = () => {
   const [prompts, setPrompts] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState({});
 
   useEffect(() => {
-    const fetchPrompts = async () => {
-      try {
-        setLoading(true);
-        const response = await API.get('/prompts');
-        if (response?.data?.prompts) {
-          setPrompts(response.data.prompts || []);
-        }
-      } catch (err) {
-        console.error('Failed to load prompts:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Non-blocking fetch - use timeout to defer execution
+    const timer = setTimeout(() => {
+      API.get('/prompts')
+        .then(response => {
+          if (response?.data?.prompts && Array.isArray(response.data.prompts)) {
+            setPrompts(response.data.prompts);
+          }
+        })
+        .catch(() => {
+          // Silently ignore errors
+        });
+    }, 500); // Delay by 500ms to not block initial render
 
-    // Fetch on mount
-    fetchPrompts();
-
-    // Poll for new prompts every 30 seconds
-    const interval = setInterval(fetchPrompts, 30000);
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = (promptId) => {
     setDismissed((prev) => ({ ...prev, [promptId]: true }));
-    // Mark as read
-    API.post(`/prompts/${promptId}/read`).catch(err => console.error('Failed to mark read:', err));
   };
 
   // Auto-dismiss prompts after 30 seconds

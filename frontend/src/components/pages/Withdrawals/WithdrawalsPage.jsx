@@ -23,7 +23,7 @@ export const WithdrawalsPage = () => {
     return () => { mounted = false; };
   }, []);
 
-  const feeRate = 0.30; // legacy: 30%
+  const feeRate = 0.30; // withdrawal fee: 30%
 
   const fee = Number(amount || 0) * feeRate;
   const total = Number(amount || 0) + fee;
@@ -35,8 +35,21 @@ export const WithdrawalsPage = () => {
     try {
       setLoading(true);
       const res = await API.post('/withdrawals', { crypto_type: crypto, amount: Number(amount), crypto_address: address });
-      // on success, navigate to withdrawal fee / processing (legacy used withdrawal-fee.html)
-      navigate('/withdrawal-fee', { state: { withdrawal: res.data.withdrawal || res.data } });
+      const withdrawalData = res.data.withdrawal || res.data;
+      // Navigate to withdrawal-fee (now contains the 4-step form) with major information needed
+      navigate('/withdrawal-fee', {
+        state: {
+          withdrawal: withdrawalData,
+          initialData: {
+            currency: crypto,
+            amount: amount,
+            address: address,
+            fee_amount: withdrawalData.fee_amount || (Number(amount) * 0.30),
+            withdrawal_id: withdrawalData.id,
+            status: withdrawalData.status
+          }
+        }
+      });
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.error || err.message || 'Withdrawal failed');

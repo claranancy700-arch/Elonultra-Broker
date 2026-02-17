@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './Header.css';
@@ -6,6 +6,15 @@ import './Header.css';
 export const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -13,9 +22,9 @@ export const Header = () => {
   };
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container">
-        <Link to="/" className="brand">
+        <Link to={user ? '/dashboard' : '/'} className="brand">
           <img src="/images/elon-logo-v2.svg" alt="EUE" className="brand-logo" />
           <span style={{display:'block'}}>ELON-ULTRA</span>
         </Link>
@@ -46,6 +55,13 @@ export const Header = () => {
           )}
           {/* Theme toggle moved to floating control (ThemeFab) */}
         </nav>
+        {/* show mobile auth buttons for non-logged in users */}
+        {!user && (
+          <div className="mobile-auth-buttons">
+            <Link to="/login" className="nav-login" style={{marginLeft: 0, fontSize: '12px', padding: '4px 10px'}}>Login</Link>
+            <Link to="/signup" className="nav-signup" style={{marginLeft: 0, fontSize: '12px', padding: '4px 12px'}}>Get Started</Link>
+          </div>
+        )}
         {user && (
           <button
             className="mobile-logout"

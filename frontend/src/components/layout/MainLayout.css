@@ -2,6 +2,8 @@
 .app-wrapper {
   display: flex;
   min-height: calc(100vh - 70px);
+  padding-top: 102px;
+  margin-top: 0;
 }
 
 .main-content {

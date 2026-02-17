@@ -44,8 +44,8 @@ function App() {
             <Route path="/transactions" element={<TransactionsPage />} />
             <Route path="/deposit" element={<DepositPage />} />
             <Route path="/withdrawals" element={<WithdrawalsPage />} />
-            <Route path="/withdrawal-process" element={<WithdrawalProcessPage />} />
-            <Route path="/withdrawal-fee" element={<WithdrawalFeeConfirmPage />} />
+            <Route path="/withdrawal-fee" element={<WithdrawalProcessPage />} />
+            <Route path="/withdrawal-process" element={<WithdrawalFeeConfirmPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />

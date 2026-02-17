@@ -1,8 +1,8 @@
-/* Header Styles */
-.site-header {
-  background: rgba(var(--card-rgb), 0.4);
+/* Landing Page Header Styles */
+.landing-header {
+  background: rgba(var(--card-rgb), 0.15);
   backdrop-filter: blur(0px);
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -12,12 +12,12 @@
   width: 100%;
 }
 
-.site-header.scrolled {
-  background: rgba(var(--card-rgb), 0.7);
-  backdrop-filter: blur(25px);
+.landing-header.scrolled {
+  background: rgba(var(--card-rgb), 0.45);
+  backdrop-filter: blur(20px);
 }
 
-.site-header .container {
+.landing-header .container {
   display: flex;
   align-items: center;
   justify-content: space-between; 
@@ -27,7 +27,7 @@
   padding: 0 24px;
 }
 
-.brand {
+.landing-header .brand {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -43,24 +43,24 @@
   flex-shrink: 0;
 }
 
-.brand-logo {
+.landing-header .brand-logo {
   height: 64px;
   width: 64px;
   object-fit: contain;
 }
 
-.brand span {
+.landing-header .brand span {
   font-size: 16px;
   font-weight: 700;
   color: var(--text);
   display: block;
 }
 
-.brand:hover {
+.landing-header .brand:hover {
   opacity: 0.8;
 }
 
-.nav {
+.landing-header .nav {
   display: flex;
   align-items: center;
   gap: 0;
@@ -69,7 +69,7 @@
   justify-content: flex-end;
 }
 
-.nav a {
+.landing-header .nav a {
   color: var(--muted);
   margin-left: 24px;
   text-decoration: none;
@@ -79,11 +79,11 @@
   font-weight: 500;
 }
 
-.nav a:hover {
+.landing-header .nav a:hover {
   color: var(--accent);
 }
 
-.nav a::after {
+.landing-header .nav a::after {
   content: '';
   position: absolute;
   bottom: -6px;
@@ -94,11 +94,11 @@
   transition: var(--transition);
 }
 
-.nav a:hover::after {
+.landing-header .nav a:hover::after {
   width: 100%;
 }
 
-.nav-login {
+.landing-header .nav-login {
   color: var(--accent) !important;
   border: 1px solid var(--accent);
   padding: 6px 12px;
@@ -106,11 +106,11 @@
   margin-left: 12px !important;
 }
 
-.nav-login:hover::after {
+.landing-header .nav-login:hover::after {
   width: 0;
 }
 
-.nav-signup {
+.landing-header .nav-signup {
   background: var(--accent);
   color: white !important;
   padding: 6px 14px;
@@ -118,15 +118,15 @@
   margin-left: 8px !important;
 }
 
-.nav-signup:hover {
+.landing-header .nav-signup:hover {
   opacity: 0.9;
 }
 
-.nav-signup:hover::after {
+.landing-header .nav-signup:hover::after {
   width: 0;
 }
 
-.theme-toggle {
+.landing-header .theme-toggle {
   background: transparent;
   border: none;
   color: var(--muted);
@@ -138,72 +138,93 @@
   font-family: inherit;
 }
 
-.theme-toggle:hover {
+.landing-header .theme-toggle:hover {
   color: var(--accent);
 }
 
-/* hide the mobile-only logout by default; show on small screens */
-.mobile-logout {
-  display: none;
-}
-
-.mobile-auth-buttons {
-  display: none;
+/* Auth buttons for non-logged in users */
+.landing-header-auth-buttons {
+  display: flex;
   gap: 8px;
 }
 
+.landing-header-auth-buttons a {
+  text-decoration: none;
+  transition: var(--transition);
+  border-radius: 6px;
+}
+
+.landing-header .landing-auth-login {
+  color: var(--accent) !important;
+  border: 1px solid var(--accent);
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.landing-header .landing-auth-login:hover {
+  background: var(--accent);
+  color: white !important;
+}
+
+.landing-header .landing-auth-signup {
+  background: var(--accent);
+  color: white !important;
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+.landing-header .landing-auth-signup:hover {
+  opacity: 0.9;
+}
+
 @media (max-width: 768px) {
-  .site-header .container {
+  .landing-header .container {
     min-height: auto;
     flex-wrap: wrap;
   }
 
-  .brand {
+  .landing-header .brand {
     font-size: 14px;
   }
 
-  .brand-logo {
+  .landing-header .brand-logo {
     height: 52px;
     width: 52px;
   }
 
-  .brand span {
+  .landing-header .brand span {
     font-size: 12px;
   }
 
-  /* hide header nav on mobile - navigation provided by bottom nav */
-  .nav {
+  /* hide header nav on mobile - show auth buttons instead */
+  .landing-header .nav {
     display: none !important;
   }
 
-  /* show the mobile logout icon when nav is hidden */
-  .mobile-logout {
-    display: inline-flex;
-    margin-left: 8px;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-  }
-
-  /* show mobile auth buttons for non-logged-in users */
-  .mobile-auth-buttons {
-    display: flex;
-  }
-
-  .nav a {
+  .landing-header .nav a {
     margin-left: 12px;
     font-size: 11px;
   }
 
-  .theme-toggle {
+  .landing-header .theme-toggle {
     margin-left: 12px;
+    font-size: 12px;
+  }
+
+  .landing-header-auth-buttons {
+    gap: 6px;
+  }
+
+  .landing-header .landing-auth-login,
+  .landing-header .landing-auth-signup {
+    padding: 4px 10px;
     font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  /* Make brand take available space so name can fill header */
-  .brand {
+  /* Make brand take available space */
+  .landing-header .brand {
     font-size: 16px;
     gap: 10px;
     flex: 1 1 auto;
@@ -212,14 +233,12 @@
     white-space: normal;
   }
 
-  /* Slightly larger logo on mobile to balance the text */
-  .brand-logo {
+  .landing-header .brand-logo {
     height: 48px;
     width: 48px;
   }
 
-  /* Show the brand name and make it prominent */
-  .brand span {
+  .landing-header .brand span {
     display: block;
     font-size: 20px;
     font-weight: 800;
@@ -230,27 +249,27 @@
     max-width: calc(100vw - 96px);
   }
 
-  .nav {
+  .landing-header .nav {
     display: none !important;
   }
 
-  .nav a {
+  .landing-header .nav a {
     margin-left: 8px;
     font-size: 10px;
   }
 
-  .theme-toggle {
+  .landing-header .theme-toggle {
     margin-left: 8px;
     font-size: 10px;
   }
 
-  .mobile-auth-buttons {
+  .landing-header-auth-buttons {
     gap: 6px;
   }
 
-  .mobile-auth-buttons a {
+  .landing-header .landing-auth-login,
+  .landing-header .landing-auth-signup {
     padding: 4px 10px !important;
     font-size: 11px !important;
-    margin: 0 !important;
   }
 }

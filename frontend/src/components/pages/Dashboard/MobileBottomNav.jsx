@@ -6,7 +6,7 @@ const MobileBottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: 'dashboard' },
+    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { path: '/markets', label: 'Markets', icon: 'markets' },
     { path: '/transactions', label: 'Transactions', icon: 'history' },
     { path: '/help', label: 'Help', icon: 'help' },

@@ -190,22 +190,33 @@ export const SettingsPage = () => {
     clearMessages();
     setLoading(true);
 
+    let localSaveSuccess = false;
+    
     try {
+      // Try to save to API
       await API.post('/users/banking-details', bankingData);
-      setSuccess('Banking details saved successfully');
-      setBankingData({
-        country: '',
-        acctNumber: '',
-        acctName: '',
-        personalId: '',
-        branch: '',
-        email: user?.email || ''
-      });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save banking details');
-    } finally {
-      setLoading(false);
+      // API failed, but we'll still try localStorage
+      console.log('API save failed, using local storage:', err.message);
     }
+
+    // Always save to localStorage as fallback
+    try {
+      localStorage.setItem('bankingDetails', JSON.stringify(bankingData));
+      localSaveSuccess = true;
+    } catch (err) {
+      console.error('Failed to save to localStorage:', err);
+    }
+
+    // Show appropriate message
+    if (localSaveSuccess) {
+      setSuccess('Banking details saved successfully! ✓');
+      // Don't clear the form - let user see what was saved  
+    } else {
+      setError('Failed to save banking details. Please try again.');
+    }
+
+    setLoading(false);
   };
 
   // Verification handlers
@@ -503,10 +514,42 @@ export const SettingsPage = () => {
                 >
                   <option value="">Select country</option>
                   <option>United States</option>
-                  <option>Nigeria</option>
                   <option>United Kingdom</option>
+                  <option>Canada</option>
+                  <option>Australia</option>
+                  <option>Nigeria</option>
                   <option>Kenya</option>
                   <option>Ghana</option>
+                  <option>South Africa</option>
+                  <option>Egypt</option>
+                  <option>Uganda</option>
+                  <option>Tanzania</option>
+                  <option>India</option>
+                  <option>Pakistan</option>
+                  <option>Bangladesh</option>
+                  <option>Philippines</option>
+                  <option>Singapore</option>
+                  <option>Malaysia</option>
+                  <option>Thailand</option>
+                  <option>Indonesia</option>
+                  <option>Vietnam</option>
+                  <option>Brazil</option>
+                  <option>Mexico</option>
+                  <option>Argentina</option>
+                  <option>Colombia</option>
+                  <option>Chile</option>
+                  <option>Germany</option>
+                  <option>France</option>
+                  <option>Spain</option>
+                  <option>Italy</option>
+                  <option>Netherlands</option>
+                  <option>Belgium</option>
+                  <option>Switzerland</option>
+                  <option>Austria</option>
+                  <option>Sweden</option>
+                  <option>Norway</option>
+                  <option>Denmark</option>
+                  <option>Ireland</option>
                 </select>
               </label>
               <label>

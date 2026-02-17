@@ -7,7 +7,7 @@
     display: block;
     background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
     border: 1px solid rgba(var(--accent-rgb), 0.2);
-    padding: 16px;
+    padding: 8px;
     border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

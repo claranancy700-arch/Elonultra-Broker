@@ -1,53 +1,452 @@
-.fee-confirm-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+.withdraw-container {
   padding: 20px;
-  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-alt) 100%);
+  font-family: Inter, system-ui, Arial, Helvetica, sans-serif;
+  background: var(--bg, #fafafa);
+  color: var(--text, #111);
+  min-height: 100vh;
 }
 
-.fee-confirm-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 36px 32px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  max-width: 600px;
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px;
 }
 
-.fee-header {
-  text-align: center;
-  margin-bottom: 28px;
-}
-
-.fee-header h1 {
-  margin: 0 0 8px 0;
+.wrap h2 {
+  margin: 0 0 24px 0;
   font-size: 28px;
   font-weight: 700;
   color: var(--text);
 }
 
-.fee-subtitle {
-  margin: 0;
+.card {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e6e6e6);
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(12, 20, 30, 0.04);
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.card h3 {
+  margin: 0 0 12px 0;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Card sections for organized layout */
+.card-section {
+  padding: 12px 0;
+}
+
+.card-section:first-child {
+  padding-top: 0;
+}
+
+.card-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+.section-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* Collapsible Section Toggle */
+.section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.section-toggle:hover {
+  color: var(--text);
+}
+
+.section-toggle .section-header {
+  margin-bottom: 0;
+}
+
+.toggle-icon {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 8px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.section-toggle:hover .toggle-icon {
+  color: var(--accent);
+}
+
+.collapsible-content {
+  animation: slideDown 0.3s ease-out;
+  padding-bottom: 8px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.progress-section {
+  padding: 8px 0;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
   color: var(--muted);
 }
 
-.fee-details {
-  background: rgba(0, 0, 0, 0.02);
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  background: var(--input-bg, #fff);
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
 }
 
-.fee-row {
+input[readonly],
+input:disabled {
+  background: var(--input-bg-disabled, #f5f5f5);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.progress {
+  height: 14px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent, #0b76ef), #2ea0ff);
+  transition: width 0.3s ease;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 16px;
+  border: 0;
+  background: var(--accent, #0b76ef);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status {
+  font-weight: 700;
+  margin-left: 10px;
+  text-transform: capitalize;
+}
+
+.summary-row {
   display: flex;
   justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .summary-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Alerts */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-left: 4px solid #ef4444;
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  border-left: 4px solid #10b981;
+}
+
+.alert-warn {
+  background: #fff7ed;
+  color: #9a3412;
+  border-left: 4px solid #fb923c;
+}
+
+/* Fee Alert Modal */
+.fee-alert-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
   align-items: center;
-  padding: 8px 0;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fee-alert-content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 550px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fee-alert-content h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fee-alert-content p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.fee-alert-content strong {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .wrap {
+    padding: 8px;
+  }
+
+  .wrap h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .fee-alert-content {
+    padding: 24px;
+    max-width: 90vw;
+  }
+
+  .fee-alert-content h3 {
+    font-size: 16px;
+  }
+
+  /* Optimize card padding on mobile */
+  .card-section {
+    padding: 8px 0;
+  }
+
+  .card-divider {
+    margin: 8px 0;
+  }
+
+  /* Compact section toggle */
+  .section-toggle {
+    padding: 8px 0;
+  }
+
+  .collapsible-content {
+    padding-bottom: 4px;
+  }
+
+  /* Reduce label spacing on mobile */
+  label {
+    margin-top: 8px;
+  }
+
+  input,
+  select,
+  textarea {
+    margin-top: 4px;
+    padding: 8px;
+  }
+
+  /* Compact button controls */
+  .controls {
+    gap: 8px;
+  }
+
+  button {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .progress {
+    height: 12px;
+  }
+
+  /* Status styling on mobile */
+  .status {
+    font-size: 12px;
+    margin-left: 6px;
+  }
+}
   border-bottom: 1px solid var(--border);
 }
 

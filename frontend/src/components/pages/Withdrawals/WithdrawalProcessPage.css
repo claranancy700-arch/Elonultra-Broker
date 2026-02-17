@@ -279,6 +279,286 @@
   border-left: 4px solid var(--error, #c00);
 }
 
+/* Step 4: Payment Styles */
+.payment-summary {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.summary-item .label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.summary-item .value {
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.summary-item .value.accent {
+  color: #fb923c;
+}
+
+.summary-item.total {
+  font-size: 16px;
+  padding-top: 12px;
+}
+
+.summary-item.total .value {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.summary-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+.deposit-instruction {
+  background: rgba(11, 118, 239, 0.05);
+  border: 1px solid rgba(11, 118, 239, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.deposit-instruction h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.deposit-address-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.address-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.address-display code {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--text);
+  word-break: break-all;
+  border: 1px solid var(--border);
+}
+
+.btn-copy {
+  padding: 8px 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-copy:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-copy:active {
+  transform: translateY(0);
+}
+
+.payment-notice {
+  background: rgba(0, 0, 0, 0.02);
+  border-left: 3px solid var(--accent);
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.payment-notice strong {
+  color: var(--accent);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.subtitle {
+  margin: 0 0 20px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Payment Progress Styles */
+.payment-progress-section {
+  background: rgba(11, 118, 239, 0.05);
+  border: 1px solid rgba(11, 118, 239, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.progress-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.progress-percent {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #2ea0ff);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(11, 118, 239, 0.4);
+}
+
+.progress-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Payment Prompt Modal */
+.payment-prompt-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.payment-prompt {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prompt-icon {
+  font-size: 48px;
+  color: #10b981;
+  margin-bottom: 16px;
+  animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.payment-prompt h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.payment-prompt p {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.payment-prompt .btn {
+  margin: 0;
+}
+
 /* Mobile Responsive */
 @media (max-width: 600px) {
   .withdrawal-process-card {
@@ -319,5 +599,34 @@
 
   .btn {
     flex: 1;
+  }
+
+  .address-display {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .address-display code {
+    font-size: 11px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  .btn-copy {
+    width: 100%;
+    text-align: center;
+  }
+
+  .deposit-instruction {
+    padding: 16px;
+  }
+
+  .payment-summary {
+    padding: 12px;
+  }
+
+  .summary-item {
+    padding: 8px 0;
+    font-size: 13px;
   }
 }
