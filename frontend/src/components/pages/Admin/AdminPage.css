@@ -67,6 +67,81 @@
   font-size: 24px;
 }
 
+/* Wrapper for legacy admin HTML injected into React admin page */
+.legacy-admin-wrapper {
+  width: 100%;
+  min-height: calc(100vh - 0px);
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 0;
+  margin: 0 auto;
+}
+
+/* Limit wildcard overrides to box-sizing only (avoid breaking legacy layouts) */
+.legacy-admin-wrapper * {
+  box-sizing: border-box !important;
+}
+
+/* Common legacy layout containers to override fixed widths */
+.legacy-admin-wrapper .wrap,
+.legacy-admin-wrapper .container,
+.legacy-admin-wrapper #wrap,
+.legacy-admin-wrapper #container,
+.legacy-admin-wrapper .admin-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 12px !important;
+}
+
+/* Make tables and panels scroll horizontally inside wrapper */
+.legacy-admin-wrapper .table-wrapper,
+.legacy-admin-wrapper .admin-table,
+.legacy-admin-wrapper table {
+  width: 100% !important;
+  overflow: auto !important;
+}
+
+/* Make the legacy page container fill the React wrapper */
+.legacy-admin-wrapper .page-container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 12px !important;
+  margin: 0 !important;
+}
+
+/* Make app layout responsive inside the wrapper */
+.legacy-admin-wrapper .app-wrapper {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  flex-wrap: wrap !important;
+}
+
+/* Sidebar and main content sizing */
+.legacy-admin-wrapper .sidebar {
+  width: 220px !important;
+  flex-shrink: 0 !important;
+}
+.legacy-admin-wrapper .main-content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* Ensure cards and panels use available width */
+.legacy-admin-wrapper .card,
+.legacy-admin-wrapper .cards-grid,
+.legacy-admin-wrapper .card > div {
+  width: 100% !important;
+}
+
+/* Images and media responsive */
+.legacy-admin-wrapper img,
+.legacy-admin-wrapper svg {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
 .admin-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

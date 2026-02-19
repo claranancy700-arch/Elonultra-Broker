@@ -39,6 +39,10 @@ export const SettingsPage = () => {
     email: user?.email || ''
   });
 
+  const [bankSaved, setBankSaved] = useState(false);
+  const [editingBank, setEditingBank] = useState(true);
+  const [bankSource, setBankSource] = useState('none'); // 'none' | 'local' | 'server'
+
   const [verificationData, setVerificationData] = useState({
     email: user?.email || '',
     code: ''
@@ -46,6 +50,7 @@ export const SettingsPage = () => {
 
   const [verificationCodeSent, setVerificationCodeSent] = useState(false);
   const [apiKeys, setApiKeys] = useState([]);
+  const [verificationVerified, setVerificationVerified] = useState(!!user?.emailVerified);
 
   // Load user data on mount
   useEffect(() => {
@@ -55,6 +60,8 @@ export const SettingsPage = () => {
         email: user.email || '',
         phone: user.phone || ''
       });
+      // set verification state from server-provided user
+      setVerificationVerified(!!user.emailVerified);
     }
 
     // load API keys
@@ -67,6 +74,59 @@ export const SettingsPage = () => {
       .catch(() => {});
     return () => { mounted = false; };
   }, [user]);
+
+  // Load saved banking details (API first, fallback to localStorage)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (!mounted) return;
+      try {
+        const res = await API.get('/users/banking-details');
+        if (res?.data) {
+          const data = res.data;
+          if (mounted) {
+            setBankingData(prev => ({ ...prev, ...data }));
+            setBankSaved(true);
+            setEditingBank(false);
+            setBankSource('server');
+            console.log('Loaded banking details from API', data);
+          }
+          return;
+        }
+      } catch (err) {
+        console.log('No banking-details from API, will try localStorage', err && err.message);
+        // ignore, we'll fallback to localStorage
+      }
+
+      try {
+        const raw = localStorage.getItem('bankingDetails');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (mounted && parsed) {
+            setBankingData(prev => ({ ...prev, ...parsed }));
+            setBankSaved(true);
+            setEditingBank(false);
+            setBankSource('local');
+            console.log('Loaded banking details from localStorage', parsed);
+          }
+        }
+      } catch (err) {
+        console.log('Failed to load bankingDetails from localStorage', err && err.message);
+        // ignore parse errors
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const getLocalBankingRaw = () => {
+    try {
+      return localStorage.getItem('bankingDetails') || 'null';
+    } catch (e) {
+      return 'error';
+    }
+  };
 
   const clearMessages = () => {
     setError('');
@@ -191,26 +251,39 @@ export const SettingsPage = () => {
     setLoading(true);
 
     let localSaveSuccess = false;
-    
+    let saveSource = 'none';
+
     try {
       // Try to save to API
-      await API.post('/users/banking-details', bankingData);
+      const res = await API.post('/users/banking-details', bankingData);
+      if (res && res.status >= 200 && res.status < 300) {
+        saveSource = 'server';
+      }
     } catch (err) {
-      // API failed, but we'll still try localStorage
-      console.log('API save failed, using local storage:', err.message);
+      // API failed, we'll fallback to localStorage
+      console.log('API save failed, will fallback to local storage:', err && err.message);
+      saveSource = 'local';
     }
 
-    // Always save to localStorage as fallback
+    // Always save to localStorage as fallback (and for offline)
     try {
       localStorage.setItem('bankingDetails', JSON.stringify(bankingData));
       localSaveSuccess = true;
+      console.log('bankingDetails saved to localStorage', bankingData);
+      if (saveSource === 'none') saveSource = 'local';
     } catch (err) {
+      console.log('Failed to save bankingDetails to localStorage', err && err.message);
       console.error('Failed to save to localStorage:', err);
+      if (saveSource === 'none') saveSource = 'none';
     }
 
     // Show appropriate message
     if (localSaveSuccess) {
+      setBankSource(saveSource);
       setSuccess('Banking details saved successfully! ✓');
+      setBankSaved(true);
+      setEditingBank(false);
+      console.log('bankSaved set true, editingBank set false; source=', saveSource);
       // Don't clear the form - let user see what was saved  
     } else {
       setError('Failed to save banking details. Please try again.');
@@ -237,6 +310,7 @@ export const SettingsPage = () => {
       setSuccess('Email verified successfully');
       setVerificationData({ email: user?.email || '', code: '' });
       setVerificationCodeSent(false);
+      setVerificationVerified(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');
     } finally {
@@ -351,6 +425,7 @@ export const SettingsPage = () => {
                 value={securityData.currentPassword}
                 onChange={(e) => handleSecurityChange('currentPassword', e.target.value)}
                 disabled={loading}
+                autoComplete="current-password"
                 required
               />
             </label>
@@ -362,6 +437,7 @@ export const SettingsPage = () => {
                 value={securityData.newPassword}
                 onChange={(e) => handleSecurityChange('newPassword', e.target.value)}
                 disabled={loading}
+                autoComplete="new-password"
                 required
                 minLength="8"
               />
@@ -374,6 +450,7 @@ export const SettingsPage = () => {
                 value={securityData.confirmPassword}
                 onChange={(e) => handleSecurityChange('confirmPassword', e.target.value)}
                 disabled={loading}
+                autoComplete="new-password"
                 required
                 minLength="8"
               />
@@ -384,6 +461,23 @@ export const SettingsPage = () => {
           </form>
         </div>
       </div>
+
+      {import.meta.env.DEV && (
+        <div style={{ marginTop: 16, padding: 12, border: '1px dashed #ccc', borderRadius: 6 }}>
+          <h3 style={{ margin: '0 0 8px 0' }}>Debug (dev only)</h3>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div><strong>bankSaved:</strong> {String(bankSaved)}</div>
+            <div><strong>bankSource:</strong> {bankSource}</div>
+            <div style={{ minWidth: 220 }}><strong>localStorage:</strong>
+              <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'auto', background: '#f7f7f7', padding: 8 }}>{getLocalBankingRaw()}</pre>
+            </div>
+          </div>
+          <details style={{ marginTop: 8 }}>
+            <summary>bankingData</summary>
+            <pre style={{ maxHeight: 240, overflow: 'auto' }}>{JSON.stringify(bankingData, null, 2)}</pre>
+          </details>
+        </div>
+      )}
 
       {/* Preferences Section */}
       <div className="settings-section">
@@ -501,125 +595,161 @@ export const SettingsPage = () => {
         <h2>Account Banking & Verification</h2>
         <div className="bank-grid">
           <div className="card banking-card">
-            <h3>Banking / Registration</h3>
-            <form className="form banking-form registration-form" onSubmit={handleSaveBankingDetails}>
-              <label>
-                <span>Country</span>
-                <select
-                  name="country"
-                  value={bankingData.country}
-                  onChange={(e) => handleBankingChange('country', e.target.value)}
-                  disabled={loading}
-                  required
-                >
-                  <option value="">Select country</option>
-                  <option>United States</option>
-                  <option>United Kingdom</option>
-                  <option>Canada</option>
-                  <option>Australia</option>
-                  <option>Nigeria</option>
-                  <option>Kenya</option>
-                  <option>Ghana</option>
-                  <option>South Africa</option>
-                  <option>Egypt</option>
-                  <option>Uganda</option>
-                  <option>Tanzania</option>
-                  <option>India</option>
-                  <option>Pakistan</option>
-                  <option>Bangladesh</option>
-                  <option>Philippines</option>
-                  <option>Singapore</option>
-                  <option>Malaysia</option>
-                  <option>Thailand</option>
-                  <option>Indonesia</option>
-                  <option>Vietnam</option>
-                  <option>Brazil</option>
-                  <option>Mexico</option>
-                  <option>Argentina</option>
-                  <option>Colombia</option>
-                  <option>Chile</option>
-                  <option>Germany</option>
-                  <option>France</option>
-                  <option>Spain</option>
-                  <option>Italy</option>
-                  <option>Netherlands</option>
-                  <option>Belgium</option>
-                  <option>Switzerland</option>
-                  <option>Austria</option>
-                  <option>Sweden</option>
-                  <option>Norway</option>
-                  <option>Denmark</option>
-                  <option>Ireland</option>
-                </select>
-              </label>
-              <label>
-                <span>Account Number</span>
-                <input
-                  name="acctNumber"
-                  placeholder="1234567890"
-                  value={bankingData.acctNumber}
-                  onChange={(e) => handleBankingChange('acctNumber', e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <label>
-                <span>Account Name</span>
-                <input
-                  name="acctName"
-                  placeholder="Full name on account"
-                  value={bankingData.acctName}
-                  onChange={(e) => handleBankingChange('acctName', e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <label>
-                <span>Personal ID</span>
-                <input
-                  name="personalId"
-                  placeholder="National ID / Passport"
-                  value={bankingData.personalId}
-                  onChange={(e) => handleBankingChange('personalId', e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <label>
-                <span>Branch</span>
-                <input
-                  name="branch"
-                  placeholder="Branch name or code"
-                  value={bankingData.branch}
-                  onChange={(e) => handleBankingChange('branch', e.target.value)}
-                  disabled={loading}
-                />
-              </label>
-              <label>
-                <span>Email</span>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={bankingData.email}
-                  onChange={(e) => handleBankingChange('email', e.target.value)}
-                  disabled={loading}
-                  required
-                />
-              </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={handleSendVerificationCode}
-                  disabled={loading || verificationCodeSent}
-                >
-                  {verificationCodeSent ? 'Code Sent ✓' : 'Send Verification Code'}
-                </button>
+            {bankSaved && !editingBank ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>Banking / Registration</h3>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        background: bankSource === 'server' ? 'var(--success)' : (bankSource === 'local' ? '#ffd86b' : '#ddd'),
+                        color: bankSource === 'server' ? '#fff' : '#000',
+                        fontSize: 12
+                      }}
+                    >{bankSource === 'server' ? 'Saved (server)' : (bankSource === 'local' ? 'Saved (local)' : 'Saved')}</span>
+                    <button
+                      className="btn btn-small"
+                      onClick={() => { setEditingBank(true); setBankSaved(false); setBankSource('none'); clearMessages(); }}
+                      disabled={loading}
+                    >Edit</button>
+                  </div>
+                </div>
+                <div className="profile-view">
+                  <div className="profile-item"><label>Country</label><p>{bankingData.country || 'Not set'}</p></div>
+                  <div className="profile-item"><label>Account Number</label><p>{bankingData.acctNumber || 'Not set'}</p></div>
+                  <div className="profile-item"><label>Account Name</label><p>{bankingData.acctName || 'Not set'}</p></div>
+                  <div className="profile-item"><label>Personal ID</label><p>{bankingData.personalId || 'Not set'}</p></div>
+                  <div className="profile-item"><label>Branch</label><p>{bankingData.branch || 'Not set'}</p></div>
+                  <div className="profile-item"><label>Email</label><p>{bankingData.email || 'Not set'}</p></div>
+                </div>
               </div>
-              <button type="submit" className="btn" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Banking Details'}
-              </button>
-            </form>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>Banking / Registration</h3>
+                </div>
+                <form className="form banking-form registration-form" onSubmit={handleSaveBankingDetails}>
+                  <label>
+                    <span>Country</span>
+                    <select
+                      name="country"
+                      value={bankingData.country}
+                      onChange={(e) => handleBankingChange('country', e.target.value)}
+                      disabled={loading}
+                      required
+                    >
+                      <option value="">Select country</option>
+                      <option>United States</option>
+                      <option>United Kingdom</option>
+                      <option>Canada</option>
+                      <option>Australia</option>
+                      <option>Nigeria</option>
+                      <option>Kenya</option>
+                      <option>Ghana</option>
+                      <option>South Africa</option>
+                      <option>Egypt</option>
+                      <option>Uganda</option>
+                      <option>Tanzania</option>
+                      <option>India</option>
+                      <option>Pakistan</option>
+                      <option>Bangladesh</option>
+                      <option>Philippines</option>
+                      <option>Singapore</option>
+                      <option>Malaysia</option>
+                      <option>Thailand</option>
+                      <option>Indonesia</option>
+                      <option>Vietnam</option>
+                      <option>Brazil</option>
+                      <option>Mexico</option>
+                      <option>Argentina</option>
+                      <option>Colombia</option>
+                      <option>Chile</option>
+                      <option>Germany</option>
+                      <option>France</option>
+                      <option>Spain</option>
+                      <option>Italy</option>
+                      <option>Netherlands</option>
+                      <option>Belgium</option>
+                      <option>Switzerland</option>
+                      <option>Austria</option>
+                      <option>Sweden</option>
+                      <option>Norway</option>
+                      <option>Denmark</option>
+                      <option>Ireland</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Account Number</span>
+                    <input
+                      name="acctNumber"
+                      placeholder="1234567890"
+                      value={bankingData.acctNumber}
+                      onChange={(e) => handleBankingChange('acctNumber', e.target.value)}
+                      disabled={loading}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Account Name</span>
+                    <input
+                      name="acctName"
+                      placeholder="Full name on account"
+                      value={bankingData.acctName}
+                      onChange={(e) => handleBankingChange('acctName', e.target.value)}
+                      disabled={loading}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Personal ID</span>
+                    <input
+                      name="personalId"
+                      placeholder="National ID / Passport"
+                      value={bankingData.personalId}
+                      onChange={(e) => handleBankingChange('personalId', e.target.value)}
+                      disabled={loading}
+                      required
+                    />
+                  </label>
+                  <label>
+                    <span>Branch</span>
+                    <input
+                      name="branch"
+                      placeholder="Branch name or code"
+                      value={bankingData.branch}
+                      onChange={(e) => handleBankingChange('branch', e.target.value)}
+                      disabled={loading}
+                    />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={bankingData.email}
+                      onChange={(e) => handleBankingChange('email', e.target.value)}
+                      disabled={loading}
+                      required
+                    />
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={handleSendVerificationCode}
+                      disabled={loading || verificationCodeSent}
+                    >
+                      {verificationCodeSent ? 'Code Sent ✓' : 'Send Verification Code'}
+                    </button>
+                  </div>
+                  <button type="submit" className="btn" disabled={loading}>
+                    {loading ? 'Saving...' : 'Save Banking Details'}
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
 
           <div className="card banking-card">
@@ -632,7 +762,7 @@ export const SettingsPage = () => {
                   placeholder="you@example.com"
                   value={verificationData.email}
                   onChange={(e) => handleVerificationChange('email', e.target.value)}
-                  disabled={loading}
+                  disabled={loading || verificationVerified}
                   required
                 />
               </label>
@@ -643,12 +773,12 @@ export const SettingsPage = () => {
                   placeholder="Enter code from email"
                   value={verificationData.code}
                   onChange={(e) => handleVerificationChange('code', e.target.value)}
-                  disabled={loading}
+                  disabled={loading || verificationVerified}
                   required
                 />
               </label>
-              <button type="submit" className="btn" disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify Email'}
+              <button type="submit" className="btn" disabled={loading || verificationVerified}>
+                {verificationVerified ? 'Verified ✓' : (loading ? 'Verifying...' : 'Verify Email')}
               </button>
             </form>
           </div>
@@ -670,3 +800,4 @@ export const SettingsPage = () => {
     </div>
   );
 };
+

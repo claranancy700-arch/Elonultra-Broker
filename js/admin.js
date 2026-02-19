@@ -1310,6 +1310,70 @@ async function deleteDeposit(depositId) {
   }
 }
 
+
+// Approve transaction (deposit or withdrawal)
+async function approveTransaction(id, type) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('Approve this ' + type + '?')) return;
+  try {
+    let url, reloadFn;
+    if (type === 'deposit') {
+      url = baseApi + `/admin/deposits/${id}/approve`;
+      reloadFn = loadAdminDeposits;
+    } else if (type === 'withdrawal') {
+      url = baseApi + `/admin/withdrawals/${id}/approve`;
+      reloadFn = loadWithdrawals;
+    } else {
+      throw new Error('Unknown transaction type');
+    }
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approvedBy: 'admin' })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'approval failed');
+    alert('✅ ' + type.charAt(0).toUpperCase() + type.slice(1) + ' approved successfully!');
+    await reloadFn();
+  } catch (err) {
+    console.error('Approve ' + type + ' error:', err);
+    alert('❌ Failed to approve ' + type + ': ' + err.message);
+  }
+}
+
+// Delete transaction (deposit or withdrawal)
+async function deleteTransaction(id, type) {
+  const key = adminKeyInput.value.trim();
+  if (!key) return alert('Admin key required');
+  if (!confirm('⚠️ DELETE this ' + (type || 'transaction') + ' permanently?')) return;
+  try {
+    let url, reloadFn;
+    if (type === 'deposit') {
+      url = baseApi + `/admin/deposits/${id}`;
+      reloadFn = loadAdminDeposits;
+    } else if (type === 'withdrawal') {
+      url = baseApi + `/admin/withdrawals/${id}`;
+      reloadFn = loadWithdrawals;
+    } else {
+      // fallback: try both
+      url = baseApi + `/admin/transactions/${id}`;
+      reloadFn = () => { loadAdminDeposits(); loadWithdrawals(); };
+    }
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'delete failed');
+    alert('✅ ' + (type || 'Transaction').charAt(0).toUpperCase() + (type || 'Transaction').slice(1) + ' deleted');
+    await reloadFn();
+  } catch (err) {
+    console.error('Delete ' + (type || 'transaction') + ' error:', err);
+    alert('❌ Failed to delete ' + (type || 'transaction') + ': ' + err.message);
+  }
+}
+
 // Expose deposit/withdrawal functions globally
 window.completeDeposit = completeDeposit;
 window.failDeposit = failDeposit;
@@ -1317,6 +1381,8 @@ window.deleteDeposit = deleteDeposit;
 window.completeWithdrawal = completeWithdrawal;
 window.failWithdrawal = failWithdrawal;
 window.deleteWithdrawal = deleteWithdrawal;
+window.approveTransaction = approveTransaction;
+window.deleteTransaction = deleteTransaction;
 
 // Wire tab switching for transactions
 document.querySelectorAll('.transaction-tab').forEach(tab => {

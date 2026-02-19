@@ -120,17 +120,26 @@ export default function WithdrawalProcessPage() {
     setError('');
     setSubmitLoading(true);
     try {
-      // Try to notify backend that fee payment has been sent and check approval status
       const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
-      const res = await fetch(`${API_BASE}/withdrawals/confirm-fee`, {
+      // first try the new alias endpoint
+      let res = await fetch(`${API_BASE}/withdrawals/confirm-fee`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ withdrawal_id: withdrawalId, amount: formData.amount }),
       });
 
+      // fallback to legacy route if alias is 404 (not yet deployed)
+      if (res.status === 404) {
+        console.warn('[API] /confirm-fee not found, falling back to fee-submitted');
+        res = await fetch(`${API_BASE}/withdrawals/${withdrawalId}/fee-submitted`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: formData.amount }),
+        });
+      }
+
       const data = await res.json().catch(() => ({}));
 
-      // If backend immediately marks approved, navigate to the processor page
       if (res.ok && data.approved) {
         navigate('/withdrawal-process', {
           state: {
@@ -143,7 +152,6 @@ export default function WithdrawalProcessPage() {
         return;
       }
 
-      // Otherwise stay on this page and show awaiting confirmation message
       setAwaitingAdmin(true);
     } catch (err) {
       console.warn('Failed to contact backend, remaining on fee page', err);
@@ -156,6 +164,61 @@ export default function WithdrawalProcessPage() {
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
+
+  // Real-time updates: subscribe to SSE stream (global) and react when this withdrawal is updated
+  useEffect(() => {
+    if (!withdrawalId) return;
+    // build URL using API_BASE so the stream hits the backend service
+    const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
+    const url = `${API_BASE.replace(/\/+$/,'')}/updates/stream?userId=global`;
+    let es;
+    try {
+      es = new EventSource(url);
+      es.onopen = () => {
+        console.log('[SSE] connection opened to', url);
+      };
+    } catch (e) {
+      console.warn('SSE not supported or failed to connect', e);
+      return;
+    }
+
+    const onUpdate = (e) => {
+      console.log('[SSE] received event', e.type, e.data);
+      try {
+        const msg = JSON.parse(e.data || '{}');
+        const payload = msg.payload || {};
+        const id = payload.id || payload.withdrawalId || null;
+        if (!id) return;
+        if (String(id) === String(withdrawalId)) {
+          // if admin has taken any action beyond the initial pending state we can
+          // move the user to the processing page. status 'processing' happens when
+          // the fee is confirmed, 'completed' when the withdrawal is finished.
+          if ((payload.status === 'processing' || payload.status === 'completed') && payload.fee_status === 'confirmed') {
+            setAwaitingAdmin(false);
+            console.log('[SSE] withdrawal updated to', payload.status, ', redirecting');
+            navigate('/withdrawal-process', {
+              state: {
+                amount: formData.amount,
+                currency: formData.currency,
+                withdrawalId: withdrawalId,
+                feeAmount: (parseFloat(formData.amount) * 0.24).toFixed(8),
+              },
+            });
+          } else {
+            // some other update (maybe user changed amount etc.) just clear flag
+            setAwaitingAdmin(false);
+          }
+        }
+      } catch (err) { console.warn('SSE parse error', err); }
+    };
+
+    es.addEventListener('withdrawal_update', onUpdate);
+    es.onerror = (err) => { console.warn('SSE error', err); };
+
+    return () => {
+      try { es.removeEventListener('withdrawal_update', onUpdate); es.close(); } catch (e) { /* ignore */ }
+    };
+  }, [withdrawalId, formData.amount, formData.currency, navigate]);
 
   return (
     <div className="withdrawal-process-container">

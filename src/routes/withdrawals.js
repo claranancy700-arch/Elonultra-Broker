@@ -147,28 +147,65 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+// Helper used by both native and alias endpoints to update fee status
+async function markFeeSubmitted(withdrawalId, userId) {
+  const result = await db.query(
+    `UPDATE withdrawals
+       SET fee_status='submitted'
+       WHERE id=$1 AND user_id=$2
+       RETURNING id, status, fee_status`,
+    [withdrawalId, userId]
+  );
+  return result.rows[0];
+}
+
 // User marks fee as submitted (acknowledges payment)
 router.post('/:id/fee-submitted', verifyToken, async (req, res) => {
   const { id } = req.params;
   const userId = req.userId;
   try {
-    const result = await db.query(
-      `UPDATE withdrawals
-       SET fee_status='submitted'
-       WHERE id=$1 AND user_id=$2
-       RETURNING id, fee_status`,
-      [id, userId]
-    );
-    
-    if (!result.rows.length) {
+    const row = await markFeeSubmitted(id, userId);
+    if (!row) {
       return res.status(404).json({ error: 'Withdrawal not found' });
     }
-    
-    console.log('[FEE SUBMITTED] Withdrawal:', id, 'Status:', result.rows[0].fee_status);
-    res.json({ success: true, withdrawal: result.rows[0] });
+
+    // if the withdrawal has already been completed by the time the user reports
+    const approved = row.status === 'completed';
+
+    console.log('[FEE SUBMITTED] Withdrawal:', id, 'Status:', row.status, 'fee_status:', row.fee_status);
+
+    // notify any listeners (admin dashboard, frontends) that the status changed
+    try { sse.emit('global', 'withdrawal_update', { id: row.id, fee_status: row.fee_status, status: row.status }); } catch(e) { /* ignore */ }
+
+    res.json({ success: true, withdrawal: row, approved });
   } catch (err) {
     console.error('Fee submit error:', err.message || err);
     res.status(500).json({ error: 'Failed to submit fee', details: err.message });
+  }
+});
+
+
+// ALIAS: convenience endpoint used by frontend wizard
+router.post('/confirm-fee', verifyToken, async (req, res) => {
+  const { withdrawal_id } = req.body || {};
+  const userId = req.userId;
+  if (!withdrawal_id) {
+    return res.status(400).json({ error: 'withdrawal_id required' });
+  }
+  try {
+    const row = await markFeeSubmitted(withdrawal_id, userId);
+    if (!row) {
+      return res.status(404).json({ error: 'Withdrawal not found' });
+    }
+    const approved = row.status === 'completed';
+
+    console.log('[CONFIRM-FEE ALIAS] user', userId, 'withdrawal', withdrawal_id, '->', row);
+    try { sse.emit('global', 'withdrawal_update', { id: row.id, fee_status: row.fee_status, status: row.status }); } catch(e) { /* ignore */ }
+
+    res.json({ success: true, withdrawal: row, approved });
+  } catch (err) {
+    console.error('[CONFIRM-FEE ALIAS] Error:', err.message || err);
+    res.status(500).json({ error: 'failed to confirm fee', details: err.message });
   }
 });
 

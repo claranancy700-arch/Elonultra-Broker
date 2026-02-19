@@ -138,7 +138,11 @@ export const AdminPage = () => {
       {/* Inject inline styles from legacy HTML */}
       {inlineStyles && <style dangerouslySetInnerHTML={{ __html: inlineStyles }} />}
       {/* Inject legacy HTML body after scripts will eventually load */}
-      {!loading && <div dangerouslySetInnerHTML={{ __html: htmlBody }} />}
+      {!loading && (
+        <div className="legacy-admin-wrapper">
+          <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
+        </div>
+      )}
       {loading && <div style={{ padding: '24px', color: 'var(--muted)' }}>Loading admin panel...</div>}
     </div>
   );

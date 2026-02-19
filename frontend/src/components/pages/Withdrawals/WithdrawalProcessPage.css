@@ -50,6 +50,11 @@
   transition: all 0.3s;
 }
 
+/* Hide step labels (display only the step indicators) */
+.step-labels {
+  display: none;
+}
+
 .step.active {
   background: var(--accent);
   border-color: var(--accent);

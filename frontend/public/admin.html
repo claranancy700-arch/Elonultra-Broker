@@ -751,6 +751,19 @@
           refreshAllTransactions();
         })
         .catch(() => alert('Unable to approve deposit'));
+      } else if (type === 'withdrawal') {
+        // For withdrawals, call the withdrawal approve endpoint (deducts balance and confirms fee)
+        fetch(`${apiBase}/admin/withdrawals/${txId}/approve`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json', 'x-admin-key': key},
+          body: JSON.stringify({})
+        })
+        .then(r => r.ok ? Promise.resolve() : Promise.reject())
+        .then(() => {
+          alert('Withdrawal approved');
+          refreshAllTransactions();
+        })
+        .catch(() => alert('Unable to approve withdrawal'));
       } else {
         // For other transactions, just update status
         fetch(`${apiBase}/admin/transactions/${txId}`, {

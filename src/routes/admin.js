@@ -997,8 +997,9 @@ router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
     const provided = req.headers['x-admin-key'];
     console.log('[CONFIRM FEE] Request received for withdrawal:', req.params.id);
     console.log('[CONFIRM FEE] Admin key provided:', !!provided, 'Key length:', provided ? provided.length : 0);
+    const ADMIN_KEY = getAdminKey();
     console.log('[CONFIRM FEE] Expected key:', ADMIN_KEY ? ADMIN_KEY.substring(0, 5) + '...' : 'NOT SET');
-    
+
     if (!ADMIN_KEY) {
       console.error('[CONFIRM FEE] Admin API key not configured');
       return res.status(503).json({ error: 'Admin API key not configured on server' });
@@ -1030,6 +1031,8 @@ router.post('/withdrawals/:id/confirm-fee', async (req, res) => {
     }
     
     console.log('[CONFIRM FEE] ✓ Updated:', result.rows[0]);
+    // Emit SSE update for this withdrawal to notify frontend
+    try { sse.emit('global', 'withdrawal_update', { id: result.rows[0].id, fee_status: result.rows[0].fee_status, status: result.rows[0].status }); } catch(e) { console.warn('SSE emit failed', e && e.message); }
     return res.json({ success: true, withdrawal: result.rows[0] });
   } catch (err) {
     console.error('[CONFIRM FEE] Error:', err.message || err);
@@ -1102,6 +1105,11 @@ router.post('/withdrawals/:id/approve', async (req, res) => {
 
       await client.query('COMMIT');
       console.log('[APPROVE WITHDRAWAL] ✓ Updated:', result.rows[0]);
+      // Notify frontend via SSE (per-user and global)
+      try {
+        if (w.user_id) sse.emit(String(w.user_id), 'withdrawal_update', { id: result.rows[0].id, fee_status: result.rows[0].fee_status, status: result.rows[0].status });
+        sse.emit('global', 'withdrawal_update', { id: result.rows[0].id, fee_status: result.rows[0].fee_status, status: result.rows[0].status });
+      } catch (ee) { console.warn('SSE emit on approve failed', ee && ee.message); }
       return res.json({ success: true, withdrawal: result.rows[0] });
     } catch (e) {
       await client.query('ROLLBACK');
@@ -1244,8 +1252,8 @@ router.delete('/withdrawals/:id', async (req, res) => {
 router.put('/transactions/:id', async (req, res) => {
   try {
     const provided = req.headers['x-admin-key'];
-    if (!ADMIN_KEY) return res.status(503).json({ error: 'Admin API key not configured on server' });
-    if (!provided || provided !== ADMIN_KEY) return res.status(403).json({ error: 'Forbidden' });
+    const guard = requireAdminKey(req, res);
+    if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
 
     const txId = parseInt(req.params.id, 10);
     if (isNaN(txId)) return res.status(400).json({ error: 'invalid transaction id' });

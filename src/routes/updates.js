@@ -4,8 +4,8 @@ const sse = require('../sse/broadcaster');
 
 // SSE subscribe: clients connect with ?userId=123
 router.get('/stream', (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) return res.status(400).json({ error: 'userId required as query param' });
+  // Support optional userId; default to 'global' so clients can subscribe to global events
+  const userId = req.query.userId || 'global';
   // Subscribe the response for SSE
   sse.subscribe(userId, res);
 });
