@@ -3,7 +3,8 @@
   padding: 8px 12px;
   position: sticky;
   top: 60px;
-  z-index: 150;
+  /* must be lower than the sidebar so the nav isn’t hidden on desktop */
+  z-index: 100;
   min-height: 36px;
   display: flex;
   align-items: center;

@@ -1,38 +1,8 @@
+/* global CBApi */
 (function(){
   // Scoped admin script to avoid leaking globals and duplicate declarations
   // baseApi should be the ROOT API endpoint (e.g., /api or https://domain.com/api)
   const baseApi = window.__apiBase || ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) ? `http://${window.location.hostname}:5001/api` : (`${window.location.origin}/api`));
-
-  async function getJSON(url, opts = {}) {
-    // url should be like /admin/users (without /api prefix)
-    // baseApi already has /api, so combine them: /api + /admin/users = /api/admin/users
-    const full = url.startsWith('http') ? url : baseApi + url;
-  // Ensure headers object exists and accept json
-  opts.headers = Object.assign({ Accept: 'application/json' }, opts.headers || {});
-  console.log('[getJSON] Full URL:', full);
-  console.log('[getJSON] Headers:', opts.headers);
-  const res = await fetch(full, opts);
-  console.log('[getJSON] Response status:', res.status, 'OK:', res.ok);
-  console.log('[getJSON] Response headers:', res.headers.get('content-type'));
-  
-  if (!res.ok) {
-    let body = null;
-    try { body = await res.json(); } catch (e) { body = await res.text().catch(()=>null); }
-    const msg = body && body.error ? body.error : `Request failed: ${res.status}`;
-    throw new Error(msg);
-  }
-
-  const text = await res.text();
-  console.log('[getJSON] Response body (first 300 chars):', text.substring(0, 300));
-  
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error('[getJSON] JSON parse error:', e.message);
-    console.error('[getJSON] Response was:', text.substring(0, 500));
-    throw new Error(`JSON parse error: ${e.message}. Response: ${text.substring(0, 200)}`);
-  }
-}
 
 const usersTbody = document.getElementById('users-tbody');
 const userDetail = document.getElementById('user-detail');
@@ -93,7 +63,7 @@ if (loadUsersBtn) {
     loadUsersBtn.disabled = true;
     try {
       debug('Admin: loading users with key:', key);
-      const j = await getJSON('/admin/users', { headers: { 'x-admin-key': key } });
+      const j = await CBApi.adminRequest('/admin/users', key);
       debug('API Response:', j);
       
       // Handle both response formats: { success, users } or direct array
@@ -215,7 +185,7 @@ async function loadUserDetails(id, key){
   try{
     // OPTIMIZED: Fetch single user instead of all users (fixes N+1 problem)
     console.log(`[Admin] Loading user ${id}...`);
-    const u = await getJSON(`/admin/users/${id}`, { headers: { 'x-admin-key': key } });
+    const u = await CBApi.adminRequest(`/admin/users/${id}`, key);
     if (!u || !u.id) { alert('User not found'); return; }
     
     if (userDetail) userDetail.innerHTML = `<div><strong>${u.email}</strong><div>ID: ${u.id}</div><div>Balance: ${formatCurrency(u.balance)}</div></div>`;
@@ -228,7 +198,7 @@ async function loadUserDetails(id, key){
     await refreshSimulator(u.id, key);
 
     // Load transactions in parallel (don't await sequentially)
-    const transactionsPromise = getJSON(`/admin/users/${u.id}/transactions`, { headers: { 'x-admin-key': key } })
+    const transactionsPromise = CBApi.adminRequest(`/admin/users/${u.id}/transactions`, key)
       .then(tr => {
         if (transactionsTbody) transactionsTbody.innerHTML = tr.transactions.map(t=>{
           const action = (t.type === 'deposit' && t.status !== 'completed')
@@ -245,7 +215,7 @@ async function loadUserDetails(id, key){
       .catch(e => debugWarn('Could not load transactions', e));
 
     // Load trades in parallel
-    const tradesPromise = getJSON(`/trades?limit=10`, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}`, 'x-admin-key': key } })
+    const tradesPromise = CBApi.adminRequest(`/trades?limit=10`, key, { headers: { 'Authorization': `Bearer ${sessionStorage.getItem('userToken') || ''}` } })
       .then(trades => {
         const recentTradesTbody = document.getElementById('recent-trades-user');
         if (recentTradesTbody && trades.trades && trades.trades.length > 0) {
@@ -274,7 +244,7 @@ async function loadUserDetails(id, key){
       });
 
     // Fetch portfolio - this is critical and should complete before rendering
-    let portfolioPromise = getJSON(`/admin/users/${u.id}/portfolio`, { headers: { 'x-admin-key': key } })
+    let portfolioPromise = CBApi.adminRequest(`/admin/users/${u.id}/portfolio`, key)
       .then(p => {
         console.log(`[Admin] Portfolio loaded for user ${u.id}`);
         // Handle both response formats: { success: true, assets: {...} } or { assets: {...} }
@@ -355,7 +325,7 @@ async function loadGrowthTrades() {
 
   try {
     // Get growth trades
-    const tradesRes = await getJSON(`/admin/users/${userId}/growth-trades?limit=100`, {
+    const tradesRes = await CBApi.adminRequest(`/admin/users/${userId}/growth-trades?limit=100`, key, {
       headers: { 'x-admin-key': key }
     });
 
@@ -387,7 +357,7 @@ async function loadGrowthTrades() {
     }
 
     // Get growth stats
-    const statsRes = await getJSON(`/admin/users/${userId}/growth-stats`, {
+    const statsRes = await CBApi.adminRequest(`/admin/users/${userId}/growth-stats`, key, {
       headers: { 'x-admin-key': key }
     });
 
@@ -415,9 +385,8 @@ async function triggerGrowthNow() {
   if (!confirm('Trigger balance growth now for this user?')) return;
 
   try {
-    await getJSON(`/admin/users/${userId}/simulator/trigger-growth`, {
-      method: 'POST',
-      headers: { 'x-admin-key': key }
+    await CBApi.adminRequest(`/admin/users/${userId}/simulator/trigger-growth`, key, {
+      method: 'POST'
     });
 
     alert('Balance growth triggered successfully');
@@ -630,7 +599,7 @@ const simPauseBtn = document.getElementById('sim-pause');
 async function refreshSimulator(uid, key){
   if(!uid || !key || !simStatusEl) return;
   try{
-    const res = await getJSON(`/admin/users/${uid}/simulator`, { headers: { 'x-admin-key': key } });
+    const res = await CBApi.adminRequest(`/admin/users/${uid}/simulator`, key);
     const s = res.simulator || {};
     simStatusEl.textContent = s.sim_enabled ? (s.sim_paused ? 'Paused' : 'Enabled') : 'Disabled';
     simNextEl.textContent = s.sim_next_run_at ? new Date(s.sim_next_run_at).toLocaleString() : '—';
@@ -771,7 +740,7 @@ if (editTotalBtn) {
     try {
       // We don't have a direct endpoint to set usd_value; set a synthetic USDT holding to reach target
       // Fetch current portfolio to compute delta
-      const p = await getJSON(`/admin/users/${uid}/portfolio`, { headers: { 'x-admin-key': key } });
+      const p = await CBApi.adminRequest(`/admin/users/${uid}/portfolio`, key);
       const pf = p.portfolio || {};
       const current = Number(pf.usd_value) || 0;
       const delta = amt - current;
@@ -782,7 +751,7 @@ if (editTotalBtn) {
         const j = await res.json(); if(!res.ok) throw new Error(j.error||'credit failed');
       } else {
         // reduce balance to reflect negative delta by setting balance lower
-        const usersData = await getJSON('/admin/users', { headers:{ 'x-admin-key': key } });
+        const usersData = await CBApi.adminRequest('/admin/users', key);
         const users = Array.isArray(usersData) ? usersData : (usersData.users || []);
         const newBal = (Number(users.find(u=>String(u.id)===String(uid)).balance) + delta).toFixed(2);
         const res = await fetch(baseApi + `/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: Number(newBal) }) });
@@ -808,9 +777,9 @@ if (triggerGrowthBtn) {
     if (!confirm('Trigger balance growth now for this user?')) return;
 
     try {
-      await getJSON(`/admin/users/${userId}/simulator/trigger-growth`, {
+      await CBApi.adminRequest(`/admin/users/${userId}/simulator/trigger-growth`, key, {
         method: 'POST',
-        headers: { 'x-admin-key': key }
+        headers: { }
       });
 
       alert('✅ Balance growth triggered successfully');
@@ -994,9 +963,7 @@ async function loadDeposits() {
   }
 
   try {
-    const data = await getJSON('/admin/transactions', {
-      headers: { 'x-admin-key': key }
-    });
+    const data = await CBApi.adminRequest('/admin/transactions', key);
 
     const deposits = (data.transactions || []).filter(t => t.type === 'deposit');
 
@@ -1036,9 +1003,7 @@ async function loadWithdrawals() {
   }
 
   try {
-    const data = await getJSON('/admin/withdrawals', {
-      headers: { 'x-admin-key': key }
-    });
+    const data = await CBApi.adminRequest('/admin/withdrawals', key);
 
     const html = (data.withdrawals || []).map(w => {
       const feeStatusClass = w.fee_status === 'confirmed'
@@ -1136,9 +1101,7 @@ async function loadAdminDeposits() {
       endpoint = `/admin/users/${selectedUserId}/transactions`;
     }
     
-    const data = await getJSON(endpoint, {
-      headers: { 'x-admin-key': key }
-    });
+    const data = await CBApi.adminRequest(endpoint, key);
 
     const deposits = (data.transactions || []).filter(t => t.type === 'deposit');
 
@@ -1333,8 +1296,14 @@ async function approveTransaction(id, type) {
       body: JSON.stringify({ approvedBy: 'admin' })
     });
     const data = await res.json().catch(() => ({}));
+    console.log('[ADMIN] approveTransaction response', data);
     if (!res.ok) throw new Error(data.error || 'approval failed');
-    alert('✅ ' + type.charAt(0).toUpperCase() + type.slice(1) + ' approved successfully!');
+    // if a withdrawal was returned, display its fee status for clarity
+    if (data.withdrawal && data.withdrawal.fee_status) {
+      alert('✅ ' + type.charAt(0).toUpperCase() + type.slice(1) + ' approved successfully! (fee_status: ' + data.withdrawal.fee_status + ')');
+    } else {
+      alert('✅ ' + type.charAt(0).toUpperCase() + type.slice(1) + ' approved successfully!');
+    }
     await reloadFn();
   } catch (err) {
     console.error('Approve ' + type + ' error:', err);

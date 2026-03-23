@@ -1,5 +1,6 @@
+/* eslint-disable no-console */
 /* global TestimoniesService */
-/* exported showTestimonyForm, editTestimony, deleteTestimony, autoGenerateTestimonies */
+/* exported showTestimonyForm, editTestimony, deleteTestimony, autoGenerateTestimonies, openTestimoniesModal */
 /**
  * Admin Testimonies Manager — Handle testimony CRUD operations
  */
@@ -233,4 +234,15 @@ if (document.readyState === 'loading') {
 } else {
   loadAllTestimonies();
 }
+
+// expose functions globally (onclick handlers, external scripts)
+if (typeof window !== 'undefined') {
+  window.showTestimonyForm = showTestimonyForm;
+  window.editTestimony = editTestimony;
+  window.deleteTestimony = deleteTestimony;
+  window.autoGenerateTestimonies = autoGenerateTestimonies;
+  window.openTestimoniesModal = openTestimoniesModal;
+}
+
 })();
+

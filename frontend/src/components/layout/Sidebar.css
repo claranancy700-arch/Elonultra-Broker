@@ -11,6 +11,8 @@
   overflow-y: auto;
   box-shadow: inset -1px 0 0 rgba(var(--text-rgb), 0.05);
   transition: var(--transition);
+  /* ensure sidebar always layers above other sticky elements like the testimonies banner */
+  z-index: 200;
 }
 
 .sidebar-link {

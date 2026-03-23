@@ -186,7 +186,7 @@ Standalone:
 2. **Create Default User Settings for Existing Users**
    ```sql
    INSERT INTO public.user_settings (user_id, theme, language)
-   SELECT id, 'dark', 'en' FROM public.users
+   SELECT id, 'light', 'en' FROM public.users
    ON CONFLICT DO NOTHING;
    ```
 

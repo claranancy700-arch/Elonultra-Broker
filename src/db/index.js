@@ -79,7 +79,15 @@ async function ensureSchema() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   `);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(20,8) NOT NULL DEFAULT 0;`);
+  // ensure the balance column exists and is wide enough; alter type for existing data
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS balance NUMERIC(30,8) NOT NULL DEFAULT 0;`);
+  try {
+    await pool.query(`ALTER TABLE users ALTER COLUMN balance TYPE NUMERIC(30,8)`);
+  } catch (e) {
+    // older PG versions may not support USING or the table might already be wide enough
+    debug('adjusting users.balance precision:', e.message);
+  }
+
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_enabled BOOLEAN NOT NULL DEFAULT FALSE;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_paused BOOLEAN NOT NULL DEFAULT FALSE;`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_next_run_at TIMESTAMPTZ;`);

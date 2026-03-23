@@ -4,6 +4,8 @@
  * Frontend MUST NEVER calculate or store balance locally
  * Every balance display = fetch from API
  */
+/* eslint-disable no-console */
+/* global AuthService, io */
 
 const BalanceSync = (() => {
   let currentBalance = null;

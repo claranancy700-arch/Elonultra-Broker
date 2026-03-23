@@ -1,35 +1,6 @@
 (function(window){
-  const PORTFOLIO_KEY = 'portfolio';
-  const BALANCE_KEY = 'availableBalance';
-  const TOTAL_KEY = 'portfolioTotal';
-
-  const DEFAULT_ASSETS = [
-    { symbol: 'BTC', name: 'Bitcoin', amount: 0, value: 0, allocation: 0, color: '#F59E0B' },
-    { symbol: 'ETH', name: 'Ethereum', amount: 0, value: 0, allocation: 0, color: '#3B82F6' },
-    { symbol: 'ADA', name: 'Cardano', amount: 0, value: 0, allocation: 0, color: '#8B5CF6' },
-    { symbol: 'SOL', name: 'Solana', amount: 0, value: 0, allocation: 0, color: '#10B981' },
-    { symbol: 'USDC', name: 'USD Coin', amount: 0, value: 0, allocation: 0, color: '#6B7280' }
-  ];
-
-  let portfolioAssets = DEFAULT_ASSETS;
-  let availableBalance = 0;
-  let totalPortfolioValue = 0;
-
-  function loadFromStorage(){
-    try{
-      const stored = localStorage.getItem(PORTFOLIO_KEY);
-      if(stored) portfolioAssets = JSON.parse(stored);
-    }catch(e){ console.error('Failed to parse portfolio:', e); }
-    try{
-      // debug
-      console.log('portfolio.loadFromStorage keys:', {PORTFOLIO_KEY, BALANCE_KEY, TOTAL_KEY});
-      console.log('localStorage snapshot:', { portfolio: localStorage.getItem(PORTFOLIO_KEY), balance: localStorage.getItem(BALANCE_KEY), total: localStorage.getItem(TOTAL_KEY) });
-    }catch(e){ console.error('Failed to parse portfolio:', e); }
-    try{
-      const storedBal = localStorage.getItem(BALANCE_KEY);
-      if (storedBal !== null) {
-        availableBalance = parseFloat(storedBal);
-      (function(window){
+          /* eslint-disable no-console */
+          /* global AuthService */
           const PORTFOLIO_KEY = 'portfolio';
           const BALANCE_KEY = 'availableBalance';
           const TOTAL_KEY = 'portfolioTotal';
@@ -108,6 +79,11 @@
                   return sum + (Number(a.value) || 0);
               }, 0);
               return (derived > 0) ? derived : (totalPortfolioValue || 0);
+          }
+
+          // Helper function for retry backoff (moved outside refreshPrices to fix no-inner-declarations)
+          async function sleepAsync(ms) {
+              return new Promise(r => setTimeout(r, ms));
           }
 
           const portfolio = {
@@ -253,8 +229,6 @@
                       const CACHE_KEY = 'prices-cache-v1';
                       const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-                      async function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
-
                       let resp = null;
                       let attempts = 0;
                       let lastErr = null;
@@ -266,7 +240,7 @@
                           }catch(e){ lastErr = e; }
                           attempts++;
                           // small backoff before retry
-                          await sleep(500 * attempts);
+                          await sleepAsync(500 * attempts);
                       }
 
                       let prices = null;

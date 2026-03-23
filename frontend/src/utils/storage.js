@@ -1,3 +1,11 @@
+/* global process */
+// Debug utility for logging
+function debug(...args) {
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+}
 // Safe storage wrapper with in-memory fallback for environments
 // where localStorage is unavailable or blocked (e.g., some iframes/privacy modes)
 let storageAvailable = true;
@@ -22,7 +30,7 @@ export const safeGetItem = (key) => {
       ? inMemoryStore[key]
       : null;
   } catch (e) {
-    console.warn(`safeGetItem failed for key "${key}":`, e?.message || e);
+    debug(`safeGetItem failed for key "${key}":`, e?.message || e);
     return null;
   }
 };
@@ -35,7 +43,7 @@ export const safeSetItem = (key, value) => {
     }
     inMemoryStore[key] = String(value);
   } catch (e) {
-    console.warn(`safeSetItem failed for key "${key}":`, e?.message || e);
+    debug(`safeSetItem failed for key "${key}":`, e?.message || e);
   }
 };
 
@@ -49,7 +57,7 @@ export const safeRemoveItem = (key) => {
       delete inMemoryStore[key];
     }
   } catch (e) {
-    console.warn(`safeRemoveItem failed for key "${key}":`, e?.message || e);
+    debug(`safeRemoveItem failed for key "${key}":`, e?.message || e);
   }
 };
 
@@ -65,7 +73,7 @@ export const safeGetAllItems = () => {
     }
     return { ...inMemoryStore };
   } catch (e) {
-    console.warn('safeGetAllItems failed:', e?.message || e);
+    debug('safeGetAllItems failed:', e?.message || e);
     return items;
   }
 };

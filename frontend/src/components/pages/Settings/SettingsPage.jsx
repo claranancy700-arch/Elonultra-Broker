@@ -39,9 +39,9 @@ export const SettingsPage = () => {
     email: user?.email || ''
   });
 
-  const [bankSaved, setBankSaved] = useState(false);
-  const [editingBank, setEditingBank] = useState(true);
-  const [bankSource, setBankSource] = useState('none'); // 'none' | 'local' | 'server'
+  const [editingBank, setEditingBank] = useState(false);
+  const [bankSource, setBankSource] = useState('none'); // 'none' | 'server'
+  const [bankingLoading, setBankingLoading] = useState(false);
 
   const [verificationData, setVerificationData] = useState({
     email: user?.email || '',
@@ -75,7 +75,7 @@ export const SettingsPage = () => {
     return () => { mounted = false; };
   }, [user]);
 
-  // Load saved banking details (API first, fallback to localStorage)
+  // Load saved banking details from API
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -86,47 +86,19 @@ export const SettingsPage = () => {
           const data = res.data;
           if (mounted) {
             setBankingData(prev => ({ ...prev, ...data }));
-            setBankSaved(true);
             setEditingBank(false);
-            setBankSource('server');
             console.log('Loaded banking details from API', data);
           }
-          return;
         }
       } catch (err) {
-        console.log('No banking-details from API, will try localStorage', err && err.message);
-        // ignore, we'll fallback to localStorage
-      }
-
-      try {
-        const raw = localStorage.getItem('bankingDetails');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (mounted && parsed) {
-            setBankingData(prev => ({ ...prev, ...parsed }));
-            setBankSaved(true);
-            setEditingBank(false);
-            setBankSource('local');
-            console.log('Loaded banking details from localStorage', parsed);
-          }
-        }
-      } catch (err) {
-        console.log('Failed to load bankingDetails from localStorage', err && err.message);
-        // ignore parse errors
+        console.log('No banking details saved yet', err && err.message);
+        // No saved banking details, user will fill form
       }
     };
 
     load();
     return () => { mounted = false; };
   }, []);
-
-  const getLocalBankingRaw = () => {
-    try {
-      return localStorage.getItem('bankingDetails') || 'null';
-    } catch (e) {
-      return 'error';
-    }
-  };
 
   const clearMessages = () => {
     setError('');
@@ -228,70 +200,6 @@ export const SettingsPage = () => {
     setBankingData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSendVerificationCode = async () => {
-    clearMessages();
-    setLoading(true);
-
-    try {
-      await API.post('/users/send-verification-code', {
-        email: bankingData.email
-      });
-      setVerificationCodeSent(true);
-      setSuccess('Verification code sent to your email');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send verification code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveBankingDetails = async (e) => {
-    e.preventDefault();
-    clearMessages();
-    setLoading(true);
-
-    let localSaveSuccess = false;
-    let saveSource = 'none';
-
-    try {
-      // Try to save to API
-      const res = await API.post('/users/banking-details', bankingData);
-      if (res && res.status >= 200 && res.status < 300) {
-        saveSource = 'server';
-      }
-    } catch (err) {
-      // API failed, we'll fallback to localStorage
-      console.log('API save failed, will fallback to local storage:', err && err.message);
-      saveSource = 'local';
-    }
-
-    // Always save to localStorage as fallback (and for offline)
-    try {
-      localStorage.setItem('bankingDetails', JSON.stringify(bankingData));
-      localSaveSuccess = true;
-      console.log('bankingDetails saved to localStorage', bankingData);
-      if (saveSource === 'none') saveSource = 'local';
-    } catch (err) {
-      console.log('Failed to save bankingDetails to localStorage', err && err.message);
-      console.error('Failed to save to localStorage:', err);
-      if (saveSource === 'none') saveSource = 'none';
-    }
-
-    // Show appropriate message
-    if (localSaveSuccess) {
-      setBankSource(saveSource);
-      setSuccess('Banking details saved successfully! ✓');
-      setBankSaved(true);
-      setEditingBank(false);
-      console.log('bankSaved set true, editingBank set false; source=', saveSource);
-      // Don't clear the form - let user see what was saved  
-    } else {
-      setError('Failed to save banking details. Please try again.');
-    }
-
-    setLoading(false);
-  };
-
   // Verification handlers
   const handleVerificationChange = (field, value) => {
     setVerificationData(prev => ({ ...prev, [field]: value }));
@@ -317,6 +225,28 @@ export const SettingsPage = () => {
       setLoading(false);
     }
   };
+
+  const handleSaveBankingDetails = async (e) => {
+    e.preventDefault();
+    clearMessages();
+    setBankingLoading(true);
+
+    try {
+      const res = await API.post('/users/banking-details', bankingData);
+      if (res && res.status >= 200 && res.status < 300) {
+        setSuccess('Banking details saved successfully!');
+        setEditingBank(false);
+        console.log('Banking details saved to server', bankingData);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save banking details. Please try again.');
+      console.error('Banking save error:', err);
+    } finally {
+      setBankingLoading(false);
+    }
+  };
+
+
 
   // Delete account handler
   const handleDeleteAccount = async () => {
@@ -425,7 +355,6 @@ export const SettingsPage = () => {
                 value={securityData.currentPassword}
                 onChange={(e) => handleSecurityChange('currentPassword', e.target.value)}
                 disabled={loading}
-                autoComplete="current-password"
                 required
               />
             </label>
@@ -437,7 +366,6 @@ export const SettingsPage = () => {
                 value={securityData.newPassword}
                 onChange={(e) => handleSecurityChange('newPassword', e.target.value)}
                 disabled={loading}
-                autoComplete="new-password"
                 required
                 minLength="8"
               />
@@ -450,7 +378,6 @@ export const SettingsPage = () => {
                 value={securityData.confirmPassword}
                 onChange={(e) => handleSecurityChange('confirmPassword', e.target.value)}
                 disabled={loading}
-                autoComplete="new-password"
                 required
                 minLength="8"
               />
@@ -461,23 +388,6 @@ export const SettingsPage = () => {
           </form>
         </div>
       </div>
-
-      {import.meta.env.DEV && (
-        <div style={{ marginTop: 16, padding: 12, border: '1px dashed #ccc', borderRadius: 6 }}>
-          <h3 style={{ margin: '0 0 8px 0' }}>Debug (dev only)</h3>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <div><strong>bankSaved:</strong> {String(bankSaved)}</div>
-            <div><strong>bankSource:</strong> {bankSource}</div>
-            <div style={{ minWidth: 220 }}><strong>localStorage:</strong>
-              <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'auto', background: '#f7f7f7', padding: 8 }}>{getLocalBankingRaw()}</pre>
-            </div>
-          </div>
-          <details style={{ marginTop: 8 }}>
-            <summary>bankingData</summary>
-            <pre style={{ maxHeight: 240, overflow: 'auto' }}>{JSON.stringify(bankingData, null, 2)}</pre>
-          </details>
-        </div>
-      )}
 
       {/* Preferences Section */}
       <div className="settings-section">
@@ -595,7 +505,7 @@ export const SettingsPage = () => {
         <h2>Account Banking & Verification</h2>
         <div className="bank-grid">
           <div className="card banking-card">
-            {bankSaved && !editingBank ? (
+            {!editingBank ? (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3>Banking / Registration</h3>
@@ -604,15 +514,15 @@ export const SettingsPage = () => {
                       style={{
                         padding: '4px 8px',
                         borderRadius: 12,
-                        background: bankSource === 'server' ? 'var(--success)' : (bankSource === 'local' ? '#ffd86b' : '#ddd'),
-                        color: bankSource === 'server' ? '#fff' : '#000',
+                        background: 'var(--success)',
+                        color: '#fff',
                         fontSize: 12
                       }}
-                    >{bankSource === 'server' ? 'Saved (server)' : (bankSource === 'local' ? 'Saved (local)' : 'Saved')}</span>
+                    >Saved</span>
                     <button
                       className="btn btn-small"
-                      onClick={() => { setEditingBank(true); setBankSaved(false); setBankSource('none'); clearMessages(); }}
-                      disabled={loading}
+                      onClick={() => setEditingBank(!editingBank)}
+                      disabled={bankingLoading}
                     >Edit</button>
                   </div>
                 </div>
@@ -637,7 +547,7 @@ export const SettingsPage = () => {
                       name="country"
                       value={bankingData.country}
                       onChange={(e) => handleBankingChange('country', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                       required
                     >
                       <option value="">Select country</option>
@@ -687,7 +597,7 @@ export const SettingsPage = () => {
                       placeholder="1234567890"
                       value={bankingData.acctNumber}
                       onChange={(e) => handleBankingChange('acctNumber', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                       required
                     />
                   </label>
@@ -698,7 +608,7 @@ export const SettingsPage = () => {
                       placeholder="Full name on account"
                       value={bankingData.acctName}
                       onChange={(e) => handleBankingChange('acctName', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                       required
                     />
                   </label>
@@ -709,7 +619,7 @@ export const SettingsPage = () => {
                       placeholder="National ID / Passport"
                       value={bankingData.personalId}
                       onChange={(e) => handleBankingChange('personalId', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                       required
                     />
                   </label>
@@ -720,7 +630,7 @@ export const SettingsPage = () => {
                       placeholder="Branch name or code"
                       value={bankingData.branch}
                       onChange={(e) => handleBankingChange('branch', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                     />
                   </label>
                   <label>
@@ -730,22 +640,12 @@ export const SettingsPage = () => {
                       placeholder="you@example.com"
                       value={bankingData.email}
                       onChange={(e) => handleBankingChange('email', e.target.value)}
-                      disabled={loading}
+                      disabled={bankingLoading}
                       required
                     />
                   </label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={handleSendVerificationCode}
-                      disabled={loading || verificationCodeSent}
-                    >
-                      {verificationCodeSent ? 'Code Sent ✓' : 'Send Verification Code'}
-                    </button>
-                  </div>
-                  <button type="submit" className="btn" disabled={loading}>
-                    {loading ? 'Saving...' : 'Save Banking Details'}
+                  <button type="submit" className="btn" disabled={bankingLoading}>
+                    {bankingLoading ? 'Saving...' : 'Save Banking Details'}
                   </button>
                 </form>
               </div>
@@ -800,4 +700,3 @@ export const SettingsPage = () => {
     </div>
   );
 };
-

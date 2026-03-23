@@ -19,7 +19,7 @@ export const LandingPageHeader = () => {
     <header className={`landing-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container">
         <Link to="/" className="brand">
-          <img src="/images/elon-logo-v2.svg" alt="EUE" className="brand-logo" />
+          <img src="/images/elon-logo.svg" alt="ELON-ULTRA" className="brand-logo" />
           <span style={{display:'block'}}>ELON-ULTRA</span>
         </Link>
         

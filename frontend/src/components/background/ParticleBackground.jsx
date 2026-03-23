@@ -7,7 +7,14 @@ const ParticleBackground = () => {
   const targetRef = useRef({ x: 0, y: 0 });
   const offsetRef = useRef({ x: 0, y: 0 });
   const rafRef = useRef(null);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() => {
+    // derive initial theme from document attribute or stored preference
+    return (
+      document.documentElement.getAttribute('data-theme') ||
+      localStorage.getItem('theme') ||
+      'light'
+    );
+  });
   // Temporary debug flag to force visibility while diagnosing rendering
   const DEBUG_FORCE_VISIBLE = true;
 
@@ -175,6 +182,15 @@ const ParticleBackground = () => {
   );
 
  
+
+  // keep background in sync when theme changes elsewhere
+  useEffect(() => {
+    const onThemeChange = (e) => {
+      setTheme(e.detail.theme);
+    };
+    window.addEventListener('themechange', onThemeChange);
+    return () => window.removeEventListener('themechange', onThemeChange);
+  }, []);
 
   return (
     <div ref={containerRef} className={`particle-background ${theme}`}>

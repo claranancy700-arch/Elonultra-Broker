@@ -23,6 +23,11 @@ const CONFIG = {
   DEBUG: process.env.DEBUG_SIMULATOR === 'true',
 };
 
+// maximum safe value that still fits in our Postgres numeric columns (30 precision, 8 scale)
+// numeric(30,8) allows 22 digits before the decimal point; we round down just in case.
+const MAX_DB_BALANCE = 9_999_999_999_999_999_999_9999.99999999;
+
+
 // Helper: Check if today is a trading day (Monday-Friday)
 function isTradingDay() {
   const day = new Date().getDay();
@@ -120,11 +125,20 @@ async function processUserBalance(userId, currentBalance) {
     const tradeType = Math.random() > 0.5 ? 'buy' : 'sell';
     const asset = getRandomAsset();
     const tradePrice = await getAssetPrice(asset);
-    const tradeAmount = (boostAmount / tradePrice).toFixed(8);
-    const tradeTotal = (tradeAmount * tradePrice).toFixed(8);
+
+    // use numeric values everywhere (toFixed() returns a string which can confuse Postgres)
+    const tradeAmount = parseFloat((boostAmount / tradePrice).toFixed(8));
+    const tradeTotal = parseFloat((tradeAmount * tradePrice).toFixed(8));
 
     // 4. UPDATE: Balance after boost (2.5% of current balance, randomly between 0.5-2.5%)
-    const newBalance = (freshBalance + (freshBalance * (randomBoost / 100))).toFixed(8);
+    let newBalance = parseFloat((freshBalance + (freshBalance * (randomBoost / 100))).toFixed(8));
+
+    // sanity check – don't let the job blow up the database with an oversized number
+    if (!Number.isFinite(newBalance) || newBalance > MAX_DB_BALANCE) {
+      console.warn(`[BalanceGrowth] User ${userId}: calculated balance ${newBalance} exceeds allowed maximum, rolling back and skipping`);
+      await client.query('ROLLBACK');
+      return;
+    }
 
     // Create trade record
     await client.query(

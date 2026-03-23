@@ -1,3 +1,11 @@
+/* global process */
+// Debug utility for logging
+function debug(...args) {
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+}
 /**
  * Frontend portfolio cache service
  * Provides fallback caching and retry logic for portfolio data
@@ -22,7 +30,7 @@ export const portfolioCache = {
         timestamp: Date.now(),
       }));
     } catch (e) {
-      console.warn('Failed to cache portfolio:', e);
+      debug('Failed to cache portfolio:', e);
     }
   },
 
@@ -39,15 +47,15 @@ export const portfolioCache = {
       const isExpired = age > CACHE_EXPIRY;
 
       if (isExpired) {
-        console.log('[Portfolio Cache] Cache expired after', Math.round(age / 1000), 'seconds');
+        debug('[Portfolio Cache] Cache expired after', Math.round(age / 1000), 'seconds');
         this.clear();
         return null;
       }
 
-      console.log('[Portfolio Cache] Using cached portfolio (age:', Math.round(age / 1000), 'seconds)');
+      debug('[Portfolio Cache] Using cached portfolio (age:', Math.round(age / 1000), 'seconds)');
       return { ...data, _isCached: true, _cacheAge: age };
     } catch (e) {
-      console.warn('Failed to read portfolio cache:', e);
+      debug('Failed to read portfolio cache:', e);
       return null;
     }
   },
@@ -59,7 +67,7 @@ export const portfolioCache = {
     try {
       localStorage.removeItem(CACHE_KEY);
     } catch (e) {
-      console.warn('Failed to clear portfolio cache:', e);
+      debug('Failed to clear portfolio cache:', e);
     }
   },
 };
@@ -73,7 +81,7 @@ export async function fetchWithRetry(fetcher, maxRetries = 2) {
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`[Fetch Retry] Attempt ${attempt + 1}/${maxRetries + 1}`);
+      debug(`[Fetch Retry] Attempt ${attempt + 1}/${maxRetries + 1}`);
       return await fetcher();
     } catch (error) {
       lastError = error;
@@ -89,7 +97,7 @@ export async function fetchWithRetry(fetcher, maxRetries = 2) {
 
       if (!isLastAttempt) {
         const delayMs = Math.pow(2, attempt) * 500; // Exponential backoff: 500ms, 1s, 2s...
-        console.log(`[Fetch Retry] Failed (${error.response?.status || 'network error'}), retrying in ${delayMs}ms`);
+        debug(`[Fetch Retry] Failed (${error.response?.status || 'network error'}), retrying in ${delayMs}ms`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }

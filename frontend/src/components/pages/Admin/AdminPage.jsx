@@ -1,4 +1,11 @@
 import React, { useEffect, useState } from 'react';
+// Debug utility for logging
+function debug(...args) {
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+}
 import { useAuth } from '../../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import './AdminPage.css';
@@ -47,9 +54,9 @@ export const AdminPage = () => {
           window.__apiBase = isLocal ? 'http://localhost:5001/api' : window.location.origin + '/api';
         }
 
-        // Ensure dark theme is set
+        // Ensure a theme is set (light by default)
         if (!document.documentElement.getAttribute('data-theme')) {
-          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.setAttribute('data-theme', 'light');
         }
 
         // Fetch admin.html
@@ -73,29 +80,29 @@ export const AdminPage = () => {
 
         // Load required legacy scripts in order (CRITICAL for functionality)
         // These need to load AFTER the HTML is rendered
-        console.log('[AdminPage] Loading legacy JS files...');
+        debug('[AdminPage] Loading legacy JS files...');
         try {
           await loadScript('/js/api.js');
-          console.log('[AdminPage] ✓ api.js loaded');
+          debug('[AdminPage] ✓ api.js loaded');
           await loadScript('/js/animations.js');
-          console.log('[AdminPage] ✓ animations.js loaded');
+          debug('[AdminPage] ✓ animations.js loaded');
           await loadScript('/js/markets.js');
-          console.log('[AdminPage] ✓ markets.js loaded');
+          debug('[AdminPage] ✓ markets.js loaded');
           await loadScript('/js/dashboard.js');
-          console.log('[AdminPage] ✓ dashboard.js loaded');
+          debug('[AdminPage] ✓ dashboard.js loaded');
           await loadScript('/js/portfolio.js');
-          console.log('[AdminPage] ✓ portfolio.js loaded');
+          debug('[AdminPage] ✓ portfolio.js loaded');
           await loadScript('/js/auth.js');
-          console.log('[AdminPage] ✓ auth.js loaded');
+          debug('[AdminPage] ✓ auth.js loaded');
           await loadScript('/js/testimonies.js');
-          console.log('[AdminPage] ✓ testimonies.js loaded');
+          debug('[AdminPage] ✓ testimonies.js loaded');
           await loadScript('/js/admin.js');
-          console.log('[AdminPage] ✓ admin.js loaded');
+          debug('[AdminPage] ✓ admin.js loaded');
           await loadScript('/js/theme-switcher.js');
-          console.log('[AdminPage] ✓ theme-switcher.js loaded');
-          console.log('[AdminPage] All scripts loaded successfully');
+          debug('[AdminPage] ✓ theme-switcher.js loaded');
+          debug('[AdminPage] All scripts loaded successfully');
         } catch (scriptErr) {
-          console.error('[AdminPage] Script loading error:', scriptErr);
+          debug('[AdminPage] Script loading error:', scriptErr);
           if (mounted) {
             setError(`Failed to load admin scripts: ${scriptErr.message}`);
           }
@@ -105,7 +112,7 @@ export const AdminPage = () => {
           setLoading(false);
         }
       } catch (err) {
-        console.error('Failed to load admin.html:', err);
+        debug('Failed to load admin.html:', err);
         if (mounted) {
           setError(`Failed to load legacy admin UI: ${err.message}`);
           setHtmlBody('<div style="padding:24px;color:var(--muted)">Failed to load legacy admin UI. Check console for details.</div>');

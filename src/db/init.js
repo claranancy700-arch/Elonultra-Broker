@@ -123,11 +123,11 @@ async function ensureSchema() {
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         type VARCHAR(50) NOT NULL,
         asset VARCHAR(20) NOT NULL,
-        amount DECIMAL(18, 8) NOT NULL,
-        price DECIMAL(18, 8) NOT NULL,
-        total DECIMAL(18, 8) NOT NULL,
-        balance_before DECIMAL(18, 8) NOT NULL,
-        balance_after DECIMAL(18, 8) NOT NULL,
+        amount NUMERIC(30,8) NOT NULL,
+        price NUMERIC(30,8) NOT NULL,
+        total NUMERIC(30,8) NOT NULL,
+        balance_before NUMERIC(30,8) NOT NULL,
+        balance_after NUMERIC(30,8) NOT NULL,
         status VARCHAR(50) DEFAULT 'completed',
         is_simulated BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW(),
@@ -139,6 +139,17 @@ async function ensureSchema() {
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_user_id ON trades(user_id)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_created_at ON trades(created_at DESC)`);
     await db.query(`CREATE INDEX IF NOT EXISTS idx_trades_is_simulated ON trades(is_simulated)`);
+
+    // if we have an existing table with smaller precision, force an ALTER
+    try {
+      await db.query(`ALTER TABLE trades ALTER COLUMN amount TYPE NUMERIC(30,8)`);
+      await db.query(`ALTER TABLE trades ALTER COLUMN price TYPE NUMERIC(30,8)`);
+      await db.query(`ALTER TABLE trades ALTER COLUMN total TYPE NUMERIC(30,8)`);
+      await db.query(`ALTER TABLE trades ALTER COLUMN balance_before TYPE NUMERIC(30,8)`);
+      await db.query(`ALTER TABLE trades ALTER COLUMN balance_after TYPE NUMERIC(30,8)`);
+    } catch (e) {
+      debug('adjusting trades column precision:', e.message);
+    }
 
     // Admin prompts table (prompts issued by admin to individual users or broadcast)
     await db.query(`

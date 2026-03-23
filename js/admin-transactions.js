@@ -1,4 +1,6 @@
 // Admin Transaction Management for editable tables
+/* eslint-disable no-console */
+/* global loadAdminDeposits */
 (function() {
   // For admin tools, use the dynamic API base (fallback to localhost for dev)
   const apiBase = (typeof window !== 'undefined' && window.__apiBase) 
@@ -370,18 +372,6 @@
     }
   }
   
-  // Expose functions globally
-  window.ADMIN_TX = {
-    fetchTransactions,
-    renderAllTransactionTables,
-    allTransactions
-  };
-  
-  // Also expose individual functions
-  window.deleteTransaction = deleteTransaction;
-  window.editTransaction = editTransaction;
-  window.approveTransaction = approveTransaction;
-  window.deleteWithdrawal = deleteWithdrawal;
   
   // Auto-load transactions when admin key is available
   document.addEventListener('DOMContentLoaded', () => {
@@ -415,4 +405,13 @@
       });
     }
   });
+
+  // expose some helpers globally for console/testing or HTML onclicks
+  if (typeof window !== 'undefined') {
+    window.deleteTransaction = deleteTransaction;
+    window.editTransaction = editTransaction;
+    window.approveTransaction = approveTransaction;
+    window.deleteWithdrawal = deleteWithdrawal;
+    window.confirmFee = confirmFee;
+  }
 })();

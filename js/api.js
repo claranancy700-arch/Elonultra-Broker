@@ -53,5 +53,11 @@
     send: (payload) => request('/contact', { method: 'POST', body: JSON.stringify(payload) })
   };
 
-  window.CBApi = { auth, portfolio, contact, setToken, getToken };
+  // helper for admin endpoints that use an x-admin-key header instead of JWT
+  async function adminRequest(path, adminKey, opts = {}){
+    const headers = Object.assign({}, opts.headers || {}, { 'x-admin-key': adminKey });
+    return request(path, Object.assign({}, opts, { headers }));
+  }
+
+  window.CBApi = { auth, portfolio, contact, setToken, getToken, adminRequest };
 })(window);

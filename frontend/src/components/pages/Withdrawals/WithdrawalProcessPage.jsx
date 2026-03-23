@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApi } from '../../../hooks/useApi';
+import API from '../../../services/api';
 import './WithdrawalProcessPage.css';
 
 export default function WithdrawalProcessPage() {
@@ -120,27 +121,34 @@ export default function WithdrawalProcessPage() {
     setError('');
     setSubmitLoading(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || window?.__ELON_API_BASE__ || '/api';
-      // first try the new alias endpoint
-      let res = await fetch(`${API_BASE}/withdrawals/confirm-fee`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ withdrawal_id: withdrawalId, amount: formData.amount }),
-      });
-
-      // fallback to legacy route if alias is 404 (not yet deployed)
-      if (res.status === 404) {
-        console.warn('[API] /confirm-fee not found, falling back to fee-submitted');
-        res = await fetch(`${API_BASE}/withdrawals/${withdrawalId}/fee-submitted`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: formData.amount }),
+      // build path and include auth via axios helper
+      // use axios wrapper for authenticated POSTs
+      let resp;
+      try {
+        resp = await API.post('/withdrawals/confirm-fee', {
+          withdrawal_id: withdrawalId,
+          amount: formData.amount,
         });
+      } catch (e) {
+        resp = e.response;
       }
 
-      const data = await res.json().catch(() => ({}));
+      // fallback if alias endpoint not available
+      if (resp && resp.status === 404) {
+        console.warn('[Fee] /confirm-fee returned 404, using fee-submitted');
+        try {
+          resp = await API.post(`/withdrawals/${withdrawalId}/fee-submitted`, {
+            amount: formData.amount,
+          });
+        } catch (e2) {
+          resp = e2.response;
+        }
+      }
 
-      if (res.ok && data.approved) {
+      console.log('[Fee] response status', resp?.status, 'data', resp?.data);
+      const data = resp?.data || {};
+
+      if (resp && resp.status >= 200 && resp.status < 300 && data.approved) {
         navigate('/withdrawal-process', {
           state: {
             amount: formData.amount,

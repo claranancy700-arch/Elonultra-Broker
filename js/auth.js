@@ -74,8 +74,6 @@ const AuthService = {
     this.setUser(userPayload.user || userPayload);
     // Sync balance and portfolio if provided by server
     try {
-    // Sync balance and portfolio if provided by server
-    try {
       const serverUser = data && (data.user || (data.data && data.data.user)) || data.user || null;
       if (serverUser && typeof window !== 'undefined' && window.CBPortfolio) {
         if (typeof serverUser.balance !== 'undefined') {
@@ -97,7 +95,9 @@ const AuthService = {
           if (assets.length) window.CBPortfolio.setAssets(assets);
         }
       }
-    } catch (err) { console.warn('Failed to sync portfolio:', err); }
+    } catch (err) {
+      console.warn('Failed to sync portfolio:', err);
+    }
     return data.user;
   },
 

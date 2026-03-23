@@ -167,7 +167,7 @@ CREATE INDEX idx_fee_config_active ON public.fee_config(is_active);
 CREATE TABLE public.user_settings (
     id integer NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id integer NOT NULL UNIQUE,
-    theme character varying(50) DEFAULT 'dark',
+    theme character varying(50) DEFAULT 'light',
     language character varying(10) DEFAULT 'en',
     two_factor_enabled boolean DEFAULT false,
     two_factor_method character varying(50),

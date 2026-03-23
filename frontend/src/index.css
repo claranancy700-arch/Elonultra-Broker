@@ -1,22 +1,23 @@
+/* Default light theme variables */
 :root {
-  --bg: #1a0f2e;
-  --card: #2d1b47;
-  --border: #3d2a5a;
-  --muted: #9a8fb5;
-  --text: #f1f5f9;
-  --accent: #e84d5c;
-  --accent-light: #f08070;
-  --accent-muted: #a84b7c;
+  --bg: #ffffff;
+  --card: #e1e5f2;
+  --border: #bfdbf7;
+  --muted: #507a8c;
+  --text: #022b3a;
+  --accent: #1f7a8c;
+  --accent-light: #4a97b0;
+  --accent-muted: #a8c5d4;
   --success: #10b981;
   --danger: #ef4444;
-  --warn: #f08070;
+  --warn: #bfdbf7;
   /* RGB values for rgba usage */
-  --bg-rgb: 26, 15, 46;
-  --card-rgb: 45, 27, 71;
-  --border-rgb: 61, 42, 90;
-  --text-rgb: 241, 245, 249;
-  --accent-rgb: 232, 77, 92;
-  --accent-light-rgb: 240, 128, 112;
+  --bg-rgb: 255, 255, 255;
+  --card-rgb: 225, 229, 242;
+  --border-rgb: 191, 219, 247;
+  --text-rgb: 2, 43, 58;
+  --accent-rgb: 31, 122, 140;
+  --accent-light-rgb: 74, 151, 176;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

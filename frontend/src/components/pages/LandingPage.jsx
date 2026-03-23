@@ -7,8 +7,8 @@ import './LandingPage.css';
 import Icon from '../icons/Icon';
 
 export const LandingPage = () => {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  // const { user, loading } = useAuth(); // Removed unused vars
+  // const navigate = useNavigate(); // Removed unused var
   const [testimonies, setTestimonies] = useState([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [openFAQ, setOpenFAQ] = useState(null);
@@ -16,11 +16,9 @@ export const LandingPage = () => {
 
   // Track mouse position for parallax
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    const handler = e => setMousePosition({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', handler);
+    return () => window.removeEventListener('mousemove', handler);
   }, []);
 
   // Animated counter for stats
@@ -278,7 +276,7 @@ export const LandingPage = () => {
         <div className="footer-content">
           <div className="footer-col">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <img src="/dist/images/elon-logo.svg" alt="ELON-ULTRA" style={{ width: '24px', height: '24px' }} />
+              <img src="dist/images/elon-logo.svg" alt="ELON-ULTRA" style={{ width: '24px', height: '24px' }} />
               <h4 style={{ margin: 0 }}>ELON-ULTRA</h4>
             </div>
             <p>Professional crypto trading platform for everyone.</p>
