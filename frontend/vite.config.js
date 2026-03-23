@@ -5,4 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   envDir: '..',  // Load .env from parent directory (project root)
+  build: {
+    cssMinify: false,  // Disable CSS minification to avoid syntax warnings
+  },
 })
