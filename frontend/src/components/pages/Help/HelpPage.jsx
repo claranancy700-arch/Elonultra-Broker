@@ -1,9 +1,11 @@
 import React from 'react';
 import './HelpPage.css';
 import Icon from '../../icons/Icon';
+import ChatBox from '../../common/ChatBox';
 
 export const HelpPage = () => {
   const [expandedFaq, setExpandedFaq] = React.useState(null);
+  const [isChatOpen, setIsChatOpen] = React.useState(false);
 
   const faqs = [
     {
@@ -66,7 +68,7 @@ export const HelpPage = () => {
               <Icon name="link" className="icon-inline" />
               <span className="text">Contact Support</span>
             </a>
-            <a href="#" className="quick-link">
+            <a href="#" className="quick-link" onClick={(e) => { e.preventDefault(); setIsChatOpen(true); }}>
               <Icon name="dashboard" className="icon-inline" />
               <span className="text">Live Chat</span>
             </a>
@@ -128,6 +130,8 @@ export const HelpPage = () => {
           </div>
         </section>
       </div>
+
+      <ChatBox isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };

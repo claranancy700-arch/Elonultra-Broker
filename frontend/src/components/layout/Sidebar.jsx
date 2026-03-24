@@ -1,12 +1,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
 import Icon from '../icons/Icon';
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   const isActive = (path) => location.pathname === path;
+
+  // Simple admin check - in production this should be more robust
+  const isAdmin = user && (user.email === 'admin@elon-u.com' || user.isAdmin);
 
   return (
     <aside className="sidebar">
@@ -40,6 +45,24 @@ export const Sidebar = () => {
       >
         <Icon name="link" className="icon-inline" /> Help & Docs
       </Link>
+      
+      {isAdmin && (
+        <>
+          <div className="sidebar-divider"></div>
+          <Link 
+            to="/admin" 
+            className={`sidebar-link ${isActive('/admin') ? 'active' : ''}`}
+          >
+            <Icon name="settings" className="icon-inline" /> Admin Panel
+          </Link>
+          <Link 
+            to="/admin/chat" 
+            className={`sidebar-link ${isActive('/admin/chat') ? 'active' : ''}`}
+          >
+            <Icon name="link" className="icon-inline" /> Admin Chat
+          </Link>
+        </>
+      )}
     </aside>
   );
 };

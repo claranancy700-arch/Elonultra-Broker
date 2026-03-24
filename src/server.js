@@ -12,11 +12,20 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const errorHandler = require('./middleware/errorHandler');
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
 const port = process.env.PORT || 5001;
 
 app.use(cors());
@@ -64,6 +73,8 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     const testimoniesRoutes = require('./routes/testimonies');
     const testimoniesGenerateRoutes = require('./routes/testimonies-generate');
     const promptsRoutes = require('./routes/prompts');
+    const chatRoutes = require('./routes/chat');
+    const adminChatRoutes = require('./routes/admin-chat');
     
     app.use('/api/auth', authRoutes);
     app.use('/api/markets', marketsRoutes);
@@ -81,8 +92,75 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     app.use('/api/testimonies', testimoniesRoutes);
     app.use('/api/testimonies-generate', testimoniesGenerateRoutes);
     app.use('/api/prompts', promptsRoutes);
+    app.use('/api/chat', chatRoutes);
+    app.use('/api/admin/chat', adminChatRoutes);
     
     console.log('All routes loaded successfully');
+    
+    // Socket.io chat functionality
+    const chatNamespace = io.of('/chat');
+    
+    chatNamespace.on('connection', (socket) => {
+      console.log('User connected to chat:', socket.id);
+      
+      // Join conversation room
+      socket.on('join_conversation', (conversationId) => {
+        socket.join(`conversation_${conversationId}`);
+        console.log(`User ${socket.id} joined conversation ${conversationId}`);
+      });
+      
+      // Leave conversation room
+      socket.on('leave_conversation', (conversationId) => {
+        socket.leave(`conversation_${conversationId}`);
+        console.log(`User ${socket.id} left conversation ${conversationId}`);
+      });
+      
+      // Handle new message
+      socket.on('send_message', async (data) => {
+        try {
+          const { conversationId, message, senderId, senderType } = data;
+          
+          // Insert message into database
+          const db = require('./db');
+          const { rows } = await db.query(`
+            INSERT INTO chat_messages (conversation_id, sender_id, sender_type, message)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *, (SELECT name FROM users WHERE id = $2) as sender_name
+          `, [conversationId, senderId, senderType, message]);
+          
+          const newMessage = rows[0];
+          
+          // Broadcast to conversation room
+          chatNamespace.to(`conversation_${conversationId}`).emit('new_message', newMessage);
+          
+        } catch (error) {
+          console.error('Error sending message via socket:', error);
+          socket.emit('message_error', { error: 'Failed to send message' });
+        }
+      });
+      
+      // Handle typing indicators
+      socket.on('typing_start', (data) => {
+        socket.to(`conversation_${data.conversationId}`).emit('user_typing', {
+          userId: data.userId,
+          userName: data.userName,
+          isTyping: true
+        });
+      });
+      
+      socket.on('typing_stop', (data) => {
+        socket.to(`conversation_${data.conversationId}`).emit('user_typing', {
+          userId: data.userId,
+          userName: data.userName,
+          isTyping: false
+        });
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('User disconnected from chat:', socket.id);
+      });
+    });
+    
   } catch (err) {
     console.error('Route registration error:', err.message || err);
   }
@@ -201,7 +279,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   const tryListen = (startPort, attempts = 5) => {
     let p = startPort;
     const attempt = () => {
-      const srv = app.listen(p, () => {
+      const srv = server.listen(p, () => {
         console.log(`✓ Server listening on port ${p}`);
       });
       srv.on('error', (err) => {

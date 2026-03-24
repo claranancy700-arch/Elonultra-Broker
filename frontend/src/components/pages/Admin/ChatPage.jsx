@@ -1,0 +1,350 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import './ChatPage.css';
+
+const ChatPage = () => {
+  const [conversations, setConversations] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+
+  // Initialize socket connection
+  useEffect(() => {
+    const newSocket = io('/chat', {
+      transports: ['websocket', 'polling']
+    });
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+      setSocket(null);
+    };
+  }, []);
+
+  // Load all conversations when component mounts
+  useEffect(() => {
+    loadAllConversations();
+  }, []);
+
+  // Socket event listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('new_message', (message) => {
+      setMessages(prev => [...prev, message]);
+      // Update conversation's last message
+      setConversations(prev => prev.map(conv =>
+        conv.id === message.conversation_id
+          ? { ...conv, last_message: message.message, last_sender_type: message.sender_type, last_message_at: message.created_at }
+          : conv
+      ));
+    });
+
+    socket.on('user_typing', (data) => {
+      setIsTyping(data.isTyping);
+    });
+
+    return () => {
+      socket.off('new_message');
+      socket.off('user_typing');
+    };
+  }, [socket]);
+
+  // Join/leave conversation room
+  useEffect(() => {
+    if (socket && activeConversation) {
+      socket.emit('join_conversation', activeConversation.id);
+      loadMessages(activeConversation.id);
+
+      return () => {
+        socket.emit('leave_conversation', activeConversation.id);
+      };
+    }
+  }, [socket, activeConversation]);
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadAllConversations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Admin endpoint to get all conversations
+      const response = await fetch('/api/admin/chat/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setConversations(data.conversations);
+        // Auto-select the first active conversation
+        const activeConv = data.conversations.find(conv => conv.status === 'active');
+        if (activeConv) {
+          setActiveConversation(activeConv);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  const loadMessages = async (conversationId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/chat/conversations/${conversationId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !activeConversation || !socket) return;
+
+    const messageData = {
+      conversationId: activeConversation.id,
+      message: newMessage.trim(),
+      senderId: parseInt(localStorage.getItem('userId')),
+      senderType: 'admin'
+    };
+
+    // Optimistically add message to UI
+    const tempMessage = {
+      ...messageData,
+      created_at: new Date().toISOString(),
+      sender_name: 'Admin',
+      id: Date.now() // Temporary ID
+    };
+    setMessages(prev => [...prev, tempMessage]);
+    setNewMessage('');
+
+    // Send via socket
+    socket.emit('send_message', messageData);
+  };
+
+  const handleTyping = () => {
+    if (!socket || !activeConversation) return;
+
+    socket.emit('typing_start', {
+      conversationId: activeConversation.id,
+      userId: localStorage.getItem('userId'),
+      userName: 'Admin'
+    });
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('typing_stop', {
+        conversationId: activeConversation.id,
+        userId: localStorage.getItem('userId'),
+        userName: 'Admin'
+      });
+    }, 2000);
+  };
+
+  const updateConversationStatus = async (conversationId, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/chat/conversations/${conversationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setConversations(prev => prev.map(conv =>
+          conv.id === conversationId ? { ...conv, status } : conv
+        ));
+        if (activeConversation?.id === conversationId) {
+          setActiveConversation(prev => ({ ...prev, status }));
+        }
+      }
+    } catch (error) {
+      console.error('Error updating conversation status:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return '#28a745';
+      case 'waiting': return '#ffc107';
+      case 'closed': return '#6c757d';
+      default: return '#6c757d';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'active': return 'Active';
+      case 'waiting': return 'Waiting';
+      case 'closed': return 'Closed';
+      default: return 'Unknown';
+    }
+  };
+
+  return (
+    <div className="admin-chat-page">
+      <div className="chat-header">
+        <h2>Admin Chat Support</h2>
+        <div className="chat-stats">
+          <span className="stat">
+            Active: {conversations.filter(c => c.status === 'active').length}
+          </span>
+          <span className="stat">
+            Waiting: {conversations.filter(c => c.status === 'waiting').length}
+          </span>
+        </div>
+      </div>
+
+      <div className="chat-content">
+        {/* Conversations List */}
+        <div className="conversations-list">
+          <div className="conversations-header">
+            <h3>All Conversations</h3>
+          </div>
+          {conversations.length === 0 ? (
+            <div className="no-conversations">
+              <p>No conversations yet.</p>
+            </div>
+          ) : (
+            conversations.map(conv => (
+              <div
+                key={conv.id}
+                className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={() => setActiveConversation(conv)}
+              >
+                <div className="conversation-info">
+                  <div className="conversation-title">
+                    <span className="user-name">{conv.user_name || `User ${conv.user_id}`}</span>
+                    <span
+                      className="status-badge"
+                      style={{ backgroundColor: getStatusColor(conv.status) }}
+                    >
+                      {getStatusText(conv.status)}
+                    </span>
+                  </div>
+                  <div className="conversation-preview">
+                    {conv.last_message?.substring(0, 40)}...
+                  </div>
+                  <div className="conversation-meta">
+                    <span className="time">
+                      {new Date(conv.last_message_at).toLocaleDateString()}
+                    </span>
+                    {conv.unread_count > 0 && (
+                      <span className="unread-count">{conv.unread_count}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Chat Messages */}
+        <div className="chat-messages">
+          {activeConversation ? (
+            <>
+              <div className="messages-header">
+                <h4>Chat with {activeConversation.user_name || `User ${activeConversation.user_id}`}</h4>
+                <div className="conversation-actions">
+                  <select
+                    value={activeConversation.status}
+                    onChange={(e) => updateConversationStatus(activeConversation.id, e.target.value)}
+                    className="status-select"
+                  >
+                    <option value="waiting">Waiting</option>
+                    <option value="active">Active</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="messages-container">
+                {messages.map(msg => (
+                  <div
+                    key={msg.id || msg.created_at}
+                    className={`message ${msg.sender_type === 'admin' ? 'admin-message' : 'user-message'}`}
+                  >
+                    <div className="message-content">
+                      <div className="message-sender">
+                        {msg.sender_type === 'admin' ? 'Admin' : activeConversation.user_name || 'User'}
+                      </div>
+                      <div className="message-text">{msg.message}</div>
+                      <div className="message-time">{formatTime(msg.created_at)}</div>
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="typing-indicator">
+                    <span>User is typing...</span>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {activeConversation.status !== 'closed' && (
+                <div className="message-input">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') sendMessage();
+                      else handleTyping();
+                    }}
+                    placeholder="Type your response..."
+                    disabled={!socket}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={!newMessage.trim() || !socket}
+                  >
+                    Send
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="no-conversation">
+              <p>Select a conversation to start responding.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ChatPage;

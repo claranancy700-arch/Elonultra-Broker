@@ -89,3 +89,9 @@
     font-size: 11px;
   }
 }
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(var(--text-rgb), 0.1);
+  margin: 12px 24px;
+}

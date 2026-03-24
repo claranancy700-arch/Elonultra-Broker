@@ -292,6 +292,62 @@ async function ensureSchema() {
       console.log('Seeded 5 initial testimonies');
     }
 
+    // Chat tables for user-admin messaging
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS chat_conversations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        admin_id INTEGER,
+        status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'closed', 'waiting')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+        sender_id INTEGER NOT NULL,
+        sender_type VARCHAR(10) NOT NULL CHECK (sender_type IN ('user', 'admin')),
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for chat tables
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_id ON chat_conversations(user_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_admin_id ON chat_conversations(admin_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_status ON chat_conversations(status)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_updated_at ON chat_conversations(updated_at DESC)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at)`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_sender_id ON chat_messages(sender_id)`);
+
+    // Add trigger to update conversation updated_at and last_message_at
+    await db.query(`
+      CREATE OR REPLACE FUNCTION update_conversation_timestamp()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        UPDATE chat_conversations
+        SET updated_at = CURRENT_TIMESTAMP,
+            last_message_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.conversation_id;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql
+    `);
+
+    await db.query(`
+      DROP TRIGGER IF EXISTS trigger_update_conversation_timestamp ON chat_messages;
+      CREATE TRIGGER trigger_update_conversation_timestamp
+        AFTER INSERT ON chat_messages
+        FOR EACH ROW
+        EXECUTE FUNCTION update_conversation_timestamp()
+    `);
+
     console.log('Schema check completed');
   } catch (err) {
     console.error('Schema init error:', err.message || err);
