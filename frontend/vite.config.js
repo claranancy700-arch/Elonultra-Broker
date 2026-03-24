@@ -5,6 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   envDir: '..',  // Load .env from parent directory (project root)
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      }
+    }
+  },
   build: {
     cssMinify: false,  // Disable CSS minification to avoid syntax warnings
   },
