@@ -1,54 +1,154 @@
 const { Pool } = require('pg');
-const dotenv = require('dotenv');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const dotenv = require('dotenv');
 
 // Load .env.local first (for local development), then .env
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 dotenv.config();
 
 let pool;
+let sqliteDb;
 
 async function initializeDatabase() {
   try {
     // Try PostgreSQL first
-    if (!process.env.DATABASE_URL) {
-      console.warn('⚠️  DATABASE_URL not set. Database features will be unavailable.');
+    if (process.env.DATABASE_URL) {
+      pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        connectionTimeoutMillis: 30000,
+        idleTimeoutMillis: 30000,
+        max: 20,
+      });
+
+      // Test the connection
+      await pool.query('SELECT 1');
+      console.log('✓ Using PostgreSQL database');
       return;
     }
-
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 30000, // Increased from 5s to 30s for Render.com remote DB
-      idleTimeoutMillis: 30000,
-      max: 20, // Connection pool size
-    });
-
-    // Test the connection with a simple query
-    await pool.query('SELECT 1');
-    console.log('✓ Using PostgreSQL database');
   } catch (err) {
     console.warn('⚠️  PostgreSQL connection failed:', err.message);
-    console.warn('   (This is OK for local testing. Render will use its internal database URL)');
-    console.warn('   Backend API calls will fail, but React frontend will still load.');
   }
+
+  // Fall back to SQLite
+  try {
+    const dbPath = path.join(__dirname, '../../elon_dev.db');
+    sqliteDb = new sqlite3.Database(dbPath);
+    console.log('✓ Using SQLite database at:', dbPath);
+
+    // Enable foreign keys
+    sqliteDb.run('PRAGMA foreign_keys = ON');
+
+    // Create basic tables
+    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      balance REAL DEFAULT 0,
+      portfolio_value REAL DEFAULT 0,
+      is_active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Chat tables
+    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS chat_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      admin_id INTEGER,
+      status TEXT DEFAULT 'active' CHECK (status IN ('active', 'closed', 'waiting')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL,
+      sender_id INTEGER NOT NULL,
+      sender_type TEXT NOT NULL CHECK (sender_type IN ('user', 'admin')),
+      message TEXT NOT NULL,
+      is_read BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Indexes
+    await runSQLiteQuery(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_id ON chat_conversations(user_id)`);
+    await runSQLiteQuery(`CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id)`);
+
+    console.log('✓ SQLite tables initialized');
+  } catch (err) {
+    console.error('SQLite initialization failed:', err);
+  }
+}
+
+// Helper for SQLite queries
+function runSQLiteQuery(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    sqliteDb.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
+}
+
+function getSQLiteQuery(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    sqliteDb.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
+function allSQLiteQuery(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    sqliteDb.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve({ rows });
+    });
+  });
 }
 
 // Initialize on module load
 initializeDatabase().catch(err => console.error('Database initialization error:', err));
 
 async function query(text, params) {
-  if (!pool) {
-    throw new Error('Database connection not available. Set DATABASE_URL in .env');
+  if (pool) {
+    return pool.query(text, params);
+  } else if (sqliteDb) {
+    // Convert PostgreSQL syntax to SQLite for basic queries
+    if (text.includes('INSERT') || text.includes('UPDATE') || text.includes('DELETE')) {
+      return runSQLiteQuery(text, params);
+    } else {
+      return allSQLiteQuery(text, params);
+    }
+  } else {
+    throw new Error('Database connection not available');
   }
-  return pool.query(text, params);
 }
 
 async function getClient() {
-  if (!pool) {
-    throw new Error('Database connection not available. Set DATABASE_URL in .env');
+  if (pool) {
+    return pool.connect();
+  } else if (sqliteDb) {
+    // For SQLite, return an object that mimics pg client
+    return {
+      query: (text, params) => {
+        if (text.includes('INSERT') || text.includes('UPDATE') || text.includes('DELETE')) {
+          return runSQLiteQuery(text, params);
+        } else {
+          return allSQLiteQuery(text, params);
+        }
+      },
+      release: () => {} // No-op for SQLite
+    };
+  } else {
+    throw new Error('Database connection not available');
   }
-  return pool.connect();
 }
+
+module.exports = { query, getClient };
 
 // Log connection errors for PostgreSQL
 if (pool) {

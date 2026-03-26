@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { io } from 'socket.io-client';
 import './ChatBox.css';
+import { AuthContext } from '../../context/AuthContext';
+import { safeGetItem } from '../../utils/storage';
 
 const API_BASE_URL = 'http://localhost:5001';
 
@@ -12,9 +14,12 @@ const ChatBox = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [socket, setSocket] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketError, setSocketError] = useState(null);
   const socketRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
+  const { user } = useContext(AuthContext);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -41,41 +46,53 @@ const ChatBox = ({ isOpen, onClose }) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const loadConversations = async () => {
+  const loadConversations = async (attempt = 1) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = safeGetItem('token');
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (data.success) {
         setConversations(data.conversations);
-        // Auto-select the first conversation if none is selected
         if (data.conversations.length > 0 && !activeConversation) {
           setActiveConversation(data.conversations[0]);
         }
       }
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error(`Error loading conversations (attempt ${attempt}):`, error);
+      if (attempt < 5) {
+        const wait = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
+        setTimeout(() => loadConversations(attempt + 1), wait);
+      }
     }
   };
 
-  const loadMessages = async (conversationId) => {
+  const loadMessages = async (conversationId, attempt = 1) => {
+    if (!conversationId) return;
+
     try {
-      const token = localStorage.getItem('token');
+      const token = safeGetItem('token');
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations/${conversationId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (data.success) {
         setMessages(data.messages);
       }
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error(`Error loading messages (attempt ${attempt}):`, error);
+      if (attempt < 5) {
+        const wait = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
+        setTimeout(() => loadMessages(conversationId, attempt + 1), wait);
+      }
     }
   };
 
@@ -86,9 +103,14 @@ const ChatBox = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!user) {
+      setError('You must be logged in to start a chat');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = safeGetItem('token');
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
         method: 'POST',
         headers: {
@@ -126,10 +148,15 @@ const ChatBox = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!user) {
+      console.error('No user context found - user not logged in');
+      return;
+    }
+
     const messageData = {
       conversationId: activeConversation.id,
       message: sanitizedMessage,
-      senderId: parseInt(localStorage.getItem('userId')),
+      senderId: user.id,
       senderType: 'user'
     };
 
@@ -176,31 +203,54 @@ const ChatBox = ({ isOpen, onClose }) => {
 
   // Initialize socket connection
   useEffect(() => {
-    if (isOpen && !socketRef.current) {
-      const newSocket = io(`${API_BASE_URL}/chat`, {
-        transports: ['websocket', 'polling']
-      });
-      socketRef.current = newSocket;
-      setSocket(newSocket);
+    const newSocket = io(`${API_BASE_URL}/chat`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+      timeout: 10000
+    });
 
-      return () => {
-        newSocket.close();
-        socketRef.current = null;
-        setSocket(null);
-      };
-    } else if (!isOpen && socketRef.current) {
-      socketRef.current.close();
+    newSocket.on('connect', () => {
+      console.log('ChatBox socket connected:', newSocket.id);
+      setSocketConnected(true);
+      setSocketError(null);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('ChatBox socket disconnected:', reason);
+      setSocketConnected(false);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('ChatBox socket connection error:', err);
+      setSocketError(err.message || 'Socket connection failed');
+      setSocketConnected(false);
+    });
+
+    newSocket.on('error', (err) => {
+      console.error('ChatBox socket error:', err);
+      setSocketError(err.message || 'Socket error');
+    });
+
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
       socketRef.current = null;
       setSocket(null);
-    }
-  }, [isOpen]);
+      setSocketConnected(false);
+    };
+  }, []);
 
   // Load conversations when chat opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
       loadConversations();
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   // Socket event listeners
   useEffect(() => {
@@ -256,6 +306,18 @@ const ChatBox = ({ isOpen, onClose }) => {
 
   return (
     <>
+      {socketError && (
+        <div className="chat-connection-warning">
+          <small>Chat connection issue: {socketError}. Retrying automatically.</small>
+        </div>
+      )}
+      {!socketConnected && !socketError && (
+        <div className="chat-connection-info">
+          <small>Attempting to connect to chat server...</small>
+        </div>
+      )}
+
+    
       {/* Notification for new messages */}
       {showNotification && unreadCount > 0 && (
         <div className="chat-notification">
@@ -339,23 +401,31 @@ const ChatBox = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="message-input">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') sendMessage();
-                      else handleTyping();
-                    }}
-                    placeholder="Type your message..."
-                    disabled={!socket}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || !socket}
-                  >
-                    Send
-                  </button>
+                  {!user ? (
+                    <div className="auth-required-notice">
+                      <small>Please log in to send messages</small>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') sendMessage();
+                          else handleTyping();
+                        }}
+                        placeholder="Type your message..."
+                        disabled={!socket}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={!newMessage.trim() || !socket}
+                      >
+                        Send
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
@@ -369,18 +439,26 @@ const ChatBox = ({ isOpen, onClose }) => {
         {/* New Conversation */}
         {conversations.length === 0 && (
           <div className="new-conversation">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Describe your issue or question..."
-              rows={3}
-            />
-            <button
-              onClick={createNewConversation}
-              disabled={!newMessage.trim() || isLoading}
-            >
-              {isLoading ? 'Starting...' : 'Start Chat'}
-            </button>
+            {!user ? (
+              <div className="auth-required-notice">
+                <small>Please log in to start a chat</small>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Describe your issue or question..."
+                  rows={3}
+                />
+                <button
+                  onClick={createNewConversation}
+                  disabled={!newMessage.trim() || isLoading}
+                >
+                  {isLoading ? 'Starting...' : 'Start Chat'}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -1,0 +1,14 @@
+﻿Γ£ô Using PostgreSQL database
+Schema check completed
+Database schema initialized
+All routes loaded successfully
+Price updater started (interval ms): 86400000
+Testimonies auto-generator started (interval ms): 86400000
+[Server] Selected simulator: balance
+[BalanceGrowth] Scheduler initialized (hourly, Mon-Fri)
+[Server] Balance growth simulator started
+Background jobs started
+≡ƒôª Serving React SPA from frontend/dist
+Γ£ô Server listening on port 5001
+[Testimonies Auto-Generate] Generated and saved 3 testimonies
+Portfolio valuation updated for 1 users

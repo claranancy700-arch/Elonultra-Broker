@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './ChatPage.css';
 
+const API_BASE_URL = import.meta.env.DEV 
+  ? 'http://localhost:5001' 
+  : window.location.origin;
+
+const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'admin-key';
+
 const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -10,19 +16,52 @@ const ChatPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [socket, setSocket] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [isMobileMessagesView, setIsMobileMessagesView] = useState(false); // Track mobile messages view
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('/chat', {
-      transports: ['websocket', 'polling']
+    const newSocket = io(`${API_BASE_URL}/chat`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      auth: {
+        adminKey: ADMIN_KEY
+      }
     });
+
+    newSocket.on('connect', () => {
+      console.log('Socket connected:', newSocket.id);
+      setSocketConnected(true);
+      setError(null);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setSocketConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setSocketConnected(false);
+    });
+
+    newSocket.on('error', (error) => {
+      console.error('Socket error:', error);
+      setError(error?.message || 'Socket error occurred');
+    });
+
     setSocket(newSocket);
 
     return () => {
       newSocket.close();
       setSocket(null);
+      setSocketConnected(false);
     };
   }, []);
 
@@ -79,7 +118,7 @@ const ChatPage = () => {
       const response = await fetch('/api/admin/chat/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
         }
       });
       const data = await response.json();
@@ -102,7 +141,7 @@ const ChatPage = () => {
       const response = await fetch(`/api/admin/chat/conversations/${conversationId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
         }
       });
       const data = await response.json();
@@ -117,10 +156,12 @@ const ChatPage = () => {
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConversation || !socket) return;
 
+    const adminId = parseInt(localStorage.getItem('adminId'), 10) || 1; // Use 1 as default admin ID
+
     const messageData = {
       conversationId: activeConversation.id,
       message: newMessage.trim(),
-      senderId: parseInt(localStorage.getItem('userId')),
+      senderId: adminId,
       senderType: 'admin'
     };
 
@@ -141,9 +182,11 @@ const ChatPage = () => {
   const handleTyping = () => {
     if (!socket || !activeConversation) return;
 
+    const adminId = parseInt(localStorage.getItem('adminId'), 10) || 1;
+
     socket.emit('typing_start', {
       conversationId: activeConversation.id,
-      userId: localStorage.getItem('userId'),
+      userId: adminId.toString(),
       userName: 'Admin'
     });
 
@@ -156,7 +199,7 @@ const ChatPage = () => {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing_stop', {
         conversationId: activeConversation.id,
-        userId: localStorage.getItem('userId'),
+        userId: adminId.toString(),
         userName: 'Admin'
       });
     }, 2000);
@@ -170,7 +213,7 @@ const ChatPage = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-admin-key': process.env.REACT_APP_ADMIN_KEY || 'admin-key'
+          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
         },
         body: JSON.stringify({ status })
       });
@@ -188,8 +231,16 @@ const ChatPage = () => {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const handleConversationSelect = (conversation) => {
+    setActiveConversation(conversation);
+    // On mobile, switch to messages view when conversation is selected
+    if (window.innerWidth <= 768) {
+      setIsMobileMessagesView(true);
+    }
+  };
+
+  const handleBackToConversations = () => {
+    setIsMobileMessagesView(false);
   };
 
   const formatTime = (timestamp) => {
@@ -225,62 +276,82 @@ const ChatPage = () => {
           <span className="stat">
             Waiting: {conversations.filter(c => c.status === 'waiting').length}
           </span>
+          <span className={`stat ${socketConnected ? 'connected' : 'disconnected'}`}>
+            Socket: {socketConnected ? '✓ Connected' : '✗ Disconnected'}
+          </span>
         </div>
       </div>
 
+      {error && (
+        <div className="error-banner">
+          <strong>Error:</strong> {error}
+          <button className="close-error" onClick={() => setError(null)}>×</button>
+        </div>
+      )}
+
       <div className="chat-content">
-        {/* Conversations List */}
-        <div className="conversations-list">
-          <div className="conversations-header">
-            <h3>All Conversations</h3>
-          </div>
-          {conversations.length === 0 ? (
-            <div className="no-conversations">
-              <p>No conversations yet.</p>
+        {/* Mobile: Show conversations list or messages based on state */}
+        {window.innerWidth <= 768 ? (
+          !isMobileMessagesView ? (
+            // Mobile conversations view
+            <div className="mobile-conversations-view">
+              <div className="conversations-list">
+                <div className="conversations-header">
+                  <h3>All Conversations</h3>
+                </div>
+                {conversations.length === 0 ? (
+                  <div className="no-conversations">
+                    <p>No conversations yet.</p>
+                  </div>
+                ) : (
+                  conversations.map(conv => (
+                    <div
+                      key={conv.id}
+                      className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
+                      onClick={() => handleConversationSelect(conv)}
+                    >
+                      <div className="conversation-info">
+                        <div className="conversation-title">
+                          <span className="user-name">{conv.user_name || `User ${conv.user_id}`}</span>
+                          <span
+                            className="status-badge"
+                            style={{ backgroundColor: getStatusColor(conv.status) }}
+                          >
+                            {getStatusText(conv.status)}
+                          </span>
+                        </div>
+                        <div className="conversation-preview">
+                          {conv.last_message?.substring(0, 40)}...
+                        </div>
+                        <div className="conversation-meta">
+                          <span className="time">
+                            {new Date(conv.last_message_at).toLocaleDateString()}
+                          </span>
+                          {conv.unread_count > 0 && (
+                            <span className="unread-count">{conv.unread_count}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           ) : (
-            conversations.map(conv => (
-              <div
-                key={conv.id}
-                className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={() => setActiveConversation(conv)}
-              >
-                <div className="conversation-info">
-                  <div className="conversation-title">
-                    <span className="user-name">{conv.user_name || `User ${conv.user_id}`}</span>
-                    <span
-                      className="status-badge"
-                      style={{ backgroundColor: getStatusColor(conv.status) }}
-                    >
-                      {getStatusText(conv.status)}
-                    </span>
-                  </div>
-                  <div className="conversation-preview">
-                    {conv.last_message?.substring(0, 40)}...
-                  </div>
-                  <div className="conversation-meta">
-                    <span className="time">
-                      {new Date(conv.last_message_at).toLocaleDateString()}
-                    </span>
-                    {conv.unread_count > 0 && (
-                      <span className="unread-count">{conv.unread_count}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Chat Messages */}
-        <div className="chat-messages">
-          {activeConversation ? (
-            <>
-              <div className="messages-header">
-                <h4>Chat with {activeConversation.user_name || `User ${activeConversation.user_id}`}</h4>
+            // Mobile messages view
+            <div className="mobile-messages-view">
+              <div className="mobile-messages-header">
+                <button 
+                  className="back-btn"
+                  onClick={handleBackToConversations}
+                  title="Back to conversations"
+                >
+                  ←
+                </button>
+                <h4>Chat with {activeConversation?.user_name || `User ${activeConversation?.user_id}`}</h4>
                 <div className="conversation-actions">
                   <select
-                    value={activeConversation.status}
+                    value={activeConversation?.status}
                     onChange={(e) => updateConversationStatus(activeConversation.id, e.target.value)}
                     className="status-select"
                   >
@@ -290,58 +361,180 @@ const ChatPage = () => {
                   </select>
                 </div>
               </div>
-
-              <div className="messages-container">
-                {messages.map(msg => (
-                  <div
-                    key={msg.id || msg.created_at}
-                    className={`message ${msg.sender_type === 'admin' ? 'admin-message' : 'user-message'}`}
-                  >
-                    <div className="message-content">
-                      <div className="message-sender">
-                        {msg.sender_type === 'admin' ? 'Admin' : activeConversation.user_name || 'User'}
-                      </div>
-                      <div className="message-text">{msg.message}</div>
-                      <div className="message-time">{formatTime(msg.created_at)}</div>
+              <div className="chat-messages">
+                {activeConversation ? (
+                  <>
+                    <div className="messages-container">
+                      {messages.map(msg => (
+                        <div
+                          key={msg.id || msg.created_at}
+                          className={`message ${msg.sender_type === 'admin' ? 'admin-message' : 'user-message'}`}
+                        >
+                          <div className="message-content">
+                            <div className="message-sender">
+                              {msg.sender_type === 'admin' ? 'Admin' : activeConversation.user_name || 'User'}
+                            </div>
+                            <div className="message-text">{msg.message}</div>
+                            <div className="message-time">{formatTime(msg.created_at)}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {isTyping && (
+                        <div className="typing-indicator">
+                          <span>User is typing...</span>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="typing-indicator">
-                    <span>User is typing...</span>
+
+                    {activeConversation.status !== 'closed' && (
+                      <div className="mobile-message-input">
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') sendMessage();
+                            else handleTyping();
+                          }}
+                          placeholder="Type your response..."
+                          disabled={!socket}
+                        />
+                        <button
+                          onClick={sendMessage}
+                          disabled={!newMessage.trim() || !socket}
+                        >
+                          Send
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-conversation">
+                    <p>Select a conversation to start responding.</p>
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
-
-              {activeConversation.status !== 'closed' && (
-                <div className="message-input">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') sendMessage();
-                      else handleTyping();
-                    }}
-                    placeholder="Type your response..."
-                    disabled={!socket}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || !socket}
+            </div>
+          )
+        ) : (
+          // Desktop view: side by side
+          <>
+            {/* Conversations List */}
+            <div className="conversations-list">
+              <div className="conversations-header">
+                <h3>All Conversations</h3>
+              </div>
+              {conversations.length === 0 ? (
+                <div className="no-conversations">
+                  <p>No conversations yet.</p>
+                </div>
+              ) : (
+                conversations.map(conv => (
+                  <div
+                    key={conv.id}
+                    className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
+                    onClick={() => handleConversationSelect(conv)}
                   >
-                    Send
-                  </button>
+                    <div className="conversation-info">
+                      <div className="conversation-title">
+                        <span className="user-name">{conv.user_name || `User ${conv.user_id}`}</span>
+                        <span
+                          className="status-badge"
+                          style={{ backgroundColor: getStatusColor(conv.status) }}
+                        >
+                          {getStatusText(conv.status)}
+                        </span>
+                      </div>
+                      <div className="conversation-preview">
+                        {conv.last_message?.substring(0, 40)}...
+                      </div>
+                      <div className="conversation-meta">
+                        <span className="time">
+                          {new Date(conv.last_message_at).toLocaleDateString()}
+                        </span>
+                        {conv.unread_count > 0 && (
+                          <span className="unread-count">{conv.unread_count}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Chat Messages */}
+            <div className="chat-messages">
+              {activeConversation ? (
+                <>
+                  <div className="messages-header">
+                    <h4>Chat with {activeConversation.user_name || `User ${activeConversation.user_id}`}</h4>
+                    <div className="conversation-actions">
+                      <select
+                        value={activeConversation.status}
+                        onChange={(e) => updateConversationStatus(activeConversation.id, e.target.value)}
+                        className="status-select"
+                      >
+                        <option value="waiting">Waiting</option>
+                        <option value="active">Active</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="messages-container">
+                    {messages.map(msg => (
+                      <div
+                        key={msg.id || msg.created_at}
+                        className={`message ${msg.sender_type === 'admin' ? 'admin-message' : 'user-message'}`}
+                      >
+                        <div className="message-content">
+                          <div className="message-sender">
+                            {msg.sender_type === 'admin' ? 'Admin' : activeConversation.user_name || 'User'}
+                          </div>
+                          <div className="message-text">{msg.message}</div>
+                          <div className="message-time">{formatTime(msg.created_at)}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {isTyping && (
+                      <div className="typing-indicator">
+                        <span>User is typing...</span>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {activeConversation.status !== 'closed' && (
+                    <div className="message-input">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') sendMessage();
+                          else handleTyping();
+                        }}
+                        placeholder="Type your response..."
+                        disabled={!socket}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={!newMessage.trim() || !socket}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="no-conversation">
+                  <p>Select a conversation to start responding.</p>
                 </div>
               )}
-            </>
-          ) : (
-            <div className="no-conversation">
-              <p>Select a conversation to start responding.</p>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

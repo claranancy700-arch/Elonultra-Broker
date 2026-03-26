@@ -10,12 +10,12 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 1px solid var(--border-color, #333);
+  border-bottom: 1px solid var(--border);
 }
 
 .chat-header h2 {
   margin: 0;
-  color: var(--text-primary, #fff);
+  color: var(--text);
   font-size: 24px;
 }
 
@@ -26,10 +26,57 @@
 
 .chat-stats .stat {
   padding: 5px 10px;
-  background: var(--bg-secondary, #2a2a2a);
+  background: var(--card);
   border-radius: 15px;
   font-size: 14px;
   color: var(--text-secondary, #ccc);
+}
+
+.chat-stats .stat.connected {
+  color: #10b981;
+  font-weight: bold;
+}
+
+.chat-stats .stat.disconnected {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fecaca;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  color: #7f1d1d;
+  font-size: 14px;
+}
+
+.error-banner strong {
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  color: #7f1d1d;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 10px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.close-error:hover {
+  opacity: 1;
+  font-size: 14px;
+  color: var(--muted);
 }
 
 .chat-content {
@@ -40,8 +87,8 @@
 
 .conversations-list {
   width: 350px;
-  background: var(--bg-primary, #1a1a1a);
-  border: 1px solid var(--border-color, #333);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -49,31 +96,31 @@
 
 .conversations-header {
   padding: 15px;
-  border-bottom: 1px solid var(--border-color, #333);
+  border-bottom: 1px solid var(--border);
 }
 
 .conversations-header h3 {
   margin: 0;
-  color: var(--text-primary, #fff);
+  color: var(--text);
   font-size: 18px;
 }
 
 .no-conversations {
   padding: 20px;
   text-align: center;
-  color: var(--text-secondary, #ccc);
+  color: var(--muted);
 }
 
 .conversation-item {
   padding: 15px;
-  border-bottom: 1px solid var(--border-color, #333);
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .conversation-item:hover,
 .conversation-item.active {
-  background: var(--bg-hover, #2a2a2a);
+  background: var(--card);
 }
 
 .conversation-info {
@@ -87,7 +134,7 @@
   justify-content: space-between;
   align-items: center;
   font-weight: 500;
-  color: var(--text-primary, #fff);
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -100,7 +147,7 @@
 }
 
 .conversation-preview {
-  color: var(--text-secondary, #ccc);
+  color: var(--muted);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -115,12 +162,12 @@
 }
 
 .conversation-meta .time {
-  color: var(--text-muted, #888);
+  color: var(--muted);
   font-size: 11px;
 }
 
 .unread-count {
-  background: var(--accent-color, #007bff);
+  background: var(--accent);
   color: white;
   border-radius: 10px;
   padding: 2px 6px;
@@ -130,8 +177,8 @@
 
 .chat-messages {
   flex: 1;
-  background: var(--bg-primary, #1a1a1a);
-  border: 1px solid var(--border-color, #333);
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -142,12 +189,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  border-bottom: 1px solid var(--border-color, #333);
+  border-bottom: 1px solid var(--border);
 }
 
 .messages-header h4 {
   margin: 0;
-  color: var(--text-primary, #fff);
+  color: var(--text);
   font-size: 18px;
 }
 
@@ -158,16 +205,16 @@
 
 .status-select {
   padding: 5px 10px;
-  background: var(--bg-secondary, #2a2a2a);
-  border: 1px solid var(--border-color, #333);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: var(--text-primary, #fff);
+  color: var(--text);
   font-size: 14px;
 }
 
 .status-select:focus {
   outline: none;
-  border-color: var(--accent-color, #007bff);
+  border-color: var(--accent);
 }
 
 .messages-container {
@@ -200,13 +247,13 @@
 }
 
 .user-message .message-content {
-  background: var(--bg-secondary, #2a2a2a);
-  color: var(--text-primary, #fff);
+  background: var(--card);
+  color: var(--text);
   border-bottom-left-radius: 4px;
 }
 
 .admin-message .message-content {
-  background: var(--accent-color, #007bff);
+  background: var(--accent);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -233,7 +280,7 @@
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  color: var(--text-secondary, #ccc);
+  color: var(--muted);
   font-style: italic;
   font-size: 14px;
 }
@@ -241,28 +288,28 @@
 .message-input {
   display: flex;
   padding: 15px;
-  border-top: 1px solid var(--border-color, #333);
+  border-top: 1px solid var(--border);
   gap: 10px;
 }
 
 .message-input input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid var(--border-color, #333);
+  border: 1px solid var(--border);
   border-radius: 25px;
-  background: var(--bg-secondary, #2a2a2a);
-  color: var(--text-primary, #fff);
+  background: var(--card);
+  color: var(--text);
   font-size: 14px;
 }
 
 .message-input input:focus {
   outline: none;
-  border-color: var(--accent-color, #007bff);
+  border-color: var(--accent);
 }
 
 .message-input button {
   padding: 12px 24px;
-  background: var(--accent-color, #007bff);
+  background: var(--accent);
   color: white;
   border: none;
   border-radius: 25px;
@@ -272,11 +319,11 @@
 }
 
 .message-input button:hover:not(:disabled) {
-  background: var(--accent-hover, #0056b3);
+  background: var(--accent-light);
 }
 
 .message-input button:disabled {
-  background: var(--bg-disabled, #444);
+  background: var(--border);
   cursor: not-allowed;
 }
 
@@ -336,4 +383,130 @@
   .status-select {
     flex: 1;
   }
+}
+
+/* Mobile conversations view - full screen conversations list */
+.mobile-conversations-view {
+  height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-conversations-view .conversations-list {
+  flex: 1;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+}
+
+/* Mobile messages view - full screen with input at bottom */
+.mobile-messages-view {
+  height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-messages-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 12px;
+}
+
+.mobile-messages-header .back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.mobile-messages-header .back-btn:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.mobile-messages-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+
+.mobile-messages-header .conversation-actions {
+  margin-left: auto;
+}
+
+.mobile-messages-view .chat-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+}
+
+.mobile-messages-view .messages-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Mobile input area positioned at bottom */
+.mobile-message-input {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  z-index: 1001;
+  display: flex;
+  gap: 8px;
+}
+
+.mobile-message-input input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.mobile-message-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+}
+
+.mobile-message-input button {
+  padding: 12px 20px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mobile-message-input button:hover:not(:disabled) {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.mobile-message-input button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+  transform: none;
 }

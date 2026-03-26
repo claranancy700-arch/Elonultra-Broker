@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 
 // Simple message sanitization
 const sanitizeMessage = (message) => {
@@ -15,7 +15,7 @@ const sanitizeMessage = (message) => {
 
 // Rate limiting middleware
 const rateLimitMessages = (req, res, next) => {
-  const userId = req.user.id;
+  const userId = req.userId;
   const now = Date.now();
   
   if (!messageRateLimit.has(userId)) {
@@ -38,12 +38,12 @@ const rateLimitMessages = (req, res, next) => {
 };
 
 // All chat routes require authentication
-router.use(authenticateToken);
+router.use(verifyToken);
 
 // GET /api/chat/conversations - Get user's conversations
 router.get('/conversations', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { rows } = await db.query(`
       SELECT
         c.*,
@@ -70,7 +70,7 @@ router.get('/conversations', async (req, res) => {
 // POST /api/chat/conversations - Create new conversation
 router.post('/conversations', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.userId;
     const { message } = req.body;
 
     if (!message || message.trim().length === 0) {
@@ -129,7 +129,7 @@ router.post('/conversations', async (req, res) => {
 router.get('/conversations/:id/messages', async (req, res) => {
   try {
     const conversationId = parseInt(req.params.id);
-    const userId = req.user.id;
+    const userId = req.userId;
 
     if (isNaN(conversationId)) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
@@ -174,7 +174,7 @@ router.get('/conversations/:id/messages', async (req, res) => {
 router.post('/conversations/:id/messages', rateLimitMessages, async (req, res) => {
   try {
     const conversationId = parseInt(req.params.id);
-    const userId = req.user.id;
+    const userId = req.userId;
     const { message } = req.body;
 
     if (isNaN(conversationId)) {

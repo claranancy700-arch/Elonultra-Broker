@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin — ELON-ULTRA</title>
   <link rel="stylesheet" href="/css/styles.css?v=2.0.1">
+  <link rel="stylesheet" href="/css/admin-chat.css">
   <style>
     body { overflow-x: hidden; }
     .page-container { max-width: 1200px; margin: 0 auto; padding: 20px; width: 100%; box-sizing: border-box; }
@@ -85,7 +86,10 @@
   <header class="site-header">
     <div class="container" style="display:flex; align-items:center; justify-content:space-between;">
       <a href="/landing.html" class="brand"><img src="/images/elon-logo-v2.svg" alt="EUE"><span style="display:block">ELON-ULTRA - ADMIN</span></a>
-      <button class="theme-toggle" style="margin:0">☀️ Light Mode</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="theme-toggle" style="margin:0">☀️ Light Mode</button>
+        <button onclick="window.__adminChat?.openModal()" style="padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s">💬 Chat Support</button>
+      </div>
     </div>
   </header>
 
@@ -614,6 +618,10 @@
   <script src="/js/admin.js"></script>
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/scrolling-banner.js"></script>
+
+  <!-- Socket.io and Admin Chat -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/js/admin-chat.js"></script>
   
   <!-- Mobile Navigation & Testimonies Modal -->
   <script>

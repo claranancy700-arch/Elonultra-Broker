@@ -7,20 +7,30 @@ export const PromptAlert = () => {
   const [dismissed, setDismissed] = useState({});
 
   useEffect(() => {
-    // Non-blocking fetch - use timeout to defer execution
-    const timer = setTimeout(() => {
-      API.get('/prompts')
-        .then(response => {
-          if (response?.data?.prompts && Array.isArray(response.data.prompts)) {
-            setPrompts(response.data.prompts);
-          }
-        })
-        .catch(() => {
-          // Silently ignore errors
-        });
-    }, 500); // Delay by 500ms to not block initial render
+    let isSubscribed = true;
 
-    return () => clearTimeout(timer);
+    const fetchPrompts = async (attempt = 1) => {
+      try {
+        const response = await API.get('/prompts');
+        if (isSubscribed && response?.data?.prompts && Array.isArray(response.data.prompts)) {
+          setPrompts(response.data.prompts);
+        }
+      } catch (err) {
+        if (attempt < 5) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
+          console.warn(`Prompt fetch failed (attempt ${attempt}), retry in ${delay}ms`, err);
+          setTimeout(() => fetchPrompts(attempt + 1), delay);
+        } else {
+          console.warn('Prompt fetch failed after retries, ignoring until next page load', err);
+        }
+      }
+    };
+
+    const timer = setTimeout(fetchPrompts, 500);
+    return () => {
+      isSubscribed = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleDismiss = (promptId) => {

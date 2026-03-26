@@ -5,6 +5,8 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import ThemeFab from './ThemeFab';
+import FloatingChat from '../common/FloatingChat';
+import AdminChatFab from './AdminChatFab';
 import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import { PromptAlert } from '../common/PromptAlert';
 import ParticleBackground from '../background/ParticleBackground';
@@ -49,6 +51,11 @@ export const MainLayout = () => {
       </div>
       <MobileBottomNav />
       <ThemeFab />
+      <FloatingChat />
+      <AdminChatFab 
+        isAdmin={user?.isAdmin || user?.role === 'admin'} 
+        onNavigate={() => navigate('/admin/chat')}
+      />
     </>
   );
 };

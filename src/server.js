@@ -22,7 +22,12 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5001",
+      "http://127.0.0.1:5001"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -125,7 +130,11 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
           const { rows } = await db.query(`
             INSERT INTO chat_messages (conversation_id, sender_id, sender_type, message)
             VALUES ($1, $2, $3, $4)
-            RETURNING *, (SELECT name FROM users WHERE id = $2) as sender_name
+            RETURNING *, 
+              CASE 
+                WHEN $3 = 'admin' THEN 'Admin'
+                ELSE (SELECT name FROM users WHERE id = $2)
+              END as sender_name
           `, [conversationId, senderId, senderType, message]);
           
           const newMessage = rows[0];

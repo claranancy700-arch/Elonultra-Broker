@@ -1,0 +1,164 @@
+/* Admin Chat FAB (Floating Action Button) */
+
+.admin-chat-fab-wrapper {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  z-index: 998;
+}
+
+.admin-chat-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: white;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(31, 122, 140, 0.4);
+  z-index: 998;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-chat-fab::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admin-chat-fab:hover {
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 8px 20px rgba(31, 122, 140, 0.6);
+}
+
+.admin-chat-fab:hover::before {
+  opacity: 1;
+}
+
+.admin-chat-fab:active {
+  transform: translateY(-2px) scale(0.95);
+}
+
+.admin-icon {
+  display: block;
+  font-style: normal;
+  z-index: 1;
+}
+
+/* Tooltip */
+.admin-fab-tooltip {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.admin-fab-tooltip::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: 10px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid rgba(0, 0, 0, 0.9);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulsing animation - optional activator */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.7);
+  }
+}
+
+.admin-chat-fab.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .admin-chat-fab-wrapper {
+    bottom: 90px;
+    right: 10px;
+  }
+
+  .admin-chat-fab {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .admin-fab-tooltip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 320px) {
+  .admin-chat-fab {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+}
+
+/* Accessibility */
+.admin-chat-fab:focus-visible {
+  outline: 2px solid rgba(102, 126, 234, 0.7);
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .admin-fab-tooltip {
+    background: rgba(0, 0, 0, 0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-chat-fab,
+  .admin-fab-tooltip {
+    transition: none;
+  }
+
+  .admin-fab-tooltip {
+    animation: none;
+  }
+
+  .admin-chat-fab.pulse {
+    animation: none;
+  }
+}

@@ -16,19 +16,33 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// Handle auth errors and network retries
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const config = error.config;
+    const status = error.response?.status;
+
+    if (!config) {
+      return Promise.reject(error);
+    }
+
+    if (status === 401 || status === 403) {
       safeRemoveItem('token');
       safeRemoveItem('user');
-      try {
-        window.location.href = '/login';
-      } catch (e) {
-        // Redirect failed silently
-      }
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
+
+    // Retry on network errors with exponential backoff, up to 3 attempts
+    config.retryCount = config.retryCount || 0;
+    if (!status && config.retryCount < 3) {
+      config.retryCount += 1;
+      const backoff = 500 * Math.pow(2, config.retryCount - 1);
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+      return API(config);
+    }
+
     return Promise.reject(error);
   }
 );

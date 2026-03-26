@@ -140,7 +140,7 @@ router.post('/conversations/:id/messages', requireAdminKey, async (req, res) => 
     const { rows } = await db.query(`
       INSERT INTO chat_messages (conversation_id, sender_id, sender_type, message)
       VALUES ($1, $2, 'admin', $3)
-      RETURNING *, (SELECT name FROM users WHERE id = $2) as sender_name
+      RETURNING *, 'Admin' as sender_name
     `, [conversationId, adminId || 0, sanitizedMessage]);
 
     res.json({ success: true, message: rows[0] });

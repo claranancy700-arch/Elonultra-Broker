@@ -9,11 +9,10 @@ export default function TestimoniesScrollBanner() {
     fetchTestimonies();
   }, []);
 
-  const fetchTestimonies = async () => {
+  const fetchTestimonies = async (attempt = 1) => {
     try {
       const response = await API.get('/testimonies');
       if (response.data && response.data.length > 0) {
-        // Map API response to component structure
         const mappedTestimonies = response.data.map(t => ({
           id: t.id,
           name: t.client_name,
@@ -22,13 +21,16 @@ export default function TestimoniesScrollBanner() {
         }));
         setTestimonies(mappedTestimonies);
       } else {
-        // Fallback if API returns empty
         setTestimonies(getDefaultTestimonies());
       }
     } catch (err) {
-      console.error('Failed to fetch testimonies:', err);
-      // Use default testimonies only on error
-      setTestimonies(getDefaultTestimonies());
+      console.error('Failed to fetch testimonies (attempt', attempt, '):', err);
+      if (attempt < 5) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
+        setTimeout(() => fetchTestimonies(attempt + 1), delay);
+      } else {
+        setTestimonies(getDefaultTestimonies());
+      }
     }
   };
 
