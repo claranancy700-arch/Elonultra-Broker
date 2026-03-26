@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -7,155 +6,44 @@ const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 dotenv.config();
 
-let pool;
-let sqliteDb;
+// PostgreSQL only - no fallbacks. Exit if DATABASE_URL not set.
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL is required but not set!');
+  console.error('Set DATABASE_URL in your .env or hosting platform environment variables.');
+  console.error('Example: postgresql://user:password@host:5432/dbname');
+  process.exit(1);
+}
 
-async function initializeDatabase() {
-  try {
-    // Try PostgreSQL first
-    if (process.env.DATABASE_URL) {
-      pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        connectionTimeoutMillis: 30000,
-        idleTimeoutMillis: 30000,
-        max: 20,
-      });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000,
+  max: 20,
+});
 
-      // Test the connection
-      await pool.query('SELECT 1');
-      console.log('✓ Using PostgreSQL database');
-      return;
-    }
-  } catch (err) {
-    console.warn('⚠️  PostgreSQL connection failed:', err.message);
+// Test connection on startup
+pool.query('SELECT 1', (err) => {
+  if (err) {
+    console.error('❌ PostgreSQL connection test failed:', err.message);
+  } else {
+    console.log('✓ PostgreSQL connected');
   }
-
-  // Fall back to SQLite
-  try {
-    const dbPath = path.join(__dirname, '../../elon_dev.db');
-    sqliteDb = new sqlite3.Database(dbPath);
-    console.log('✓ Using SQLite database at:', dbPath);
-
-    // Enable foreign keys
-    sqliteDb.run('PRAGMA foreign_keys = ON');
-
-    // Create basic tables
-    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      balance REAL DEFAULT 0,
-      portfolio_value REAL DEFAULT 0,
-      is_active BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Chat tables
-    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS chat_conversations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      admin_id INTEGER,
-      status TEXT DEFAULT 'active' CHECK (status IN ('active', 'closed', 'waiting')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    await runSQLiteQuery(`CREATE TABLE IF NOT EXISTS chat_messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      conversation_id INTEGER NOT NULL,
-      sender_id INTEGER NOT NULL,
-      sender_type TEXT NOT NULL CHECK (sender_type IN ('user', 'admin')),
-      message TEXT NOT NULL,
-      is_read BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-
-    // Indexes
-    await runSQLiteQuery(`CREATE INDEX IF NOT EXISTS idx_chat_conversations_user_id ON chat_conversations(user_id)`);
-    await runSQLiteQuery(`CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id)`);
-
-    console.log('✓ SQLite tables initialized');
-  } catch (err) {
-    console.error('SQLite initialization failed:', err);
-  }
-}
-
-// Helper for SQLite queries
-function runSQLiteQuery(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    sqliteDb.run(sql, params, function(err) {
-      if (err) reject(err);
-      else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-  });
-}
-
-function getSQLiteQuery(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    sqliteDb.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-}
-
-function allSQLiteQuery(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    sqliteDb.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve({ rows });
-    });
-  });
-}
-
-// Initialize on module load
-initializeDatabase().catch(err => console.error('Database initialization error:', err));
+});
 
 async function query(text, params) {
-  if (pool) {
-    return pool.query(text, params);
-  } else if (sqliteDb) {
-    // Convert PostgreSQL syntax to SQLite for basic queries
-    if (text.includes('INSERT') || text.includes('UPDATE') || text.includes('DELETE')) {
-      return runSQLiteQuery(text, params);
-    } else {
-      return allSQLiteQuery(text, params);
-    }
-  } else {
-    throw new Error('Database connection not available');
-  }
+  return pool.query(text, params);
 }
 
 async function getClient() {
-  if (pool) {
-    return pool.connect();
-  } else if (sqliteDb) {
-    // For SQLite, return an object that mimics pg client
-    return {
-      query: (text, params) => {
-        if (text.includes('INSERT') || text.includes('UPDATE') || text.includes('DELETE')) {
-          return runSQLiteQuery(text, params);
-        } else {
-          return allSQLiteQuery(text, params);
-        }
-      },
-      release: () => {} // No-op for SQLite
-    };
-  } else {
-    throw new Error('Database connection not available');
-  }
+  return await pool.connect();
 }
 
-module.exports = { query, getClient };
+module.exports = { query, getClient, pool, ensureSchema };
 
-// Log connection errors for PostgreSQL
-if (pool) {
-  pool.on('error', (err) => {
-    console.error('Unexpected PostgreSQL pool error:', err);
-  });
-}
+// Log connection errors
+pool.on('error', (err) => {
+  console.error('Unexpected PostgreSQL pool error:', err);
+});
 /**
  * ensureSchema
  * Idempotently creates core tables and required columns, including withdrawal fee fields
@@ -185,7 +73,7 @@ async function ensureSchema() {
     await pool.query(`ALTER TABLE users ALTER COLUMN balance TYPE NUMERIC(30,8)`);
   } catch (e) {
     // older PG versions may not support USING or the table might already be wide enough
-    debug('adjusting users.balance precision:', e.message);
+    console.debug('adjusting users.balance precision:', e.message);
   }
 
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_enabled BOOLEAN NOT NULL DEFAULT FALSE;`);

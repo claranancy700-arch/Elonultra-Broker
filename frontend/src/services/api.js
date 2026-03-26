@@ -2,9 +2,12 @@ import axios from 'axios';
 import { safeGetItem, safeRemoveItem } from '../utils/storage';
 
 // Create axios instance pointing to backend
-// Use relative path so it works in both local dev and production
+// Production should set VITE_API_URL in .env (or hosting env vars)
+// Fallback to relative '/api' for same-origin deployments.
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE,
 });
 
 // Auto-attach JWT token to requests
