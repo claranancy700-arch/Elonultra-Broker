@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './ChatPage.css';
+import { getApiBaseUrl } from '../../../utils/apiConfig';
 
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'http://localhost:5001' 
-  : window.location.origin;
+const API_BASE_URL = getApiBaseUrl();
 
 const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'admin-key';
 

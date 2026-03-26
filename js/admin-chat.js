@@ -8,7 +8,7 @@
 (function(){
   'use strict';
 
-  // API and socket base URLs
+  // API and socket base URLs - check for global config first
   const API_BASE_URL = window.__apiBase ||
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? `http://${window.location.hostname}:5001/api`
@@ -16,8 +16,8 @@
 
   const SOCKET_BASE_URL = (window.__apiBase ||
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `http://${window.location.hostname}:5001/api`
-      : `${window.location.origin}/api`))
+      ? `http://${window.location.hostname}:5001`
+      : window.location.origin))
     .replace(/\/api\/?$/, '');
 
   // Get admin key - check sessionStorage first (populated by admin.js), then localStorage, then window var

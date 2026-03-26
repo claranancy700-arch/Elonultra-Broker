@@ -3,8 +3,9 @@ import { io } from 'socket.io-client';
 import './ChatBox.css';
 import { AuthContext } from '../../context/AuthContext';
 import { safeGetItem } from '../../utils/storage';
+import { getApiBaseUrl } from '../../utils/apiConfig';
 
-const API_BASE_URL = 'http://localhost:5001';
+const API_BASE_URL = getApiBaseUrl();
 
 const ChatBox = ({ isOpen, onClose }) => {
   const [conversations, setConversations] = useState([]);

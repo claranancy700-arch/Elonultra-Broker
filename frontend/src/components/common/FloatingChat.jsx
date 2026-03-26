@@ -3,10 +3,9 @@ import { io } from 'socket.io-client';
 import './FloatingChat.css';
 import { AuthContext } from '../../context/AuthContext';
 import { safeGetItem } from '../../utils/storage';
+import { getApiBaseUrl } from '../../utils/apiConfig';
 
-const API_BASE_URL = import.meta.env.DEV 
-  ? 'http://localhost:5001' 
-  : window.location.origin;
+const API_BASE_URL = getApiBaseUrl();
 
 export const FloatingChat = () => {
   const [isOpen, setIsOpen] = useState(false);

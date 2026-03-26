@@ -16,4 +16,10 @@ export default defineConfig({
   build: {
     cssMinify: false,  // Disable CSS minification to avoid syntax warnings
   },
+  define: {
+    // Replace API base URL placeholder in admin.html during build
+    __API_BASE_URL__: JSON.stringify(
+      process.env.VITE_API_URL || 'http://localhost:5001/api'
+    ),
+  },
 })
