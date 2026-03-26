@@ -82,6 +82,8 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     const adminChatRoutes = require('./routes/admin-chat');
     
     app.use('/api/auth', authRoutes);
+    app.use('/auth', authRoutes); // backward compatibility for existing deployed requests
+
     app.use('/api/markets', marketsRoutes);
     app.use('/api/contact', contactRoutes);
     app.use('/api/withdrawals', withdrawalRoutes);
