@@ -38,17 +38,22 @@ API.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Only force logout for real authentication failures.
-    // Generic 403 responses (e.g. role/permission checks) should not wipe session.
-    const shouldForceLogout =
-      status === 401 ||
-      (status === 403 && (isAuthEndpoint || isTokenFailure));
+    // For /auth/me checks, let AuthContext handle retries/logout decisions.
+    // This avoids hard redirects on transient startup/session-check issues.
+    if (isAuthEndpoint && (status === 401 || status === 403)) {
+      return Promise.reject(error);
+    }
 
-    if (shouldForceLogout) {
+    // For clear token failures from other endpoints, clear cached auth and notify app.
+    // Main auth state should handle route transitions instead of hard window redirects.
+    const shouldInvalidateSession =
+      (status === 401 || status === 403) && isTokenFailure;
+
+    if (shouldInvalidateSession) {
       safeRemoveItem('token');
       safeRemoveItem('user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:expired'));
       }
       return Promise.reject(error);
     }

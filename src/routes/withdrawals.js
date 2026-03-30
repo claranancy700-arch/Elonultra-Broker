@@ -5,7 +5,10 @@ const { verifyToken } = require('../middleware/auth');
 const { recordLossIfApplicable } = require('../services/balanceChanges');
 const sse = require('../sse/broadcaster');
 
-// POST: Request a new withdrawal (adds 30% fee requirement, PENDING until admin approval)
+const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const FEE_CURRENCY = 'USD';
+
+// POST: Request a new withdrawal (adds 0.05% fee requirement, PENDING until admin approval)
 router.post('/', verifyToken, async (req, res) => {
   const { amount, crypto_type, crypto_address } = req.body;
   const userId = req.userId;
@@ -45,22 +48,22 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const currentBalance = parseFloat(balRes.rows[0].balance) || 0;
-    const feeAmount = amt * 0.3; // 30% fee calculated from requested amount
+    const feeAmount = amt * WITHDRAWAL_FEE_RATE;
     const totalRequired = amt + feeAmount;
     
     // Validate user has sufficient funds, but don't deduct yet
     if (currentBalance < totalRequired) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + 30% fee), Available: $${currentBalance.toFixed(2)}` });
+      return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + 0.05% fee), Available: $${currentBalance.toFixed(2)}` });
     }
     const balanceSnapshot = currentBalance;
 
-    console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount });
+    console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount, feeCurrency: FEE_CURRENCY });
     const withdrawalResult = await client.query(
-      `INSERT INTO withdrawals(user_id, amount, crypto_type, crypto_address, status, balance_snapshot, fee_amount, fee_status)
-       VALUES($1, $2, $3, $4, $5, $6, $7, 'required')
-       RETURNING id, status, created_at, fee_amount, fee_status, balance_snapshot`,
-      [userId, amt, crypto_type.toUpperCase(), crypto_address, 'pending', balanceSnapshot, feeAmount]
+      `INSERT INTO withdrawals(user_id, amount, crypto_type, crypto_address, status, balance_snapshot, fee_amount, fee_currency, fee_status)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'required')
+       RETURNING id, status, created_at, fee_amount, fee_currency, fee_status, balance_snapshot`,
+      [userId, amt, crypto_type.toUpperCase(), crypto_address, 'pending', balanceSnapshot, feeAmount, FEE_CURRENCY]
     );
 
     console.log('[WITHDRAWAL] Withdrawal request created, ID:', withdrawalResult.rows[0].id);
@@ -88,6 +91,7 @@ router.post('/', verifyToken, async (req, res) => {
         status: withdrawal.status,
         created_at: withdrawal.created_at,
         fee_amount: withdrawal.fee_amount,
+        fee_currency: withdrawal.fee_currency,
         fee_status: withdrawal.fee_status,
         balance_snapshot: withdrawal.balance_snapshot,
         message: `Withdrawal request of $${amt} submitted. Awaiting admin approval to process.`
@@ -111,7 +115,7 @@ router.get('/:id', verifyToken, async (req, res) => {
   try {
     const result = await db.query(
       `SELECT id, amount, crypto_type, crypto_address, status, txn_hash, error_message, created_at, processed_at,
-              fee_amount, fee_status, balance_snapshot
+              fee_amount, fee_currency, fee_status, balance_snapshot
        FROM withdrawals WHERE id=$1 AND user_id=$2`,
       [id, userId]
     );
@@ -135,7 +139,7 @@ router.get('/', verifyToken, async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT id, amount, crypto_type, status, created_at, processed_at, fee_amount, fee_status
+      `SELECT id, amount, crypto_type, status, created_at, processed_at, fee_amount, fee_currency, fee_status
        FROM withdrawals WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`,
       [userId]
     );

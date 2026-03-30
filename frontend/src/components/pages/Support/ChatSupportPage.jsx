@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { getApiBaseUrl } from '../../../utils/apiConfig';
+import { io } from 'socket.io-client';
+import { getApiBaseUrl, getChatSocketBaseUrl } from '../../../utils/apiConfig';
 import './ChatSupportPage.css';
 
 const CHAT_SUPPORT_UNLOCK_KEY = 'chat_support_unlocked';
 const CHAT_SUPPORT_ADMIN_KEY = 'chat_support_admin_key';
 const API_BASE_URL = getApiBaseUrl();
+const CHAT_SOCKET_BASE_URL = getChatSocketBaseUrl();
 
 export const ChatSupportPage = () => {
   const navigate = useNavigate();
@@ -19,8 +21,16 @@ export const ChatSupportPage = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [socket, setSocket] = useState(null);
+  const [socketConnected, setSocketConnected] = useState(false);
   const messagesListRef = useRef(null);
+  const optimisticMessageIdRef = useRef(null);
+  const activeConversationRef = useRef(null);
   const activeConversationId = activeConversation?.id || null;
+
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
 
   const scrollToLatestMessage = useCallback(() => {
     if (!messagesListRef.current) return;
@@ -90,6 +100,81 @@ export const ChatSupportPage = () => {
     }
   }, [adminKey, requestJson]);
 
+  useEffect(() => {
+    if (!unlocked || !adminKey) return undefined;
+
+    const newSocket = io(`${CHAT_SOCKET_BASE_URL}/chat`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      auth: { adminKey }
+    });
+
+    newSocket.on('connect', () => {
+      setSocketConnected(true);
+      setError('');
+    });
+
+    newSocket.on('disconnect', () => {
+      setSocketConnected(false);
+    });
+
+    newSocket.on('connect_error', () => {
+      setSocketConnected(false);
+    });
+
+    newSocket.on('new_message', (message) => {
+      const activeId = Number(activeConversationRef.current?.id || 0);
+      const messageConversationId = Number(message?.conversation_id || 0);
+
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === messageConversationId
+            ? {
+                ...conversation,
+                last_message: message.message,
+                last_sender_type: message.sender_type,
+                last_message_at: message.created_at,
+                updated_at: message.created_at
+              }
+            : conversation
+        )
+      );
+
+      if (!activeId || activeId !== messageConversationId) return;
+
+      setMessages((prev) => {
+        const hasSameId = prev.some((msg) => msg.id === message.id);
+        if (hasSameId) return prev;
+
+        const withoutOptimistic = prev.filter(
+          (msg) => !(msg.isOptimistic && msg.sender_type === message.sender_type && msg.message === message.message)
+        );
+
+        return [...withoutOptimistic, message];
+      });
+    });
+
+    newSocket.on('message_error', (payload) => {
+      if (optimisticMessageIdRef.current) {
+        const optimisticId = optimisticMessageIdRef.current;
+        setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      }
+      setError(payload?.error || 'Failed to send message');
+      setSending(false);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+      setSocket(null);
+      setSocketConnected(false);
+    };
+  }, [adminKey, unlocked]);
+
   const fetchMessages = useCallback(async (conversationId, { silent = false } = {}) => {
     if (!conversationId || !adminKey) return;
 
@@ -128,12 +213,24 @@ export const ChatSupportPage = () => {
   }, [activeConversationId, adminKey, fetchMessages, unlocked]);
 
   useEffect(() => {
+    if (!socket || !activeConversationId) return undefined;
+
+    socket.emit('join_conversation', activeConversationId);
+
+    return () => {
+      socket.emit('leave_conversation', activeConversationId);
+    };
+  }, [socket, activeConversationId]);
+
+  useEffect(() => {
     if (!activeConversationId) return undefined;
 
     const interval = setInterval(() => {
-      fetchMessages(activeConversationId, { silent: true });
+      if (!socketConnected) {
+        fetchMessages(activeConversationId, { silent: true });
+      }
       fetchConversations({ silent: true });
-    }, 10000);
+    }, 12000);
 
     return () => clearInterval(interval);
   }, [activeConversationId, fetchConversations, fetchMessages]);
@@ -147,29 +244,81 @@ export const ChatSupportPage = () => {
     event.preventDefault();
     if (!activeConversation?.id || !messageText.trim() || sending) return;
 
+    const trimmedMessage = messageText.trim();
+    const optimisticId = `temp-${Date.now()}`;
+    optimisticMessageIdRef.current = optimisticId;
+
+    // Optimistic append so sending feels instant and does not "reload" the panel.
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: optimisticId,
+        sender_type: 'admin',
+        sender_name: 'Support',
+        message: trimmedMessage,
+        created_at: new Date().toISOString(),
+        isOptimistic: true
+      }
+    ]);
+    setMessageText('');
+
     setSending(true);
     setError('');
     try {
-      await requestJson(
-        `/api/admin/chat/conversations/${activeConversation.id}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: messageText.trim(),
-            adminId: 1
-          })
+      if (socket && socketConnected) {
+        socket.emit('send_message', {
+          conversationId: activeConversation.id,
+          message: trimmedMessage,
+          senderId: 1,
+          senderType: 'admin'
+        });
+      } else {
+        const data = await requestJson(
+          `/api/admin/chat/conversations/${activeConversation.id}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: trimmedMessage,
+              adminId: 1
+            })
+          }
+        );
+
+        // Replace optimistic message with server message when available.
+        if (data?.message) {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === optimisticId ? data.message : msg))
+          );
         }
+      }
+
+      // Keep UI instant: avoid immediate message refetch (it can briefly drop the just-sent
+      // message on slow backends). Sync continues via periodic silent polling.
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+                ...conversation,
+                last_message: trimmedMessage,
+                last_sender_type: 'admin',
+                last_message_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            : conversation
+        )
       );
 
-      setMessageText('');
-      await fetchMessages(activeConversation.id);
-      await fetchConversations();
+      fetchConversations({ silent: true });
     } catch (err) {
+      // Roll back optimistic message on failure.
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId));
+      setMessageText(trimmedMessage);
       setError(err?.message || 'Failed to send message');
     } finally {
+      optimisticMessageIdRef.current = null;
       setSending(false);
     }
   };
@@ -256,7 +405,7 @@ export const ChatSupportPage = () => {
               </div>
 
               <div className="support-messages-list" ref={messagesListRef}>
-                {isLoadingMessages ? (
+                {isLoadingMessages && messages.length === 0 ? (
                   <div className="support-empty">Loading messages...</div>
                 ) : messages.length === 0 ? (
                   <div className="support-empty">No messages yet.</div>

@@ -4,6 +4,10 @@ import { useApi } from '../../../hooks/useApi';
 import API from '../../../services/api';
 import './WithdrawalProcessPage.css';
 
+const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const FEE_DISPLAY_CURRENCY = 'USD';
+const FEE_DEPOSIT_CURRENCY = 'USDT';
+
 export default function WithdrawalProcessPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,6 +31,9 @@ export default function WithdrawalProcessPage() {
     accountHolder: '',
     bankCode: '',
   });
+
+  const amountUsd = parseFloat(formData.amount) || 0;
+  const feeUsd = amountUsd * WITHDRAWAL_FEE_RATE;
 
   // Pre-fill form with data from WithdrawalsPage
   useEffect(() => {
@@ -94,7 +101,7 @@ export default function WithdrawalProcessPage() {
     } else if (step === 3) {
       // Moving from Review to Payment - fetch deposit address
       setStep(4);
-      await fetchDepositAddress(formData.currency);
+      await fetchDepositAddress(FEE_DEPOSIT_CURRENCY);
     }
   };
 
@@ -154,7 +161,7 @@ export default function WithdrawalProcessPage() {
             amount: formData.amount,
             currency: formData.currency,
             withdrawalId: withdrawalId,
-            feeAmount: (parseFloat(formData.amount) * 0.24).toFixed(8),
+            feeAmount: feeUsd.toFixed(2),
           },
         });
         return;
@@ -209,7 +216,7 @@ export default function WithdrawalProcessPage() {
                 amount: formData.amount,
                 currency: formData.currency,
                 withdrawalId: withdrawalId,
-                feeAmount: (parseFloat(formData.amount) * 0.24).toFixed(8),
+                feeAmount: feeUsd.toFixed(2),
               },
             });
           } else {
@@ -282,11 +289,11 @@ export default function WithdrawalProcessPage() {
                 value={formData.amount}
                 onChange={handleChange}
                 placeholder="0.00"
-                step="0.00000001"
+                step="0.01"
                 min="0"
               />
               <small className="form-hint">
-                Available Balance will be checked during processing
+                Enter amount in USD. Available balance will be checked during processing.
               </small>
             </div>
           </div>
@@ -431,23 +438,17 @@ export default function WithdrawalProcessPage() {
 
             <div className="review-summary">
               <div className="review-row">
-                <span className="label">Currency</span>
+                <span className="label">Withdrawal Method</span>
                 <span className="value">{formData.currency}</span>
               </div>
               <div className="review-row">
-                <span className="label">Amount</span>
-                <span className="value">{parseFloat(formData.amount).toFixed(8)}</span>
+                <span className="label">Amount (USD)</span>
+                <span className="value">${amountUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="review-row">
-                <span className="label">Fee (30%)</span>
+                <span className="label">Fee (0.05%)</span>
                 <span className="value accent">
-                  {(parseFloat(formData.amount) * 0.30).toFixed(8)}
-                </span>
-              </div>
-              <div className="review-row divider">
-                <span className="label">Total Deducted</span>
-                <span className="value total">
-                  {(parseFloat(formData.amount) * 1.30).toFixed(8)}
+                  ${feeUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}
                 </span>
               </div>
 
@@ -489,17 +490,17 @@ export default function WithdrawalProcessPage() {
 
             <div className="payment-summary">
               <div className="summary-item">
-                <span className="label">Withdrawal Amount</span>
-                <span className="value">{parseFloat(formData.amount).toFixed(8)} {formData.currency}</span>
+                <span className="label">Withdrawal Amount (USD)</span>
+                <span className="value">${amountUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="summary-item">
-                <span className="label">Processing Fee (30%)</span>
-                <span className="value accent">{(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency}</span>
+                <span className="label">Processing Fee (0.05%)</span>
+                <span className="value accent">${feeUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="summary-divider"></div>
               <div className="summary-item total">
-                <span className="label">Fee to Pay</span>
-                <span className="value">{(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency}</span>
+                <span className="label">Fee to Pay (USD)</span>
+                <span className="value">${feeUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
             </div>
 
@@ -525,7 +526,7 @@ export default function WithdrawalProcessPage() {
                   </div>
                 </div>
                 <div className="payment-notice">
-                  <strong>Important:</strong> Send exactly {(parseFloat(formData.amount) * 0.30).toFixed(8)} {formData.currency} to the address above.
+                  <strong>Important:</strong> Send exactly ${feeUsd.toFixed(2)} USD to the address above (USDT equivalent accepted).
                   Once confirmed on the blockchain, your withdrawal will be processed.
                 </div>
               </div>

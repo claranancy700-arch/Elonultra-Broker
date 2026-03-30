@@ -4,7 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import './Header.css';
 
 export const Header = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -16,9 +16,12 @@ export const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleOpenLiveSupport = () => {
+    if (typeof window !== 'undefined' && typeof window.openSupportChat === 'function') {
+      window.openSupportChat();
+      return;
+    }
+    navigate('/help');
   };
 
   return (
@@ -64,17 +67,20 @@ export const Header = () => {
         )}
         {user && (
           <button
-            className="mobile-logout"
-            onClick={(e) => { e.preventDefault(); handleLogout(); }}
-            aria-label="Logout"
-            title="Logout"
-            style={{background:'transparent',border:'none',cursor:'pointer',padding:6,display:'inline-flex',alignItems:'center',gap:6}}
+            className="mobile-support"
+            onClick={(e) => { e.preventDefault(); handleOpenLiveSupport(); }}
+            aria-label="Open live support chat"
+            title="Live Support"
+            style={{background:'transparent',border:'none',cursor:'pointer',padding:8,display:'inline-flex',alignItems:'center',gap:6}}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M10 17L15 12L10 7" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M15 12H3" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M21 12C21 16.4183 17.4183 20 13 20H11" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M11 4H13C17.4183 4 21 7.58172 21 12" stroke="#ef4444" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M4 12a8 8 0 0 1 16 0" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
+              <rect x="3" y="11" width="3" height="6" rx="1.3" stroke="var(--accent)" strokeWidth="1.7"/>
+              <rect x="18" y="11" width="3" height="6" rx="1.3" stroke="var(--accent)" strokeWidth="1.7"/>
+              <circle cx="12" cy="11" r="2.6" stroke="var(--accent)" strokeWidth="1.7"/>
+              <path d="M8.8 18.2C9.7 16.9 10.8 16.2 12 16.2c1.2 0 2.3 0.7 3.2 2" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round"/>
+              <path d="M15.8 16.2h1.7c1 0 1.8 0.8 1.8 1.8v0.2c0 1-0.8 1.8-1.8 1.8h-2" stroke="var(--accent)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="14.7" cy="20" r="0.9" fill="var(--accent)"/>
             </svg>
           </button>
         )}

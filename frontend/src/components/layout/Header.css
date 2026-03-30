@@ -142,8 +142,8 @@
   color: var(--accent);
 }
 
-/* hide the mobile-only logout by default; show on small screens */
-.mobile-logout {
+/* hide the mobile-only support button by default; show on small screens */
+.mobile-support {
   display: none;
 }
 
@@ -176,13 +176,14 @@
     display: none !important;
   }
 
-  /* show the mobile logout icon when nav is hidden */
-  .mobile-logout {
+  /* show the mobile support icon when nav is hidden */
+  .mobile-support {
     display: inline-flex;
     margin-left: 8px;
     align-items: center;
     justify-content: center;
-    padding: 6px;
+    padding: 8px;
+    border-radius: 10px;
   }
 
   /* show mobile auth buttons for non-logged-in users */

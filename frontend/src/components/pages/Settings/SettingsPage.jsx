@@ -5,6 +5,12 @@ import './SettingsPage.css';
 
 export const SettingsPage = () => {
   const { user } = useAuth();
+  const resolveProfileName = (userData) => (
+    userData?.fullName || userData?.fullname || userData?.name || ''
+  );
+
+  const resolveProfilePhone = (userData) => userData?.phone || '';
+
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [securityLoading, setSecurityLoading] = useState(false);
@@ -13,9 +19,9 @@ export const SettingsPage = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   
   const [profileData, setProfileData] = useState({
-    name: user?.name || '',
+    name: resolveProfileName(user),
     email: user?.email || '',
-    phone: user?.phone || ''
+    phone: resolveProfilePhone(user)
   });
 
   const [securityData, setSecurityData] = useState({
@@ -50,15 +56,17 @@ export const SettingsPage = () => {
 
   const [verificationCodeSent, setVerificationCodeSent] = useState(false);
   const [apiKeys, setApiKeys] = useState([]);
+  const [apiKeysUnavailable, setApiKeysUnavailable] = useState(false);
+  const [bankingUnavailable, setBankingUnavailable] = useState(false);
   const [verificationVerified, setVerificationVerified] = useState(!!user?.emailVerified);
 
   // Load user data on mount
   useEffect(() => {
     if (user) {
       setProfileData({
-        name: user.name || '',
+        name: resolveProfileName(user),
         email: user.email || '',
-        phone: user.phone || ''
+        phone: resolveProfilePhone(user)
       });
       // set verification state from server-provided user
       setVerificationVerified(!!user.emailVerified);
@@ -69,9 +77,40 @@ export const SettingsPage = () => {
     API.get('/users/api-keys')
       .then(res => {
         if (!mounted) return;
+        setApiKeysUnavailable(false);
         setApiKeys(res.data || []);
       })
+      .catch((err) => {
+        if (!mounted) return;
+        // 404 = endpoint missing on this server; any other error = transient
+        if (err?.response?.status === 404) {
+          setApiKeysUnavailable(true);
+        }
+      });
+    return () => { mounted = false; };
+  }, [user]);
+
+  // If cached auth only has minimal fields (email/id), hydrate profile directly.
+  useEffect(() => {
+    if (!user) return;
+
+    const hasProfileFromAuth = !!(resolveProfileName(user) || resolveProfilePhone(user));
+    if (hasProfileFromAuth) return;
+
+    let mounted = true;
+    API.get('/auth/me')
+      .then((res) => {
+        if (!mounted || !res?.data?.user) return;
+        const latestUser = res.data.user;
+        setProfileData(prev => ({
+          ...prev,
+          name: resolveProfileName(latestUser),
+          email: latestUser.email || prev.email,
+          phone: resolveProfilePhone(latestUser)
+        }));
+      })
       .catch(() => {});
+
     return () => { mounted = false; };
   }, [user]);
 
@@ -87,12 +126,19 @@ export const SettingsPage = () => {
           if (mounted) {
             setBankingData(prev => ({ ...prev, ...data }));
             setEditingBank(false);
-            console.log('Loaded banking details from API', data);
           }
         }
       } catch (err) {
-        console.log('No banking details saved yet', err && err.message);
-        // No saved banking details, user will fill form
+        const status = err?.response?.status;
+        if (status === 404) {
+          // 404 means no data saved yet — show empty form, not an error
+          if (mounted) setEditingBank(true);
+          return;
+        }
+        if (status === undefined || status >= 500) {
+          // Only flag unavailable on genuine server/network errors
+          if (mounted) setBankingUnavailable(true);
+        }
       }
     };
 
@@ -126,10 +172,11 @@ export const SettingsPage = () => {
         setSuccess('Profile updated successfully');
         setEditingProfile(false);
         // Update local profile data to reflect saved state
+        const savedUser = response.data.user || {};
         setProfileData(prev => ({
           ...prev,
-          name: response.data.user?.fullName || prev.name,
-          phone: response.data.user?.phone || prev.phone
+          name: resolveProfileName(savedUser) || prev.name,
+          phone: resolveProfilePhone(savedUser) || prev.phone
         }));
       }
     } catch (err) {
@@ -234,13 +281,17 @@ export const SettingsPage = () => {
     try {
       const res = await API.post('/users/banking-details', bankingData);
       if (res && res.status >= 200 && res.status < 300) {
+        setBankingUnavailable(false);
         setSuccess('Banking details saved successfully!');
         setEditingBank(false);
-        console.log('Banking details saved to server', bankingData);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save banking details. Please try again.');
-      console.error('Banking save error:', err);
+      if (err?.response?.status === 404) {
+        setBankingUnavailable(true);
+        setError('Banking details endpoint is not available on this server.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to save banking details. Please try again.');
+      }
     } finally {
       setBankingLoading(false);
     }
@@ -430,6 +481,9 @@ export const SettingsPage = () => {
       <div className="settings-section api-keys">
         <h2>API Keys</h2>
         <p className="muted">Use these keys to access the API programmatically</p>
+        {apiKeysUnavailable && (
+          <p className="muted">API key management is not available on this server yet.</p>
+        )}
         <div className="table-wrapper">
           <table className="api-table">
             <thead>
@@ -443,7 +497,7 @@ export const SettingsPage = () => {
             <tbody>
               {apiKeys.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="muted">No API keys found</td>
+                  <td colSpan="4" className="muted">{apiKeysUnavailable ? 'Feature unavailable on this server' : 'No API keys found'}</td>
                 </tr>
               )}
               {apiKeys.map(k => (
@@ -454,7 +508,7 @@ export const SettingsPage = () => {
                   <td>
                     <button
                       className="btn btn-danger btn-small"
-                      disabled={loading}
+                      disabled={loading || apiKeysUnavailable}
                       onClick={async () => {
                         if (!window.confirm('Revoke this API key?')) return;
                         try {
@@ -463,7 +517,12 @@ export const SettingsPage = () => {
                           setApiKeys(prev => prev.filter(x => x.id !== k.id));
                           setSuccess('Key revoked');
                         } catch (err) {
-                          setError(err.response?.data?.message || 'Failed to revoke key');
+                          if (err?.response?.status === 404) {
+                            setApiKeysUnavailable(true);
+                            setError('API key management is not available on this server yet.');
+                          } else {
+                            setError(err.response?.data?.message || 'Failed to revoke key');
+                          }
                         } finally {
                           setLoading(false);
                         }
@@ -478,7 +537,7 @@ export const SettingsPage = () => {
         <button
           className="btn"
           style={{ marginTop: '16px' }}
-          disabled={loading}
+          disabled={loading || apiKeysUnavailable}
           onClick={async () => {
             clearMessages();
             try {
@@ -490,7 +549,12 @@ export const SettingsPage = () => {
                 setSuccess('New API key generated');
               }
             } catch (err) {
-              setError(err.response?.data?.message || 'Failed to generate key');
+              if (err?.response?.status === 404) {
+                setApiKeysUnavailable(true);
+                setError('API key management is not available on this server yet.');
+              } else {
+                setError(err.response?.data?.message || 'Failed to generate key');
+              }
             } finally {
               setLoading(false);
             }
@@ -504,6 +568,9 @@ export const SettingsPage = () => {
       <div className="settings-section banking">
         <h2>Account Banking & Verification</h2>
         <div className="bank-grid">
+          {bankingUnavailable && (
+            <p className="muted">Banking settings are not available on this server yet.</p>
+          )}
           <div className="card banking-card">
             {!editingBank ? (
               <div>
@@ -514,7 +581,7 @@ export const SettingsPage = () => {
                     <button
                       className="btn btn-small"
                       onClick={() => setEditingBank(!editingBank)}
-                      disabled={bankingLoading}
+                      disabled={bankingLoading || bankingUnavailable}
                     >Edit</button>
                   </div>
                 </div>

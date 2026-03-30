@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      'SELECT id, email, password_hash FROM users WHERE email=$1',
+      'SELECT id, email, password_hash, name, phone, fullName FROM users WHERE email=$1',
       [email]
     );
 
@@ -84,8 +84,18 @@ router.post('/login', async (req, res) => {
       expiresIn: '7d',
     });
 
-    // Return token and a minimal user object to match frontend expectations
-    res.json({ success: true, token, user: { id: user.id, email: user.email } });
+    // Return token and user profile fields for immediate UI hydration.
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name || user.fullname || null,
+        fullName: user.fullname || user.name || null,
+        phone: user.phone || null
+      }
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });

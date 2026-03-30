@@ -23,7 +23,7 @@ export const WithdrawalsPage = () => {
     return () => { mounted = false; };
   }, []);
 
-  const feeRate = 0.30; // withdrawal fee: 30%
+  const feeRate = 0.0005; // withdrawal fee: 0.05% of USD amount
 
   const fee = Number(amount || 0) * feeRate;
   const total = Number(amount || 0) + fee;
@@ -44,7 +44,7 @@ export const WithdrawalsPage = () => {
             currency: crypto,
             amount: amount,
             address: address,
-            fee_amount: withdrawalData.fee_amount || (Number(amount) * 0.30),
+            fee_amount: withdrawalData.fee_amount || (Number(amount) * feeRate),
             withdrawal_id: withdrawalData.id,
             status: withdrawalData.status
           }
@@ -61,7 +61,7 @@ export const WithdrawalsPage = () => {
   return (
     <div className="withdrawals-page">
       <h1>Withdraw Crypto</h1>
-      <p className="muted">Request a withdrawal — fees shown below are applied immediately.</p>
+      <p className="muted">Request a withdrawal in USD — fees shown below are calculated in USD.</p>
 
       <div className="withdraw-grid">
         <div className="user-card">
@@ -83,13 +83,12 @@ export const WithdrawalsPage = () => {
           </label>
 
           <label>
-            <span>Amount</span>
-            <input type="number" step="0.00000001" min="0" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" />
+            <span>Amount (USD)</span>
+            <input type="number" step="0.01" min="0" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" />
           </label>
 
           <div className="fee-box">
-            <div><span>Fee ({feeRate*100}%)</span><strong>${fee.toFixed(2)}</strong></div>
-            <div><span>Total Deducted</span><strong>${total.toFixed(2)}</strong></div>
+            <div><span>Fee ({(feeRate * 100).toFixed(2)}%)</span><strong>${fee.toFixed(2)}</strong></div>
           </div>
 
           <label>

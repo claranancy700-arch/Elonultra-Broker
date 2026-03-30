@@ -9,6 +9,19 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      safeRemoveItem('token');
+      safeRemoveItem('user');
+      setUser(null);
+      setToken(null);
+      setLoading(false);
+    };
+
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+  }, []);
+
   // Initialize auth from localStorage but validate token with server
   useEffect(() => {
     let mounted = true;
@@ -60,6 +73,15 @@ export const AuthProvider = ({ children }) => {
         const status = err?.response?.status;
         const isAuthError = status === 401 || status === 403;
         if (isAuthError) {
+          // Give startup checks one extra chance before clearing session,
+          // as some environments briefly return auth errors during cold starts.
+          if (attempt < 2) {
+            setTimeout(() => {
+              if (mounted) tryAuthorize(attempt + 1);
+            }, 500);
+            return;
+          }
+
           safeRemoveItem('token');
           safeRemoveItem('user');
           if (mounted) {

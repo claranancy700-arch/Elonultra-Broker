@@ -167,10 +167,14 @@ html[data-theme="light"] .carousel-card {
 }
 
 .balance-amount {
-  font-size: 69px;
+  font-size: clamp(26px, 10vw, 56px);
   font-weight: 900;
   line-height: 1;
   margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Metallic gradient text */
@@ -298,12 +302,6 @@ html[data-theme="light"] .metallic {
   margin-bottom: 4px;
 }
 
-.portfolio-value {
-  font-size: 36px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-}
-
 .portfolio-divider {
   width: 1px;
   height: 60px;
@@ -341,7 +339,8 @@ html[data-theme="light"] .metallic {
 
 .portfolio-right {
   flex: 0 0 auto;
-  min-width: 180px;
+  min-width: min(180px, 42%);
+  max-width: 55%;
   height: 100%;
   display: flex;
   align-items: center;
@@ -354,10 +353,122 @@ html[data-theme="light"] .metallic {
   background: linear-gradient(180deg, rgba(var(--card-rgb), 0.02), rgba(var(--card-rgb), 0.0));
 }
 
+.composition-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.composition-ring-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+
+.composition-ring-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.14));
+}
+
+.composition-ring-track {
+  fill: none;
+  stroke: rgba(var(--text-rgb), 0.12);
+  stroke-width: 9;
+}
+
+.composition-ring-segment {
+  transition: stroke-dasharray 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.composition-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.composition-center-coin {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(var(--text-rgb), 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.25px;
+  max-width: 56px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composition-center-pct {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.composition-legend {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+
+.composition-legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 4px;
+  border-radius: 8px;
+  background: rgba(var(--card-rgb), 0.18);
+  border: 1px solid rgba(var(--text-rgb), 0.08);
+}
+
+.composition-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.composition-coin {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(var(--text-rgb), 0.74);
+  text-transform: uppercase;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.composition-pct {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(var(--text-rgb), 0.56);
+}
+
+.composition-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .portfolio-value {
-  font-size: 32px;
+  font-size: clamp(20px, 7vw, 32px);
   font-weight: 900;
   margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .portfolio-positions {
@@ -421,6 +532,9 @@ html[data-theme="light"] .metallic {
     display: block;
     height: auto;
     aspect-ratio: 16/9;
+  }
+  .carousel-card {
+    height: 100%;
   }
 }
 

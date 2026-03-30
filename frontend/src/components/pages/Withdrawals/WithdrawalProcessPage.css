@@ -212,6 +212,7 @@
 .review-row .value.mono {
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: 12px;
+  overflow: hidden;
 }
 
 .review-notice {
