@@ -121,18 +121,18 @@ export const FloatingChat = () => {
     }
   }, [socket, activeConversation]);
 
-  // Update body class for mobile chat state
+  // Update body class for mobile chat state - full screen on mobile
   useEffect(() => {
-    if (isOpen && isMobileMessagesView && window.innerWidth <= 768) {
-      document.body.classList.add('mobile-chat-messages-view');
+    if (isOpen && window.innerWidth <= 768) {
+      document.body.classList.add('mobile-chat-fullscreen');
     } else {
-      document.body.classList.remove('mobile-chat-messages-view');
+      document.body.classList.remove('mobile-chat-fullscreen');
     }
 
     return () => {
-      document.body.classList.remove('mobile-chat-messages-view');
+      document.body.classList.remove('mobile-chat-fullscreen');
     };
-  }, [isOpen, isMobileMessagesView]);
+  }, [isOpen]);
 
   const loadConversations = async (attempt = 1) => {
     try {
@@ -357,18 +357,23 @@ export const FloatingChat = () => {
           </div>
         ) : conversations.length === 0 ? (
           <div className="new-conversation-form">
-            <textarea
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Describe your issue..."
-              rows={3}
-            />
-            <button
-              onClick={createNewConversation}
-              disabled={!newMessage.trim() || isLoading}
-            >
-              {isLoading ? 'Starting...' : 'Start Chat'}
-            </button>
+            <div className="start-chat-section">
+              <button
+                onClick={createNewConversation}
+                disabled={!newMessage.trim() || isLoading}
+                className="start-chat-btn"
+              >
+                {isLoading ? 'Starting...' : 'Start Chat'}
+              </button>
+            </div>
+            <div className="message-input-section">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Describe your issue..."
+                rows={3}
+              />
+            </div>
           </div>
         ) : (
           <>
