@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ParticleBackground from './components/background/ParticleBackground';
 import { MainLayout } from './components/layout/MainLayout';
@@ -15,7 +15,8 @@ import { TransactionsPage } from './components/pages/Transactions/TransactionsPa
 import { SettingsPage } from './components/pages/Settings/SettingsPage';
 import { HelpPage } from './components/pages/Help/HelpPage';
 import { AdminPage } from './components/pages/Admin/AdminPage';
-import ChatPage from './components/pages/Admin/ChatPage';
+import { ChatSupportUnlockPage } from './components/pages/Support/ChatSupportUnlockPage';
+import { ChatSupportPage } from './components/pages/Support/ChatSupportPage';
 import { AboutPage } from './components/pages/About/AboutPage';
 import { ContactPage } from './components/pages/Contact/ContactPage';
 import { TestimoniesPage } from './components/pages/Testimonies/TestimoniesPage';
@@ -37,6 +38,8 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/testimonies" element={<TestimoniesPage />} />
+          <Route path="/chat-support-unlock" element={<ChatSupportUnlockPage />} />
+          <Route path="/chatsupport" element={<ChatSupportPage />} />
           
           {/* Protected routes */}
           <Route element={<MainLayout />}>
@@ -50,7 +53,6 @@ function App() {
             <Route path="/help" element={<HelpPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/admin/chat" element={<ChatPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

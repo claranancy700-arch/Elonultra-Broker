@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback, useLayoutEffect } from 'react';
 import { io } from 'socket.io-client';
 import './ChatBox.css';
 import { AuthContext } from '../../context/AuthContext';
 import { safeGetItem } from '../../utils/storage';
-import { getApiBaseUrl } from '../../utils/apiConfig';
+import { getApiBaseUrl, getChatSocketBaseUrl } from '../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
+const CHAT_SOCKET_BASE_URL = getChatSocketBaseUrl();
 
 const ChatBox = ({ isOpen, onClose }) => {
   const [conversations, setConversations] = useState([]);
@@ -18,17 +19,27 @@ const ChatBox = ({ isOpen, onClose }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [socketError, setSocketError] = useState(null);
   const socketRef = useRef(null);
+  const [isMobileMessagesView, setIsMobileMessagesView] = useState(false); // Track mobile messages view
+  const [isMobile, setIsMobile] = useState(false);
+
+  const { user } = useContext(AuthContext);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
-  const { user } = useContext(AuthContext);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const activeConversationRef = useRef(null);
 
   // ============ Utility Functions (before effects) ============
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = useCallback((instant = false) => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      return;
+    }
+
+    messagesEndRef.current?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
+  }, []);
 
   const sanitizeMessage = (message) => {
     // Basic sanitization - remove potentially harmful content
@@ -97,19 +108,139 @@ const ChatBox = ({ isOpen, onClose }) => {
     }
   };
 
-  const createNewConversation = async () => {
-    const sanitizedMessage = sanitizeMessage(newMessage);
-    if (!validateMessage(sanitizedMessage)) {
-      alert('Message must be between 1-1000 characters and contain valid content.');
-      return;
-    }
+  // ============ Socket Management ============
 
-    if (!user) {
-      setError('You must be logged in to start a chat');
-      return;
-    }
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
 
-    setIsLoading(true);
+  useEffect(() => {
+    const token = safeGetItem('token');
+    if (!token || !user) return;
+
+    const newSocket = io(`${CHAT_SOCKET_BASE_URL}/chat`, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      auth: { token }
+    });
+
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('ChatBox socket connected:', newSocket.id);
+      setSocketConnected(true);
+      setSocketError(null);
+      loadConversations();
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('ChatBox socket disconnected');
+      setSocketConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('ChatBox socket connection error:', error);
+      setSocketConnected(false);
+      setSocketError('Connection failed. Retrying...');
+    });
+
+    newSocket.on('new_message', (message) => {
+      const activeConversationId = Number(activeConversationRef.current?.id);
+      const messageConversationId = Number(message?.conversation_id);
+
+      if (activeConversationId && messageConversationId && messageConversationId !== activeConversationId) {
+        return;
+      }
+
+      setMessages(prev => {
+        const already = prev.some(m => m.id === message.id);
+        if (already) return prev;
+
+        const deduped = prev.filter(m => !(m.isOptimistic && m.sender_type === 'user' && m.message === message.message));
+        return [...deduped, message];
+      });
+
+      if (message.sender_type === 'admin') {
+        setUnreadCount(prev => prev + 1);
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 3000);
+      }
+      scrollToBottom();
+    });
+
+    newSocket.on('conversation_created', (conversation) => {
+      setConversations(prev => {
+        if (prev.some(c => c.id === conversation.id)) return prev;
+        return [conversation, ...prev];
+      });
+      setActiveConversation(conversation);
+    });
+
+    newSocket.on('user_typing', (data) => {
+      if (data.userName === 'Admin') {
+        setIsTyping(data.isTyping);
+        if (data.isTyping) {
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        }
+      }
+    });
+
+    return () => {
+      newSocket.close();
+      setSocket(null);
+      setSocketConnected(false);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [user]);
+
+  // ============ Message Handling ============
+
+  const sendMessage = async () => {
+    if (!validateMessage(newMessage) || !activeConversation || !socket) return;
+
+    const messageData = {
+      conversationId: activeConversation.id,
+      message: sanitizeMessage(newMessage),
+      senderId: user.id,
+      senderType: 'user'
+    };
+
+    try {
+      // Optimistic UI update for instant feedback
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        conversation_id: activeConversation.id,
+        sender_id: user.id,
+        sender_type: 'user',
+        message: messageData.message,
+        created_at: new Date().toISOString(),
+        isOptimistic: true
+      };
+
+      setMessages(prev => [...prev, optimisticMessage]);
+      socket.emit('send_message', messageData);
+      setNewMessage('');
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const startConversation = async () => {
+    if (!user) return;
+
     try {
       const token = safeGetItem('token');
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
@@ -118,353 +249,171 @@ const ChatBox = ({ isOpen, onClose }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ message: sanitizedMessage })
+        body: JSON.stringify({
+          message: 'Hello, I need help with my account.'
+        })
       });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+
       if (data.success) {
-        setConversations(prev => [data.conversation, ...prev]);
         setActiveConversation(data.conversation);
-        setNewMessage('');
-        setUnreadCount(0); // Reset unread count when opening chat
-        // Join the new conversation room (will happen in useEffect when socket is ready)
-        // if (socket) {
-        //   socket.emit('join_conversation', data.conversation.id);
-        // }
+        setConversations(prev => [data.conversation, ...prev]);
       }
     } catch (error) {
-      console.error('Error creating conversation:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error starting conversation:', error);
     }
   };
 
-  const sendMessage = async () => {
-    const sanitizedMessage = sanitizeMessage(newMessage);
-    if (!validateMessage(sanitizedMessage) || !activeConversation) return;
+  // ============ UI Handlers ============
 
-    const activeSocket = socket || socketRef.current;
-    // Don't send if socket is not ready
-    if (!activeSocket) {
-      console.warn('Socket not ready, message not sent');
-      return;
+  const selectConversation = (conversation) => {
+    if (!conversation) return;
+
+    // leave previous conversation if set
+    if (socket && activeConversation?.id && activeConversation.id !== conversation.id) {
+      socket.emit('leave_conversation', activeConversation.id);
     }
 
-    if (!user) {
-      console.error('No user context found - user not logged in');
-      return;
+    setActiveConversation(conversation);
+    setUnreadCount(0);
+
+    if (socket) {
+      socket.emit('join_conversation', conversation.id);
     }
-
-    const messageData = {
-      conversationId: activeConversation.id,
-      message: sanitizedMessage,
-      senderId: user.id,
-      senderType: 'user'
-    };
-
-    // Optimistically add message to UI
-    const tempMessage = {
-      ...messageData,
-      created_at: new Date().toISOString(),
-      sender_name: 'You',
-      id: Date.now() // Temporary ID
-    };
-    setMessages(prev => [...prev, tempMessage]);
-    setNewMessage('');
-
-    // Send via socket
-    activeSocket.emit('send_message', messageData);
   };
 
-  const handleTyping = () => {
-    const activeSocket = socket || socketRef.current;
-    if (!activeSocket || !activeConversation) return;
-
-    activeSocket.emit('typing_start', {
-      conversationId: activeConversation.id,
-      userId: localStorage.getItem('userId'),
-      userName: localStorage.getItem('userName') || 'User'
-    });
-
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Stop typing after 2 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
-      activeSocket.emit('typing_stop', {
-        conversationId: activeConversation.id,
-        userId: localStorage.getItem('userId'),
-        userName: localStorage.getItem('userName') || 'User'
-      });
-    }, 2000);
-  };
-
-  // ============ useEffect Hooks ============
-
-  // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(`${API_BASE_URL}/chat`, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
-      timeout: 10000
-    });
+    if (!socket || !activeConversation?.id) return;
 
-    newSocket.on('connect', () => {
-      console.log('ChatBox socket connected:', newSocket.id);
-      setSocketConnected(true);
-      setSocketError(null);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('ChatBox socket disconnected:', reason);
-      setSocketConnected(false);
-    });
-
-    newSocket.on('connect_error', (err) => {
-      console.error('ChatBox socket connection error:', err);
-      setSocketError(err.message || 'Socket connection failed');
-      setSocketConnected(false);
-    });
-
-    newSocket.on('error', (err) => {
-      console.error('ChatBox socket error:', err);
-      setSocketError(err.message || 'Socket error');
-    });
-
-    socketRef.current = newSocket;
-    setSocket(newSocket);
+    socket.emit('join_conversation', activeConversation.id);
 
     return () => {
-      newSocket.close();
-      socketRef.current = null;
-      setSocket(null);
-      setSocketConnected(false);
-    };
-  }, []);
-
-  // Load conversations when chat opens
-  useEffect(() => {
-    if (isOpen && user) {
-      loadConversations();
-    }
-  }, [isOpen, user]);
-
-  // Socket event listeners
-  useEffect(() => {
-    const activeSocket = socket || socketRef.current;
-    if (!activeSocket) return;
-
-    activeSocket.on('new_message', (message) => {
-      // Only show notification if chat is not currently open or message is from admin
-      if (!isOpen || message.sender_type === 'admin') {
-        setUnreadCount(prev => prev + 1);
-        setShowNotification(true);
-        // Auto-hide notification after 5 seconds
-        setTimeout(() => setShowNotification(false), 5000);
-      }
-      
-      setMessages(prev => [...prev, message]);
-      // Update conversation's last message
-      setConversations(prev => prev.map(conv =>
-        conv.id === message.conversation_id
-          ? { ...conv, last_message: message.message, last_sender_type: message.sender_type, last_message_at: message.created_at }
-          : conv
-      ));
-    });
-
-    activeSocket.on('user_typing', (data) => {
-      setIsTyping(data.isTyping);
-    });
-
-    return () => {
-      activeSocket.off('new_message');
-      activeSocket.off('user_typing');
-    };
-  }, [socket, isOpen]); // Keep both dependencies but socket should be stable now
-
-  // Join/leave conversation room
-  useEffect(() => {
-    if (socket && activeConversation) {
-      socket.emit('join_conversation', activeConversation.id);
-      loadMessages(activeConversation.id);
-
-      return () => {
+      if (socket && activeConversation?.id) {
         socket.emit('leave_conversation', activeConversation.id);
-      };
-    }
+      }
+    };
   }, [socket, activeConversation]);
 
-  // Auto scroll to bottom when new messages arrive
+  const toggleMobileView = () => {
+    setIsMobileMessagesView(!isMobileMessagesView);
+  };
+
+  // ============ Effects ============
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (activeConversation) {
+      loadMessages(activeConversation.id);
+    }
+  }, [activeConversation]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || !activeConversation) return;
+    scrollToBottom(true);
+  }, [isOpen, activeConversation, messages, isTyping, scrollToBottom]);
+
+  // ============ Render ============
 
   if (!isOpen) return null;
 
   return (
-    <>
-      {socketError && (
-        <div className="chat-connection-warning">
-          <small>Chat connection issue: {socketError}. Retrying automatically.</small>
-        </div>
-      )}
-      {!socketConnected && !socketError && (
-        <div className="chat-connection-info">
-          <small>Attempting to connect to chat server...</small>
-        </div>
-      )}
-
-    
-      {/* Notification for new messages */}
-      {showNotification && unreadCount > 0 && (
-        <div className="chat-notification">
-          <div className="notification-content">
-            <span className="notification-icon">💬</span>
-            <span className="notification-text">
-              {unreadCount} new message{unreadCount > 1 ? 's' : ''} from support
-            </span>
-            <button 
-              className="notification-close"
-              onClick={() => setShowNotification(false)}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="chat-overlay">
-        <div className="chat-container">
-        <div className="chat-header">
+    <div className="chatbox-overlay" onClick={onClose}>
+      <div className="chatbox-container" onClick={(e) => e.stopPropagation()}>
+        <div className="chatbox-header">
           <h3>Live Support Chat</h3>
-          <button className="chat-close" onClick={onClose}>×</button>
+          <button className="chatbox-close" onClick={onClose}>×</button>
         </div>
 
-        <div className="chat-content">
-          {/* Conversations List */}
-          <div className="conversations-list">
-            <div className="conversations-header">
-              <h4>Your Conversations</h4>
-              {conversations.length === 0 && (
-                <p className="no-conversations">No conversations yet. Start chatting below!</p>
-              )}
-            </div>
-            {conversations.map(conv => (
-              <div
-                key={conv.id}
-                className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={() => setActiveConversation(conv)}
-              >
-                <div className="conversation-info">
-                  <div className="conversation-title">
-                    Conversation #{conv.id}
-                    {conv.unread_count > 0 && (
-                      <span className="unread-badge">{conv.unread_count}</span>
-                    )}
-                  </div>
-                  <div className="conversation-preview">
-                    {conv.last_message?.substring(0, 50)}...
-                  </div>
-                </div>
-                <div className="conversation-time">
-                  {new Date(conv.last_message_at).toLocaleDateString()}
-                </div>
+        <div className="chatbox-content">
+          {!activeConversation ? (
+            <div className="chatbox-start">
+              <div className="chatbox-welcome">
+                <h4>Welcome to Live Support</h4>
+                <p>Get instant help from our support team</p>
+                <button
+                  type="button"
+                  className="chatbox-start-btn"
+                  onClick={startConversation}
+                  disabled={!socketConnected}
+                >
+                  {socketConnected ? 'Start Chat' : 'Connecting...'}
+                </button>
+                {!socketConnected && (
+                  <p className="chatbox-status">
+                    {socketError || 'Connecting to chat...'}
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Chat Messages */}
-          <div className="chat-messages">
-            {activeConversation ? (
-              <>
-                <div className="messages-container">
-                  {messages.map(msg => (
-                    <div
-                      key={msg.id || msg.created_at}
-                      className={`message ${msg.sender_type === 'user' ? 'user-message' : 'admin-message'}`}
-                    >
-                      <div className="message-content">
-                        <div className="message-text">{msg.message}</div>
-                        <div className="message-time">{formatTime(msg.created_at)}</div>
+            </div>
+          ) : (
+            <>
+              <div className="chatbox-messages" ref={messagesContainerRef}>
+                {messages.map((message, index) => (
+                  <div
+                    key={message.id || `${message.created_at}-${index}`}
+                    className={`chatbox-message ${message.sender_type === 'user' ? 'user' : 'admin'}`}
+                  >
+                    <div className="chatbox-message-content">
+                      {message.message}
+                    </div>
+                    <div className="chatbox-message-time">
+                      {formatTime(message.created_at)}
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="chatbox-message admin typing">
+                    <div className="chatbox-message-content">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                       </div>
                     </div>
-                  ))}
-                  {isTyping && (
-                    <div className="typing-indicator">
-                      <span>Admin is typing...</span>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="message-input">
-                  {!user ? (
-                    <div className="auth-required-notice">
-                      <small>Please log in to send messages</small>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') sendMessage();
-                          else handleTyping();
-                        }}
-                        placeholder="Type your message..."
-                        disabled={!socket}
-                      />
-                      <button
-                        onClick={sendMessage}
-                        disabled={!newMessage.trim() || !socket}
-                      >
-                        Send
-                      </button>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="no-conversation">
-                <p>Select a conversation or start a new one below.</p>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* New Conversation */}
-        {conversations.length === 0 && (
-          <div className="new-conversation">
-            {!user ? (
-              <div className="auth-required-notice">
-                <small>Please log in to start a chat</small>
-              </div>
-            ) : (
-              <>
+              <div className="chatbox-input">
                 <textarea
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Describe your issue or question..."
-                  rows={3}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  maxLength={1000}
+                  disabled={!socketConnected}
                 />
                 <button
-                  onClick={createNewConversation}
-                  disabled={!newMessage.trim() || isLoading}
+                  type="button"
+                  onClick={sendMessage}
+                  disabled={!validateMessage(newMessage) || !socketConnected}
                 >
-                  {isLoading ? 'Starting...' : 'Start Chat'}
+                  Send
                 </button>
-              </>
-            )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {showNotification && (
+          <div className="chatbox-notification">
+            New message received!
           </div>
         )}
       </div>
     </div>
-    </>
   );
 };
 

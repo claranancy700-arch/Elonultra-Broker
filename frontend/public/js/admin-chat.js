@@ -9,15 +9,11 @@
   'use strict';
 
   // API and socket base URLs
-  const API_BASE_URL = window.__apiBase ||
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `http://${window.location.hostname}:5001/api`
-      : `${window.location.origin}/api`);
+  const API_BASE_URL = '/api';
 
-  const SOCKET_BASE_URL = (window.__apiBase ||
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `http://${window.location.hostname}:5001/api`
-      : `${window.location.origin}/api`))
+  const SOCKET_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? `http://${window.location.hostname}:5001`
+      : `${window.location.origin}`)
     .replace(/\/api\/?$/, '');
 
   // Get admin key - check sessionStorage first (populated by admin.js), then localStorage, then window var
@@ -34,6 +30,7 @@
   let conversations = [];
   let activeConversation = null;
   let messages = [];
+  let pendingMessageKeys = new Set();
 
   // DOM Elements
   let chatContainer, conversationsList, messagesList, messageInput, sendBtn, statusIndicator;
@@ -82,7 +79,16 @@
 
     socket.on('new_message', (message) => {
       if (activeConversation && message.conversation_id === activeConversation.id) {
-        messages.push(message);
+        const pendingKey = `${message.conversation_id}::${message.message}`;
+        const optimisticIndex = messages.findIndex((m) => m.isOptimistic && m.pendingKey === pendingKey);
+
+        if (optimisticIndex !== -1) {
+          messages[optimisticIndex] = message;
+          pendingMessageKeys.delete(pendingKey);
+        } else if (!messages.some((m) => m.id === message.id)) {
+          messages.push(message);
+        }
+
         renderMessages();
         scrollToBottom();
       }
@@ -155,9 +161,10 @@
    * Send a message via socket
    */
   function sendMessage() {
-    if (!messageInput.value.trim() || !activeConversation || !socketConnected) {
+    const text = messageInput.value.trim();
+    if (!text || !activeConversation || !socketConnected) {
       console.log('[admin-chat] send blocked:', {
-        hasMessage: !!messageInput.value.trim(),
+        hasMessage: !!text,
         hasConversation: !!activeConversation,
         socketConnected,
         conversationStatus: activeConversation?.status
@@ -176,12 +183,16 @@
 
     const messageData = {
       conversationId: activeConversation.id,
-      message: messageInput.value.trim(),
+      message: text,
       senderId: adminId,
       senderType: 'admin'
     };
 
     console.log('[admin-chat] sending message:', messageData);
+
+    const tempId = `temp-${Date.now()}`;
+    const pendingKey = `${activeConversation.id}::${text}`;
+    pendingMessageKeys.add(pendingKey);
 
     // Optimistically add message
     messages.push({
@@ -189,7 +200,9 @@
       created_at: new Date().toISOString(),
       sender_type: 'admin',
       sender_name: 'Admin',
-      id: Date.now()
+      id: tempId,
+      isOptimistic: true,
+      pendingKey
     });
     renderMessages();
     scrollToBottom();
@@ -197,37 +210,6 @@
     // Send via socket
     console.log('[admin-chat] emitting send_message via socket:', messageData, 'socket connected:', socketConnected);
     socket.emit('send_message', messageData);
-
-    // Also persist via API fallback (use server admin endpoint)
-    fetch(`${API_BASE_URL}/admin/chat/conversations/${activeConversation.id}/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-key': getAdminKey()
-      },
-      body: JSON.stringify({ message: messageData.message, adminId })
-    }).then(response => {
-      console.log('[admin-chat] API response:', response.status, response.ok, 'for conversation:', activeConversation.id);
-      if (!response.ok) {
-        console.error('[admin-chat] API error details:', response);
-        return response.text();
-      }
-      return response.json();
-    }).then(data => {
-      console.log('[admin-chat] API data:', data);
-      if (data && data.error) {
-        console.error('[admin-chat] API error:', data.error);
-        // Remove the optimistically added message if API failed
-        messages = messages.filter(msg => msg.id !== Date.now());
-        renderMessages();
-        showError(data.error);
-      }
-    }).catch(err => {
-      console.error('Admin message API fallback failed:', err);
-      // Remove the optimistically added message if API failed
-      messages = messages.filter(msg => msg.id !== Date.now());
-      renderMessages();
-    });
 
     messageInput.value = '';
   }
@@ -433,6 +415,9 @@
     sendMessage,
     updateConversationStatus
   };
+
+  // Backward compat: global helper if referenced directly
+  window.openAdminChat = window.openAdminChat || openChatModal;
 
   // Initialize when document is ready
   if (document.readyState === 'loading') {

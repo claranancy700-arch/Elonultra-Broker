@@ -190,4 +190,24 @@ router.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 
+// POST: Verify support admin key before allowing chat support page access
+router.post('/verify-support-key', async (req, res) => {
+  const { adminKey } = req.body || {};
+  const expected = process.env.ADMIN_KEY || process.env.ADMIN_API_KEY;
+
+  if (!adminKey || typeof adminKey !== 'string') {
+    return res.status(400).json({ error: 'Admin key is required' });
+  }
+
+  if (!expected) {
+    return res.status(503).json({ error: 'Support key is not configured on server' });
+  }
+
+  if (adminKey.trim() !== expected) {
+    return res.status(403).json({ error: 'Invalid admin key' });
+  }
+
+  return res.json({ success: true });
+});
+
 module.exports = router;

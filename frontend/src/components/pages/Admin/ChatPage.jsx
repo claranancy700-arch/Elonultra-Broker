@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import './ChatPage.css';
-import { getApiBaseUrl } from '../../../utils/apiConfig';
+import { getApiBaseUrl, getChatSocketBaseUrl } from '../../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
+const CHAT_SOCKET_BASE_URL = getChatSocketBaseUrl();
+const CHAT_SUPPORT_ADMIN_KEY = 'chat_support_admin_key';
 
-const ADMIN_KEY = import.meta.env.VITE_ADMIN_KEY || 'admin-key';
+const getAdminKey = () => sessionStorage.getItem(CHAT_SUPPORT_ADMIN_KEY) || import.meta.env.VITE_ADMIN_KEY || 'admin-key';
 
 const ChatPage = () => {
   const [conversations, setConversations] = useState([]);
@@ -19,18 +21,25 @@ const ChatPage = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const activeConversationRef = useRef(null);
   const [isMobileMessagesView, setIsMobileMessagesView] = useState(false); // Track mobile messages view
+
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(`${API_BASE_URL}/chat`, {
+    const adminKey = getAdminKey();
+
+    const newSocket = io(`${CHAT_SOCKET_BASE_URL}/chat`, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
       auth: {
-        adminKey: ADMIN_KEY
+        adminKey
       }
     });
 
@@ -74,7 +83,17 @@ const ChatPage = () => {
     if (!socket) return;
 
     socket.on('new_message', (message) => {
-      setMessages(prev => [...prev, message]);
+      const activeId = activeConversationRef.current?.id;
+      if (activeId && message.conversation_id === activeId) {
+        setMessages(prev => {
+          const already = prev.some(m => m.id === message.id);
+          if (already) return prev;
+
+          const withoutOptimistic = prev.filter(m => !(m.isOptimistic && m.sender_type === message.sender_type && m.message === message.message));
+          return [...withoutOptimistic, message];
+        });
+      }
+
       // Update conversation's last message
       setConversations(prev => prev.map(conv =>
         conv.id === message.conversation_id
@@ -112,12 +131,10 @@ const ChatPage = () => {
 
   const loadAllConversations = async () => {
     try {
-      const token = localStorage.getItem('token');
       // Admin endpoint to get all conversations
-      const response = await fetch('/api/admin/chat/conversations', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/chat/conversations`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
+          'x-admin-key': getAdminKey()
         }
       });
       const data = await response.json();
@@ -136,11 +153,9 @@ const ChatPage = () => {
 
   const loadMessages = async (conversationId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/chat/conversations/${conversationId}/messages`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/chat/conversations/${conversationId}/messages`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
+          'x-admin-key': getAdminKey()
         }
       });
       const data = await response.json();
@@ -167,9 +182,12 @@ const ChatPage = () => {
     // Optimistically add message to UI
     const tempMessage = {
       ...messageData,
+      conversation_id: activeConversation.id,
+      sender_type: 'admin',
       created_at: new Date().toISOString(),
       sender_name: 'Admin',
-      id: Date.now() // Temporary ID
+      id: `temp-${Date.now()}`,
+      isOptimistic: true
     };
     setMessages(prev => [...prev, tempMessage]);
     setNewMessage('');
@@ -206,13 +224,11 @@ const ChatPage = () => {
 
   const updateConversationStatus = async (conversationId, status) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/admin/chat/conversations/${conversationId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/chat/conversations/${conversationId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-admin-key': import.meta.env.VITE_ADMIN_KEY || 'admin-key'
+          'x-admin-key': getAdminKey()
         },
         body: JSON.stringify({ status })
       });

@@ -9,3 +9,11 @@ export const getApiBaseUrl = () => {
   // Fallback for same-origin deployments (local dev)
   return import.meta.env.DEV ? 'http://localhost:5001' : window.location.origin;
 };
+
+export const getChatSocketBaseUrl = () => {
+  if (import.meta.env.VITE_CHAT_SOCKET_URL) {
+    return import.meta.env.VITE_CHAT_SOCKET_URL.replace(/\/$/, '');
+  }
+
+  return getApiBaseUrl();
+};

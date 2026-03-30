@@ -34,6 +34,7 @@
   let conversations = [];
   let activeConversation = null;
   let messages = [];
+  let pendingMessageKeys = new Set();
 
   // DOM Elements
   let chatContainer, conversationsList, messagesList, messageInput, sendBtn, statusIndicator;
@@ -83,7 +84,16 @@
 
     socket.on('new_message', (message) => {
       if (activeConversation && message.conversation_id === activeConversation.id) {
-        messages.push(message);
+        const pendingKey = `${message.conversation_id}::${message.message}`;
+        const optimisticIndex = messages.findIndex((m) => m.isOptimistic && m.pendingKey === pendingKey);
+
+        if (optimisticIndex !== -1) {
+          messages[optimisticIndex] = message;
+          pendingMessageKeys.delete(pendingKey);
+        } else if (!messages.some((m) => m.id === message.id)) {
+          messages.push(message);
+        }
+
         renderMessages();
         scrollToBottom();
       }
@@ -156,15 +166,20 @@
    * Send a message via socket
    */
   function sendMessage() {
-    if (!messageInput.value.trim() || !activeConversation || !socketConnected) {
+    const text = messageInput.value.trim();
+    if (!text || !activeConversation || !socketConnected) {
       return;
     }
 
     const messageData = {
       conversationId: activeConversation.id,
-      message: messageInput.value.trim(),
+      message: text,
       senderType: 'admin'
     };
+
+    const tempId = `temp-${Date.now()}`;
+    const pendingKey = `${activeConversation.id}::${text}`;
+    pendingMessageKeys.add(pendingKey);
 
     // Optimistically add message
     messages.push({
@@ -172,7 +187,9 @@
       created_at: new Date().toISOString(),
       sender_type: 'admin',
       sender_name: 'Admin',
-      id: Date.now()
+      id: tempId,
+      isOptimistic: true,
+      pendingKey
     });
     renderMessages();
     scrollToBottom();

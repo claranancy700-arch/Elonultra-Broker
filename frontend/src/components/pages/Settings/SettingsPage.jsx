@@ -507,18 +507,10 @@ export const SettingsPage = () => {
           <div className="card banking-card">
             {!editingBank ? (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="banking-header">
                   <h3>Banking / Registration</h3>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: 12,
-                        background: 'var(--success)',
-                        color: '#fff',
-                        fontSize: 12
-                      }}
-                    >Saved</span>
+                  <div className="banking-header-actions">
+                    <span className="banking-status-badge">Saved</span>
                     <button
                       className="btn btn-small"
                       onClick={() => setEditingBank(!editingBank)}
@@ -537,7 +529,7 @@ export const SettingsPage = () => {
               </div>
             ) : (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="banking-header">
                   <h3>Banking / Registration</h3>
                 </div>
                 <form className="form banking-form registration-form" onSubmit={handleSaveBankingDetails}>

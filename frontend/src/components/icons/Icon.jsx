@@ -53,6 +53,13 @@ const svgs = {
       <rect x="4" y="4" width="9" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/>
     </svg>
   ),
+  chat: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M5 6.5C5 5.12 6.12 4 7.5 4h9C17.88 4 19 5.12 19 6.5v6c0 1.38-1.12 2.5-2.5 2.5H12l-3.5 3v-3H7.5C6.12 15 5 13.88 5 12.5v-6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8.5 9h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+      <path d="M8.5 12h4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+    </svg>
+  ),
   dashboard: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM13 3v6h8V3h-8zM3 21h8v-6H3v6z" stroke="currentColor" strokeWidth="0" fill="currentColor"/>

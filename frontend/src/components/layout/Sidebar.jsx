@@ -45,6 +45,14 @@ export const Sidebar = () => {
       >
         <Icon name="link" className="icon-inline" /> Help & Docs
       </Link>
+      {isAdmin && (
+        <Link 
+          to="/chat-support-unlock" 
+          className={`sidebar-link ${isActive('/chat-support-unlock') || isActive('/chatsupport') ? 'active' : ''}`}
+        >
+          <Icon name="dashboard" className="icon-inline" /> Chat Support
+        </Link>
+      )}
       
       {isAdmin && (
         <>
@@ -54,12 +62,6 @@ export const Sidebar = () => {
             className={`sidebar-link ${isActive('/admin') ? 'active' : ''}`}
           >
             <Icon name="settings" className="icon-inline" /> Admin Panel
-          </Link>
-          <Link 
-            to="/admin/chat" 
-            className={`sidebar-link ${isActive('/admin/chat') ? 'active' : ''}`}
-          >
-            <Icon name="link" className="icon-inline" /> Admin Chat
           </Link>
         </>
       )}

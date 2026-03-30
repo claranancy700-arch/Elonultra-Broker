@@ -14,7 +14,17 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
     const savedToken = safeGetItem('token');
     const savedUserString = safeGetItem('user');
-    const savedUser = savedUserString ? JSON.parse(savedUserString) : null;
+    let savedUser = null;
+
+    if (savedUserString) {
+      try {
+        savedUser = JSON.parse(savedUserString);
+      } catch (parseErr) {
+        console.warn('Invalid cached user payload, clearing auth cache');
+        safeRemoveItem('token');
+        safeRemoveItem('user');
+      }
+    }
 
     if (savedToken && savedUser) {
       setToken(savedToken);

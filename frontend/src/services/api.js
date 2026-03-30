@@ -25,15 +25,31 @@ API.interceptors.response.use(
   async (error) => {
     const config = error.config;
     const status = error.response?.status;
+    const requestUrl = String(config?.url || '');
+    const serverError = String(
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      ''
+    ).toLowerCase();
+    const isAuthEndpoint = requestUrl.includes('/auth/me');
+    const isTokenFailure = serverError.includes('token') || serverError.includes('jwt');
 
     if (!config) {
       return Promise.reject(error);
     }
 
-    if (status === 401 || status === 403) {
+    // Only force logout for real authentication failures.
+    // Generic 403 responses (e.g. role/permission checks) should not wipe session.
+    const shouldForceLogout =
+      status === 401 ||
+      (status === 403 && (isAuthEndpoint || isTokenFailure));
+
+    if (shouldForceLogout) {
       safeRemoveItem('token');
       safeRemoveItem('user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
       return Promise.reject(error);
     }
 

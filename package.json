@@ -6,8 +6,10 @@
   "scripts": {
     "precommit": "npm run lint",
     "dev": "concurrently \"npm run server:dev\" \"npm run frontend:dev\"",
+    "dev:full": "concurrently \"npm run server:dev\" \"npm run frontend:dev\" \"npm run chat:python\"",
     "dev:server": "npm run server:dev",
     "dev:frontend": "npm run frontend:dev",
+    "chat:python": "cd python-chat-service && python -m uvicorn app.main:app --host 0.0.0.0 --port 5100 --reload",
     "start": "node src/server.js",
     "server": "node src/server.js",
     "server:dev": "nodemon src/server.js",

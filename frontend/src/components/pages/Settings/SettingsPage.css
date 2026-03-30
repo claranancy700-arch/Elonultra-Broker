@@ -317,6 +317,53 @@ profile-item label {
   color: var(--text);
 }
 
+.banking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.banking-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.banking-status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: var(--success);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .banking-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .banking-header h3 {
+    margin: 0;
+    width: 100%;
+  }
+
+  .banking-header-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .banking-header-actions .btn-small {
+    min-width: 88px;
+    text-align: center;
+  }
+}
+
 /* Danger Zone */
 .danger-zone {
   margin-top: 30px;

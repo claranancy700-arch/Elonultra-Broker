@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="api-base-url" content="__API_BASE_URL__" />
   <title>Admin — ELON-ULTRA</title>
   <link rel="stylesheet" href="/css/styles.css?v=2.0.1">
   <link rel="stylesheet" href="/css/admin-chat.css">
@@ -87,10 +86,7 @@
   <header class="site-header">
     <div class="container" style="display:flex; align-items:center; justify-content:space-between;">
       <a href="/landing.html" class="brand"><img src="/images/elon-logo-v2.svg" alt="EUE"><span style="display:block">ELON-ULTRA - ADMIN</span></a>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="theme-toggle" style="margin:0">☀️ Light Mode</button>
-        <button onclick="window.__adminChat?.openModal()" style="padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s">💬 Chat Support</button>
-      </div>
+      <button class="theme-toggle" style="margin:0">☀️ Light Mode</button>
     </div>
   </header>
 
@@ -596,21 +592,9 @@
     (function() {
       var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
       var isLocal = host === 'localhost' || host === '127.0.0.1';
-
-      // Check for API base URL from various sources
-      var apiBaseFromMeta = document.querySelector('meta[name="api-base-url"]');
-      var apiBaseFromEnv = (typeof window !== 'undefined' && window.VITE_API_URL);
-
       if (!window.__apiBase) {
-        if (apiBaseFromEnv) {
-          window.__apiBase = apiBaseFromEnv;
-        } else if (apiBaseFromMeta && apiBaseFromMeta.content) {
-          window.__apiBase = apiBaseFromMeta.content;
-        } else {
-          window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
-        }
+        window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
       }
-
       if (!document.documentElement.getAttribute('data-theme')) {
         document.documentElement.setAttribute('data-theme', 'light');
       }
@@ -632,10 +616,6 @@
   <script src="/js/theme-switcher.js"></script>
   <script src="/js/scrolling-banner.js"></script>
 
-  <!-- Socket.io and Admin Chat -->
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="/js/admin-chat.js"></script>
-  
   <!-- Mobile Navigation & Testimonies Modal -->
   <script>
     // Toggle mobile nav

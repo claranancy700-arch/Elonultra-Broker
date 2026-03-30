@@ -48,8 +48,10 @@ const MobileBottomNav = () => {
       case 'help':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 16v-4M12 8h.01"></path>
+            <path d="M4 12a8 8 0 0116 0"></path>
+            <rect x="3" y="12" width="4" height="6" rx="1.5"></rect>
+            <rect x="17" y="12" width="4" height="6" rx="1.5"></rect>
+            <path d="M8 20h8"></path>
           </svg>
         );
       default:

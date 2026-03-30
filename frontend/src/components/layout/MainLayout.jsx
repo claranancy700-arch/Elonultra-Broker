@@ -5,16 +5,16 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import ThemeFab from './ThemeFab';
-import FloatingChat from '../common/FloatingChat';
-import AdminChatFab from './AdminChatFab';
 import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import { PromptAlert } from '../common/PromptAlert';
 import ParticleBackground from '../background/ParticleBackground';
+import FloatingChat from '../common/FloatingChat';
 import './MainLayout.css';
 
 export const MainLayout = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user && (user.email === 'admin@elon-u.com' || user.isAdmin);
 
   // Protect all routes under MainLayout - redirect to login if not authenticated
   useEffect(() => {
@@ -51,11 +51,7 @@ export const MainLayout = () => {
       </div>
       <MobileBottomNav />
       <ThemeFab />
-      <FloatingChat />
-      <AdminChatFab 
-        isAdmin={user?.isAdmin || user?.role === 'admin'} 
-        onNavigate={() => navigate('/admin/chat')}
-      />
+      {!isAdmin ? <FloatingChat /> : null}
     </>
   );
 };

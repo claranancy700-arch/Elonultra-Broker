@@ -3,10 +3,22 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'change_this';
 const ADMIN_KEY = process.env.ADMIN_API_KEY || 'admin_key_12345';
 
+const isAuthBypassEnabled = () => {
+  const bypassRequested = process.env.DISABLE_AUTH === 'true';
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Never allow auth bypass in production to avoid forcing all users to DEV_USER_ID.
+  if (bypassRequested && isProduction) {
+    return false;
+  }
+
+  return bypassRequested;
+};
+
 // Middleware to verify JWT token
 // When DISABLE_AUTH=true (local testing), skip token verification and inject a dev user
 const verifyToken = (req, res, next) => {
-  if (process.env.DISABLE_AUTH === 'true') {
+  if (isAuthBypassEnabled()) {
     req.userId = Number(process.env.DEV_USER_ID || 1);
     req.userEmail = process.env.DEV_USER_EMAIL || 'dev@local';
     return next();
@@ -32,8 +44,8 @@ const verifyToken = (req, res, next) => {
 
 // Middleware to verify admin key
 const verifyAdmin = (req, res, next) => {
-  // Allow admin bypass in local dev if DISABLE_AUTH=true
-  if (process.env.DISABLE_AUTH === 'true') return next();
+  // Allow admin bypass only when auth bypass is explicitly enabled outside production.
+  if (isAuthBypassEnabled()) return next();
 
   const adminKey = req.headers['x-admin-key'];
   

@@ -5,7 +5,7 @@ import { useApi } from '../../../hooks/useApi';
 import './LoginPage.css';
 
 export const LoginPage = () => {
-  const { user, login } = useAuth();
+  const { user, login, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { request, loading } = useApi();
 
@@ -18,10 +18,10 @@ export const LoginPage = () => {
 
   // Redirect if already logged in (wait until auth loading completes)
   useEffect(() => {
-    if (!loading && user) {
+    if (!authLoading && user) {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,11 +1,16 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './HelpPage.css';
 import Icon from '../../icons/Icon';
-import ChatBox from '../../common/ChatBox';
 
 export const HelpPage = () => {
   const [expandedFaq, setExpandedFaq] = React.useState(null);
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
+
+  const openLiveChat = () => {
+    if (typeof window !== 'undefined' && typeof window.openSupportChat === 'function') {
+      window.openSupportChat();
+    }
+  };
 
   const faqs = [
     {
@@ -68,10 +73,10 @@ export const HelpPage = () => {
               <Icon name="link" className="icon-inline" />
               <span className="text">Contact Support</span>
             </a>
-            <a href="#" className="quick-link" onClick={(e) => { e.preventDefault(); setIsChatOpen(true); }}>
-              <Icon name="dashboard" className="icon-inline" />
+            <button type="button" className="quick-link" onClick={openLiveChat}>
+              <Icon name="chat" className="icon-inline" />
               <span className="text">Live Chat</span>
-            </a>
+            </button>
             <a href="#" className="quick-link">
               <Icon name="copy" className="icon-inline" />
               <span className="text">Documentation</span>
@@ -131,7 +136,6 @@ export const HelpPage = () => {
         </section>
       </div>
 
-      <ChatBox isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };

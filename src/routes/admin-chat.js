@@ -143,6 +143,17 @@ router.post('/conversations/:id/messages', requireAdminKey, async (req, res) => 
       RETURNING *, 'Admin' as sender_name
     `, [conversationId, adminId || 0, sanitizedMessage]);
 
+    await db.query(`
+      UPDATE chat_conversations
+      SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `, [conversationId]);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.of('/chat').to(`conversation_${conversationId}`).emit('new_message', rows[0]);
+    }
+
     res.json({ success: true, message: rows[0] });
   } catch (error) {
     console.error('Error sending admin message:', error);

@@ -10,6 +10,7 @@ process.emit = function(event, err, ...args) {
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 const { createServer } = require('http');
@@ -31,7 +32,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
-const port = process.env.PORT || 5001;
+const port = Number(process.env.PORT) || 5001;
 
 app.use(cors());
 app.use(express.json());
@@ -104,8 +105,37 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     
     console.log('All routes loaded successfully');
     
+    // Make io instance available to routes
+    app.set('io', io);
+    
     // Socket.io chat functionality
     const chatNamespace = io.of('/chat');
+
+    chatNamespace.use((socket, next) => {
+      try {
+        const { token, adminKey } = socket.handshake.auth || {};
+        const ADMIN_KEY = process.env.ADMIN_KEY || process.env.ADMIN_API_KEY || 'admin-key';
+
+        if (adminKey && adminKey === ADMIN_KEY) {
+          socket.data.authRole = 'admin';
+          return next();
+        }
+
+        if (token) {
+          const JWT_SECRET = process.env.JWT_SECRET || 'change_this';
+          const decoded = jwt.verify(token, JWT_SECRET);
+          if (decoded?.userId) {
+            socket.data.authRole = 'user';
+            socket.data.userId = decoded.userId;
+            return next();
+          }
+        }
+
+        return next(new Error('Unauthorized chat socket'));
+      } catch (err) {
+        return next(new Error('Unauthorized chat socket'));
+      }
+    });
     
     chatNamespace.on('connection', (socket) => {
       console.log('User connected to chat:', socket.id);
@@ -125,7 +155,20 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
       // Handle new message
       socket.on('send_message', async (data) => {
         try {
-          const { conversationId, message, senderId, senderType } = data;
+          const { conversationId, message, senderId } = data;
+          const parsedConversationId = Number(conversationId);
+          const sanitizedMessage = typeof message === 'string'
+            ? message.trim().replace(/[<>]/g, '').substring(0, 1000).replace(/\s+/g, ' ')
+            : '';
+
+          if (!parsedConversationId || !sanitizedMessage) {
+            socket.emit('message_error', { error: 'Invalid message payload' });
+            return;
+          }
+
+          const isAdmin = socket.data.authRole === 'admin';
+          const normalizedSenderType = isAdmin ? 'admin' : 'user';
+          const normalizedSenderId = isAdmin ? (Number(senderId) || 0) : socket.data.userId;
           
           // Insert message into database
           const db = require('./db');
@@ -137,12 +180,18 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
                 WHEN $3 = 'admin' THEN 'Admin'
                 ELSE (SELECT name FROM users WHERE id = $2)
               END as sender_name
-          `, [conversationId, senderId, senderType, message]);
+          `, [parsedConversationId, normalizedSenderId, normalizedSenderType, sanitizedMessage]);
           
           const newMessage = rows[0];
+
+          await db.query(`
+            UPDATE chat_conversations
+            SET last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+          `, [parsedConversationId]);
           
           // Broadcast to conversation room
-          chatNamespace.to(`conversation_${conversationId}`).emit('new_message', newMessage);
+          chatNamespace.to(`conversation_${parsedConversationId}`).emit('new_message', newMessage);
           
         } catch (error) {
           console.error('Error sending message via socket:', error);
@@ -288,7 +337,8 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   // START THE SERVER - after routes are registered
   // Try to listen on configured port, but if it's in use, try the next few ports
   const tryListen = (startPort, attempts = 5) => {
-    let p = startPort;
+    const basePort = Number(startPort) || 5001;
+    let p = basePort;
     const attempt = () => {
       const srv = server.listen(p, () => {
         console.log(`✓ Server listening on port ${p}`);
@@ -297,7 +347,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
         if (err && err.code === 'EADDRINUSE') {
           console.warn(`Port ${p} in use, trying ${p + 1}...`);
           p += 1;
-          if (p <= startPort + attempts) {
+          if (p <= basePort + attempts) {
             setTimeout(attempt, 200);
             return;
           }
