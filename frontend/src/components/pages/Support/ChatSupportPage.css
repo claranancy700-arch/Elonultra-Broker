@@ -2,7 +2,10 @@
   position: relative;
   z-index: 2;
   height: 100vh;
+  height: 100svh;
+  min-height: 100svh;
   overflow: hidden;
+  overscroll-behavior: none;
   box-sizing: border-box;
   padding: 24px 16px;
   display: flex;
@@ -10,18 +13,19 @@
 }
 
 .support-chat-shell {
+  flex: 1;
   min-height: 0;
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  position: sticky;
+  position: relative;
   background: rgba(12, 18, 28, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 16px;
   backdrop-filter: blur(12px);
   padding: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  display: block;
+  display: flex;
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
@@ -159,7 +163,6 @@
   min-height: 0;
   width: 88%;
   max-width: 900px;
-  max-height: calc(64vh - 120px);
   overflow-y: auto;
   margin: 0 auto;
   padding-right: 4px;
