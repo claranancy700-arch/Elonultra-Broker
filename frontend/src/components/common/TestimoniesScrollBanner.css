@@ -98,30 +98,7 @@ html[data-theme="light"] .testimonies-banner-item-text {
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .testimonies-banner {
-    padding: 6px 8px;
-    min-height: 32px;
-    margin-bottom: 12px;
-  }
-
-  .testimonies-banner-content {
-    gap: 18px;
-    animation: scroll-left 660s linear infinite;
-  }
-
-  .testimonies-banner-item {
-    padding: 10px 14px;
-    font-size: 12px;
-    min-width: 240px;
-    max-width: 300px;
-    border-radius: 5px;
-  }
-
-  .testimonies-banner-item strong {
-    font-size: 11px;
-  }
-
-  .testimonies-banner-item-text {
-    font-size: 11px;
+    display: none;
   }
 }
 

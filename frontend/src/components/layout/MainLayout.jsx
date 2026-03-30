@@ -7,7 +7,6 @@ import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import ThemeFab from './ThemeFab';
 import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import { PromptAlert } from '../common/PromptAlert';
-import ParticleBackground from '../background/ParticleBackground';
 import FloatingChat from '../common/FloatingChat';
 import './MainLayout.css';
 
@@ -39,7 +38,6 @@ export const MainLayout = () => {
 
   return (
     <>
-      <ParticleBackground />
       <Header />
       <TestimoniesScrollBanner />
       <PromptAlert />

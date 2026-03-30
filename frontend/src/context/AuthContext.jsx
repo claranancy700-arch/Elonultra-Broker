@@ -29,6 +29,9 @@ export const AuthProvider = ({ children }) => {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(savedUser);
+      // Unblock UI immediately when a cached session exists.
+      // Server verification continues in the background and will log out if invalid.
+      if (mounted) setLoading(false);
     }
 
     const tryAuthorize = async (attempt = 1) => {
@@ -67,7 +70,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        if (attempt <= 5) {
+        if (attempt <= 3) {
           const backoff = 1000 * Math.pow(2, attempt - 1);
           console.warn(`Auth check failed (attempt ${attempt}), retrying in ${backoff}ms`, err.message || err);
           setTimeout(() => {

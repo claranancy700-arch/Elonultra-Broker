@@ -275,6 +275,46 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Mobile performance mode: reduce expensive compositing and continuous animation */
+@media (max-width: 768px) {
+  .site-header,
+  .site-header.scrolled,
+  .sidebar,
+  .mobile-bottom-nav,
+  .theme-fab,
+  .panel,
+  .card,
+  .help-section,
+  .support-chat-shell {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .main-content,
+  .dashboard-page,
+  .settings-page,
+  .help-page,
+  .markets-page,
+  .transactions-page {
+    animation: none !important;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.12s !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media (max-width: 480px) {
   .container {
     padding: 12px;

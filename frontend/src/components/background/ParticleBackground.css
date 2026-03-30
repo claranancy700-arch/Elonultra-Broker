@@ -35,3 +35,9 @@
   display: block;
   object-fit: cover;
 }
+
+@media (max-width: 768px) {
+  .particle-background {
+    display: none;
+  }
+}
