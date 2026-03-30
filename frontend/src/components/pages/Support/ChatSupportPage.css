@@ -10,7 +10,6 @@
 }
 
 .support-chat-shell {
-  flex: 1;
   min-height: 0;
   max-width: 1200px;
   width: 100%;
@@ -21,7 +20,7 @@
   backdrop-filter: blur(12px);
   padding: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  display: flex;
+  display: block;
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
@@ -85,7 +84,6 @@
 
 .support-conversations-full {
   max-width: 980px;
-  margin: 0 auto;
 }
 
 .support-conversations-title,
