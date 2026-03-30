@@ -191,7 +191,7 @@ export const ChatSupportPage = () => {
   return (
     <div
       className="support-chat-page"
-      style={{ position: 'relative', zIndex: 2 }}
+      style={{}}
     >
       <div className="support-chat-shell">
         <div className="support-chat-head">

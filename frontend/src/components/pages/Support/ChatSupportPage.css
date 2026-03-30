@@ -1,11 +1,8 @@
 .support-chat-page {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 2;
-  height: 100vh;
-  height: 100svh;
-  min-height: 100svh;
   overflow: hidden;
-  overscroll-behavior: none;
   box-sizing: border-box;
   padding: 24px 16px;
   display: flex;
