@@ -1,12 +1,19 @@
 .support-chat-page {
   position: relative;
   z-index: 2;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
   padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .support-chat-shell {
+  flex: 1;
+  min-height: 0;
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   background: rgba(12, 18, 28, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -14,6 +21,10 @@
   backdrop-filter: blur(12px);
   padding: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .support-chat-head {
@@ -49,8 +60,11 @@
 }
 
 .support-chat-layout {
-  display: block;
-  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .support-conversations,
@@ -65,7 +79,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 72vh;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .support-conversations-full {
@@ -114,7 +129,8 @@
 .support-messages-panel {
   display: flex;
   flex-direction: column;
-  min-height: 72vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 .support-messages-panel-full {
