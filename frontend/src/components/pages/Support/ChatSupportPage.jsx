@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { getApiBaseUrl, getChatSocketBaseUrl } from '../../../utils/apiConfig';
@@ -31,6 +31,12 @@ export const ChatSupportPage = () => {
   useEffect(() => {
     activeConversationRef.current = activeConversation;
   }, [activeConversation]);
+
+  // Hide bottom nav on this full-page view
+  useEffect(() => {
+    document.body.classList.add('chat-support-view');
+    return () => document.body.classList.remove('chat-support-view');
+  }, []);
 
   const scrollToLatestMessage = useCallback(() => {
     if (!messagesListRef.current) return;
@@ -337,109 +343,157 @@ export const ChatSupportPage = () => {
     return <Navigate to="/chat-support-unlock" replace />;
   }
 
+  const getInitial = (name) => (name || '?')[0].toUpperCase();
+
   return (
-    <div
-      className="support-chat-page"
-      style={{}}
-    >
-      <div className="support-chat-shell">
-        <div className="support-chat-head">
-          <h1>Chat Support</h1>
-          <button
-            type="button"
-            className="support-chat-lock"
-            onClick={() => {
-              sessionStorage.removeItem(CHAT_SUPPORT_UNLOCK_KEY);
-              sessionStorage.removeItem(CHAT_SUPPORT_ADMIN_KEY);
-              navigate('/chat-support-unlock', { replace: true });
-            }}
-          >
-            Lock
-          </button>
+    <div className="cs-page">
+      {/* â”€â”€ TOP BAR â”€â”€ */}
+      <header className="cs-topbar">
+        <div className="cs-topbar-left">
+          {/* Mobile: menu or back button */}
+          {activeConversation ? (
+            <button
+              type="button"
+              className="cs-mobile-back"
+              onClick={() => { setActiveConversation(null); setMessages([]); setMessageText(''); }}
+              aria-label="Back to conversations"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+          ) : null}
+
+          <div className="cs-topbar-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
+          <h1>Support Chat</h1>
+          <span className={`cs-status-dot ${socketConnected ? 'online' : ''}`} style={{ marginLeft: 6 }} />
+          <span className="cs-status-label">{socketConnected ? 'Live' : 'Polling'}</span>
         </div>
 
-        {error ? <div className="support-chat-error">{error}</div> : null}
+        <button
+          type="button"
+          className="cs-lock-btn"
+          onClick={() => {
+            sessionStorage.removeItem(CHAT_SUPPORT_UNLOCK_KEY);
+            sessionStorage.removeItem(CHAT_SUPPORT_ADMIN_KEY);
+            navigate('/chat-support-unlock', { replace: true });
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          Lock
+        </button>
+      </header>
 
-        <div className={`support-chat-layout ${activeConversation ? 'messages-open' : 'conversations-open'}`}>
-          {!activeConversation ? (
-            <aside className="support-conversations support-conversations-full">
-              <div className="support-conversations-title">Support Conversations</div>
-              {isLoadingConversations ? (
-                <div className="support-empty">Loading conversations...</div>
-              ) : conversations.length === 0 ? (
-                <div className="support-empty">No conversations yet.</div>
-              ) : (
-                conversations.map((conversation) => (
-                  <button
-                    type="button"
-                    key={conversation.id}
-                    className="support-conversation-item"
-                    onClick={() => {
-                      setActiveConversation(conversation);
-                      setMessageText('');
-                    }}
-                  >
-                    <span className="name">{conversation.user_name || `User ${conversation.user_id}`}</span>
-                    <span className="meta">{formatTime(conversation.last_message_at || conversation.updated_at)}</span>
-                  </button>
-                ))
-              )}
-            </aside>
-          ) : (
-            <section className="support-messages-panel support-messages-panel-full">
-              <div className="support-messages-header">
+      {/* â”€â”€ BODY â”€â”€ */}
+      <div className="cs-body">
+        {/* â”€â”€ SIDEBAR â”€â”€ */}
+        <aside className={`cs-sidebar${!activeConversation ? ' open' : ''}`}>
+          <div className="cs-sidebar-head">
+            <div className="cs-sidebar-title">Conversations</div>
+          </div>
+          <div className="cs-conv-list">
+            {isLoadingConversations ? (
+              <div className="cs-empty">Loading…</div>
+            ) : conversations.length === 0 ? (
+              <div className="cs-empty">No conversations yet.</div>
+            ) : (
+              conversations.map((conv) => (
                 <button
                   type="button"
-                  className="support-back"
-                  onClick={() => {
-                    setActiveConversation(null);
-                    setMessages([]);
-                    setMessageText('');
-                  }}
+                  key={conv.id}
+                  className={`cs-conv-item${activeConversation?.id === conv.id ? ' active' : ''}`}
+                  onClick={() => { setActiveConversation(conv); setMessageText(''); }}
                 >
-                  Back to conversations
+                  <div className="cs-conv-avatar">{getInitial(conv.user_name)}</div>
+                  <div className="cs-conv-info">
+                    <div className="cs-conv-name">{conv.user_name || `User ${conv.user_id}`}</div>
+                    <div className="cs-conv-preview">
+                      {conv.last_message ? (conv.last_sender_type === 'admin' ? 'You: ' : '') + conv.last_message : 'No messages'}
+                    </div>
+                  </div>
+                  <div className="cs-conv-time">{formatTime(conv.last_message_at || conv.updated_at)}</div>
                 </button>
-                <div className="support-messages-title">
-                  {activeConversation.user_name || `User ${activeConversation.user_id}`}
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* â”€â”€ MAIN PANEL â”€â”€ */}
+        <main className="cs-main">
+          {error ? <div className="cs-error">{error}</div> : null}
+
+          {!activeConversation ? (
+            <div className="cs-placeholder">
+              <div className="cs-placeholder-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                </svg>
+              </div>
+              <p>Select a conversation to start replying</p>
+            </div>
+          ) : (
+            <>
+              {/* Message header */}
+              <div className="cs-msg-header">
+                <div className="cs-msg-avatar">{getInitial(activeConversation.user_name)}</div>
+                <div className="cs-msg-user">
+                  <div className="cs-msg-user-name">{activeConversation.user_name || `User ${activeConversation.user_id}`}</div>
+                  <div className="cs-msg-user-sub">Conversation #{activeConversation.id}</div>
                 </div>
               </div>
 
-              <div className="support-messages-list" ref={messagesListRef}>
+              {/* Messages */}
+              <div className="cs-messages" ref={messagesListRef}>
                 {isLoadingMessages && messages.length === 0 ? (
-                  <div className="support-empty">Loading messages...</div>
+                  <div className="cs-empty" style={{ textAlign: 'center' }}>Loading messages…</div>
                 ) : messages.length === 0 ? (
-                  <div className="support-empty">No messages yet.</div>
+                  <div className="cs-empty" style={{ textAlign: 'center' }}>No messages yet.</div>
                 ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`support-message support-message-${msg.sender_type === 'admin' ? 'mine' : 'theirs'}`}
-                    >
-                      <div className="support-message-author">
-                        {msg.sender_type === 'admin' ? 'Support' : msg.sender_name || 'User'}
+                  messages.map((msg) => {
+                    const isAdmin = msg.sender_type === 'admin';
+                    return (
+                      <div key={msg.id} className={`cs-bubble-row ${isAdmin ? 'mine' : 'theirs'}`}>
+                        <div className="cs-bubble">{msg.message}</div>
+                        <div className="cs-bubble-meta">
+                          <span>{isAdmin ? 'Support' : (msg.sender_name || 'User')}</span>
+                          <span>·</span>
+                          <span>{formatTime(msg.created_at)}</span>
+                        </div>
                       </div>
-                      <div className="support-message-body">{msg.message}</div>
-                      <div className="support-message-time">{formatTime(msg.created_at)}</div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
-              <form className="support-send-row" onSubmit={handleSend}>
-                <input
-                  type="text"
-                  value={messageText}
-                  onChange={(event) => setMessageText(event.target.value)}
-                  placeholder="Type your reply..."
-                  disabled={sending}
-                />
-                <button type="submit" disabled={sending || !messageText.trim()}>
-                  {sending ? 'Sending...' : 'Send'}
-                </button>
-              </form>
-            </section>
+              {/* Send row */}
+              <div className="cs-send-row">
+                <form className="cs-send-form" onSubmit={handleSend}>
+                  <input
+                    className="cs-send-input"
+                    type="text"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    placeholder="Type a reply…"
+                    disabled={sending}
+                    autoComplete="off"
+                  />
+                  <button type="submit" className="cs-send-btn" disabled={sending || !messageText.trim()} aria-label="Send">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import API from '../../../services/api';
 import './WithdrawalFeeConfirmPage.css';
 
 const MIN_WITHDRAWAL_FEE_RATE = 0.00045; // 0.045%
@@ -87,32 +88,31 @@ export default function WithdrawalProcessPage() {
     // Get current date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
 
-    // Load banking data from localStorage if available
+    // Load banking data from API
     let bankingDetails = {};
-    try {
-      const saved = localStorage.getItem('bankingDetails');
-      if (saved) {
-        bankingDetails = JSON.parse(saved);
+    const loadBanking = async () => {
+      try {
+        const res = await API.get('/users/banking-details');
+        if (res?.data) bankingDetails = res.data;
+      } catch (e) {
+        // No banking details saved yet — form stays empty
       }
-    } catch (e) {
-      console.log('Failed to load banking details');
-    }
-
-    // Pre-fill form with combined data
-    setFormData(prev => ({
-      ...prev,
-      digital: currency,
-      amount: amount,
-      rate: '1.0',
-      tdate: today,
-      fromAcct: 'THE ELON-ULTRA TRADING VAULT',
-      xcur: FEE_DEPOSIT_CURRENCY,
-      destCountry: bankingDetails.country || '',
-      benName: bankingDetails.acctName || '',
-      benAcct: bankingDetails.acctNumber || '',
-      benId: bankingDetails.personalId || '',
-      benBranch: bankingDetails.branch || '',
-    }));
+      setFormData(prev => ({
+        ...prev,
+        digital: currency,
+        amount: amount,
+        rate: '1.0',
+        tdate: today,
+        fromAcct: 'THE ELON-ULTRA TRADING VAULT',
+        xcur: FEE_DEPOSIT_CURRENCY,
+        destCountry: bankingDetails.country || '',
+        benName: bankingDetails.acctName || '',
+        benAcct: bankingDetails.acctNumber || '',
+        benId: bankingDetails.personalId || '',
+        benBranch: bankingDetails.branch || '',
+      }));
+    };
+    loadBanking();
 
     return () => {};
   }, [searchParams, location.state]);

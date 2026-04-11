@@ -55,8 +55,16 @@ export const PromptAlert = () => {
     <div className="prompts-container">
       {visiblePrompts.map((prompt) => (
         <div key={prompt.id} className="prompt-alert">
-          <div className="prompt-icon">📢</div>
+          <div className="prompt-icon-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10.5V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              <path d="M16 19h6" />
+              <path d="M19 16v6" />
+            </svg>
+          </div>
           <div className="prompt-content">
+            <div className="prompt-label">Notification</div>
             <div className="prompt-message">{prompt.message}</div>
             <div className="prompt-time">
               {new Date(prompt.created_at).toLocaleString()}
@@ -67,7 +75,10 @@ export const PromptAlert = () => {
             onClick={() => handleDismiss(prompt.id)}
             aria-label="Dismiss prompt"
           >
-            ✕
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
       ))}

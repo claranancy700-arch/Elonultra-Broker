@@ -55,9 +55,9 @@ export const TransactionsPage = () => {
 
   const getAssetSymbol = (asset) => {
     const sym = (asset || '').toUpperCase();
-    if (sym === 'BTC') return 'â‚¿';
-    if (sym === 'ETH') return 'Îž';
-    if (sym === 'SOL') return 'â—Ž';
+    if (sym === 'BTC') return '₿';
+    if (sym === 'ETH') return 'Ξ';
+    if (sym === 'SOL') return '◎';
     return '$';
   };
 
@@ -130,7 +130,7 @@ export const TransactionsPage = () => {
       {loading ? (
         <div className="tx-loading">
           <div className="tx-loading-spinner"/>
-          <span>Loading transactionsâ€¦</span>
+          <span>Loading transactions…</span>
         </div>
       ) : (
         <>

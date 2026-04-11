@@ -41,18 +41,31 @@ export default function WithdrawalProcessPage() {
     ? `${((feeUsd / amountUsd) * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}%`
     : '0.045% - 0.05%';
 
-  // Pre-fill form with data from WithdrawalsPage
+  // Pre-fill form with data from WithdrawalsPage + saved banking details
   useEffect(() => {
-    if (location.state?.initialData) {
-      const initial = location.state.initialData;
-      setFormData(prev => ({
-        ...prev,
-        currency: initial.currency || '',
-        amount: initial.amount || '',
-        address: initial.address || '',
-      }));
-      setWithdrawalId(initial.withdrawal_id);
-    }
+    const initial = location.state?.initialData || {};
+    setFormData(prev => ({
+      ...prev,
+      currency: initial.currency || prev.currency,
+      amount: initial.amount || prev.amount,
+      address: initial.address || prev.address,
+    }));
+    if (initial.withdrawal_id) setWithdrawalId(initial.withdrawal_id);
+
+    // Load saved banking details from API and pre-fill recipient section
+    API.get('/users/banking-details')
+      .then(res => {
+        const b = res?.data;
+        if (!b) return;
+        setFormData(prev => ({
+          ...prev,
+          country: b.country || prev.country,
+          accountHolder: b.acctName || prev.accountHolder,
+          accountNumber: b.acctNumber || prev.accountNumber,
+          bankCode: b.branch || prev.bankCode,
+        }));
+      })
+      .catch(() => {}); // silently ignore if not saved yet
   }, [location.state]);
 
   const handleChange = (e) => {
@@ -570,7 +583,7 @@ export default function WithdrawalProcessPage() {
                 onClick={handleSubmit}
                 disabled={submitLoading || awaitingAdmin}
               >
-                {submitLoading ? 'Recording paymentâ€¦' : awaitingAdmin ? 'Awaiting admin confirmation' : 'I have completed withdrawal fee'}
+                {submitLoading ? 'Recording payment…' : awaitingAdmin ? 'Awaiting admin confirmation' : 'I have completed withdrawal fee'}
               </button>
             </div>
           )}
