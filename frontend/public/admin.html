@@ -1789,23 +1789,23 @@
       return;
     }
     const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : location.origin + '/api');
-    fetch(`${apiBase}/admin/verification-codes`, { headers: { 'x-admin-key': key } })
+    fetch(`${apiBase}/users/pending-verifications`, { headers: { 'x-admin-key': key } })
       .then(r => r.json())
       .then(data => {
-        const codes = data.codes || data || [];
+        const codes = Array.isArray(data) ? data : (data.codes || []);
         if (!tbody) return;
         if (!codes.length) {
           tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No active verification codes.</td></tr>';
           return;
         }
         tbody.innerHTML = codes.map(c => {
-          const exp = c.expires_at ? Math.max(0, Math.round((new Date(c.expires_at) - Date.now()) / 60000)) : '?';
+          const expMin = c.expiresIn != null ? Math.max(0, Math.round(c.expiresIn / 60)) : '?';
           return `<tr>
-            <td>${c.user_name || c.user_id || '—'}</td>
+            <td>${c.name || c.userId || '—'}</td>
             <td>${c.email || '—'}</td>
             <td style="text-align:center"><span class="otp-code">${c.code}</span></td>
-            <td style="text-align:center">${exp} min</td>
-            <td>${c.created_at ? new Date(c.created_at).toLocaleString() : '—'}</td>
+            <td style="text-align:center">${expMin} min</td>
+            <td>${c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</td>
           </tr>`;
         }).join('');
       })
