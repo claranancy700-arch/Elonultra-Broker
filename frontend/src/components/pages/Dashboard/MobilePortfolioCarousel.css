@@ -28,7 +28,6 @@
   background: linear-gradient(135deg, rgba(var(--card-rgb), 0.55) 0%, rgba(var(--bg-rgb), 0.55) 100%);
   backdrop-filter: blur(var(--blur-amount));
   -webkit-backdrop-filter: blur(var(--blur-amount));
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08), 0 12px 32px rgba(var(--accent-rgb), 0.08);
   overflow: visible;
   display: flex;
   align-items: center;
@@ -72,7 +71,6 @@
 
 html[data-theme="light"] .carousel-card {
   background: linear-gradient(135deg, rgba(var(--card-rgb), 0.8) 0%, rgba(var(--bg-rgb), 0.8) 100%);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.05), 0 12px 32px rgba(var(--accent-rgb), 0.06);
 }
 
 

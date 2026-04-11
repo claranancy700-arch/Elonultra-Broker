@@ -37,7 +37,10 @@
 const usersTbody = document.getElementById('users-tbody');
 const userDetail = document.getElementById('user-detail');
 const transactionsTbody = document.getElementById('transactions-tbody');
-const adminKeyInput = document.getElementById('admin-key');
+// Key is read exclusively from sessionStorage (set by auth gate)
+function getAdminKey() { return sessionStorage.getItem('adminKey') || ''; }
+// Null stub so existing `adminKeyInput &&` guards stay safe without a DOM element
+const adminKeyInput = null;
 const loadUsersBtn = document.getElementById('load-users');
 const creditForm = document.getElementById('credit-form');
 const currentUserSelect = document.getElementById('current-user-select');
@@ -73,22 +76,21 @@ const usersListBtn = document.getElementById('users-list-btn');
 const usersModal = document.getElementById('users-modal');
 const usersListContainer = document.getElementById('users-list-container');
 
+// usersListBtn already has onclick="openModal('users-modal')" in HTML which auto-loads;
+// the JS listener is kept only to ensure it fires even if the inline attr is stripped.
 if (usersListBtn) {
   usersListBtn.addEventListener('click', () => {
-    usersModal.classList.add('active');
+    if (typeof openModal === 'function') openModal('users-modal');
+    else usersModal?.classList.add('open');
   });
 }
 
-// Close modal when clicking outside
-if (usersModal) {
-  usersModal.addEventListener('click', (e) => {
-    if (e.target === usersModal) usersModal.classList.remove('active');
-  });
-}
+// Modal close-on-overlay-click is handled globally in admin.html;
+// no duplicate listener needed here.
 
 if (loadUsersBtn) {
   loadUsersBtn.addEventListener('click', async () => {
-    const key = (adminKeyInput && adminKeyInput.value || '').trim();
+    const key = getAdminKey();
     if (!key) return alert('Paste admin key');
     loadUsersBtn.disabled = true;
     try {
@@ -109,14 +111,23 @@ if (loadUsersBtn) {
       // Render as list modal
       if (usersListContainer) {
         usersListContainer.innerHTML = users.map(u => `
-          <div class="user-item" data-user-id="${u.id}">
-            <div class="user-item-id">ID #${u.id}</div>
-            <div class="user-item-email">${u.email}</div>
-            <div class="user-item-balance">Balance: ${formatCurrency(u.balance)}</div>
-            <div class="user-item-actions">
-              <button data-id="${u.id}" class="view-user btn btn-small" style="flex:1;min-width:60px">View</button>
-              ${u.is_active ? `<button data-disable="${u.id}" class="disable-user-btn btn btn-secondary btn-small" style="flex:1;min-width:60px">Disable</button>` : `<button data-enable="${u.id}" class="enable-user-btn btn btn-small" style="flex:1;min-width:60px">Enable</button>`}
-              <button data-delete="${u.id}" class="delete-user-btn btn btn-danger btn-small" style="flex:1;min-width:60px">Delete</button>
+          <div class="user-card" data-user-id="${u.id}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+              <div style="min-width:0">
+                <div class="user-card-name">${u.name || u.email}</div>
+                <div class="user-card-email">${u.email}</div>
+                <div class="user-card-balance">Balance: ${formatCurrency(u.balance)}</div>
+                <div class="user-card-meta">
+                  <span class="badge ${u.is_active !== false ? 'badge-green' : 'badge-red'}">${u.is_active !== false ? 'Active' : 'Disabled'}</span>
+                  <span class="badge badge-gray">ID #${u.id}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+                <button data-id="${u.id}" class="view-user btn btn-primary btn-xs">Select</button>
+                ${u.is_active !== false ? `<button data-disable="${u.id}" class="disable-user-btn btn btn-ghost btn-xs">Disable</button>` : `<button data-enable="${u.id}" class="enable-user-btn btn btn-success btn-xs">Enable</button>`}
+                <button data-delete="${u.id}" class="delete-user-btn btn btn-danger btn-xs">Deactivate</button>
+                <button data-purge="${u.id}" class="purge-user-btn btn btn-danger btn-xs" style="opacity:0.75;font-size:10px">Purge ☠</button>
+              </div>
             </div>
           </div>
         `).join('');
@@ -124,21 +135,43 @@ if (loadUsersBtn) {
         // Bind event handlers
         usersListContainer.querySelectorAll('.view-user').forEach(btn => btn.addEventListener('click', (e) => {
           loadUserDetails(e.currentTarget.dataset.id, key);
-          usersModal.classList.remove('active');
+          document.getElementById('users-modal').classList.remove('open');
         }));
         usersListContainer.querySelectorAll('.disable-user-btn').forEach(btn => btn.addEventListener('click', (e) => disableUser(e.currentTarget.getAttribute('data-disable'), key)));
         usersListContainer.querySelectorAll('.enable-user-btn').forEach(btn => btn.addEventListener('click', (e) => enableUser(e.currentTarget.getAttribute('data-enable'), key)));
         usersListContainer.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', (e) => deleteUser(e.currentTarget.getAttribute('data-delete'), key)));
+        usersListContainer.querySelectorAll('.purge-user-btn').forEach(btn => btn.addEventListener('click', (e) => purgeUser(e.currentTarget.getAttribute('data-purge'), key)));
       }
       
-      // Keep table rendering for backward compatibility (though it won't be visible)
-      if (usersTbody) usersTbody.innerHTML = users.map(u => `
-        <tr>
-          <td>${u.id}</td>
-          <td>${u.email}</td>
-          <td>${formatCurrency(u.balance)}</td>
-        </tr>
-      `).join('');
+      // Populate the page-users table (8 columns: ID, Name, Email, Balance, Status, Verified, Joined, Actions)
+      if (usersTbody) {
+        usersTbody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.name || '—'}</td>
+            <td>${u.email}</td>
+            <td>${formatCurrency(u.balance)}</td>
+            <td><span class="badge ${u.is_active !== false ? 'badge-green' : 'badge-red'}">${u.is_active !== false ? 'Active' : 'Disabled'}</span></td>
+            <td>${u.is_verified ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-gray">—</span>'}</td>
+            <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+            <td style="display:flex;gap:4px;flex-wrap:wrap">
+              <button data-id="${u.id}" class="view-user-tbl btn btn-primary btn-xs">Select</button>
+              ${u.is_active !== false
+                ? `<button data-disable="${u.id}" class="disable-user-btn btn btn-ghost btn-xs">Disable</button>`
+                : `<button data-enable="${u.id}" class="enable-user-btn btn btn-success btn-xs">Enable</button>`}
+              <button data-delete="${u.id}" class="delete-user-btn btn btn-danger btn-xs">Deactivate</button>
+              <button data-purge="${u.id}" class="purge-user-btn btn btn-danger btn-xs" style="opacity:0.75;font-size:10px">Purge ☠</button>
+            </td>
+          </tr>
+        `).join('');
+        usersTbody.querySelectorAll('.view-user-tbl').forEach(btn => btn.addEventListener('click', (e) => {
+          loadUserDetails(e.currentTarget.dataset.id, key);
+        }));
+        usersTbody.querySelectorAll('.disable-user-btn').forEach(btn => btn.addEventListener('click', (e) => disableUser(e.currentTarget.getAttribute('data-disable'), key)));
+        usersTbody.querySelectorAll('.enable-user-btn').forEach(btn => btn.addEventListener('click', (e) => enableUser(e.currentTarget.getAttribute('data-enable'), key)));
+        usersTbody.querySelectorAll('.delete-user-btn').forEach(btn => btn.addEventListener('click', (e) => deleteUser(e.currentTarget.getAttribute('data-delete'), key)));
+        usersTbody.querySelectorAll('.purge-user-btn').forEach(btn => btn.addEventListener('click', (e) => purgeUser(e.currentTarget.getAttribute('data-purge'), key)));
+      }
       
       // populate current-user-select
       if (currentUserSelect) {
@@ -153,7 +186,7 @@ if (loadUsersBtn) {
       loadWithdrawals();
       
       // Show modal automatically after loading
-      usersModal.classList.add('active');
+      usersModal.classList.add('open');
     } catch (err) {
       debugError('Failed to load users', err);
       alert('Failed to load users: ' + (err.message || err));
@@ -162,18 +195,14 @@ if (loadUsersBtn) {
 }
 
   // Prefill admin key from sessionStorage if available
-  const preKey = sessionStorage.getItem('adminKey');
-  if (preKey && adminKeyInput) {
-    adminKeyInput.value = preKey;
-    debug('Admin key prefilled from session');
-  }
+  // Key is always read from sessionStorage via getAdminKey() — no DOM element to prefill.
 
 
   // When selecting a user from the preview dropdown, load their details automatically
   if (currentUserSelect) {
     currentUserSelect.addEventListener('change', () => {
       const val = currentUserSelect.value;
-      const key = (adminKeyInput && adminKeyInput.value || '').trim();
+      const key = getAdminKey();
       if (val && key) {
         loadUserDetails(val, key);
       }
@@ -221,6 +250,7 @@ async function loadUserDetails(id, key){
     if (userDetail) userDetail.innerHTML = `<div><strong>${u.email}</strong><div>ID: ${u.id}</div><div>Balance: ${formatCurrency(u.balance)}</div></div>`;
     // Set admin preview name to the selected user so the header reflects the loaded user (not the admin)
     try { document.getElementById('user-name').textContent = u.name || u.email; } catch(e) { /* ignore if missing */ }
+    try { document.getElementById('active-user-name').textContent = u.name || u.email; } catch(e) { /* ignore if missing */ }
     document.getElementById('credit-user-id').value = u.id;
     document.getElementById('portfolio-user-id').value = u.id;
     if (currentUserSelect) currentUserSelect.value = String(u.id);
@@ -308,7 +338,7 @@ async function loadUserDetails(id, key){
             // IMPORTANT: Clear old portfolio data first
             window.CBPortfolio.setAssets([]);
             // Set balance to user's cash balance
-            const userBalance = Number(u.balance) || 0;
+            const userBalance = Number(p.balance != null ? p.balance : u.balance) || 0;
             window.CBPortfolio.setBalance(userBalance);
             // Update the available-balance display element
             const availableBalanceEl = document.getElementById('available-balance');
@@ -319,19 +349,24 @@ async function loadUserDetails(id, key){
             if (assetsList.length > 0) {
               window.CBPortfolio.setAssets(assetsList);
             }
-            // If server provided a portfolio total value, use it (more accurate than calculating)
-            if (typeof p.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
-              window.CBPortfolio.setTotalValue(Number(p.portfolio_value) || 0);
+            // API may return totalValue or portfolio_value — prefer totalValue
+            const serverTotal = Number(p.totalValue != null ? p.totalValue : p.portfolio_value) || 0;
+            if (serverTotal > 0 && window.CBPortfolio.setTotalValue) {
+              window.CBPortfolio.setTotalValue(serverTotal);
             }
-            
-            // OPTIMIZATION: Skip refreshPrices call here - use cached prices instead
-            // The prices were already fetched by backend /api/portfolio endpoint
-            // Only render the cards with existing price data to avoid extra API calls
+
+            // Render immediately with what we have, then re-render after live prices
             if (window.renderPortfolioCards) window.renderPortfolioCards();
             if (window.renderHoldings) window.renderHoldings();
-            // Skip renderMarketOverview for now - it makes another CoinGecko call
-            // if (window.renderMarketOverview) window.renderMarketOverview();
-            console.log('[Admin] Portfolio summary cards rendered (no price refresh)');
+            if (window.CBPortfolio.refreshPrices) {
+              window.CBPortfolio.refreshPrices()
+                .then(() => {
+                  if (window.renderPortfolioCards) window.renderPortfolioCards();
+                  if (window.renderHoldings) window.renderHoldings();
+                })
+                .catch(e => debugWarn('Price refresh failed', e));
+            }
+            console.log('[Admin] Portfolio cards rendered; live price refresh requested');
           }
         }catch(e){ debugWarn('Failed to populate broker preview', e); }
       })
@@ -347,7 +382,7 @@ async function loadUserDetails(id, key){
 
 // Load growth trades for the selected user
 async function loadGrowthTrades() {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   const userIdInput = document.getElementById('credit-user-id');
   const userId = userIdInput ? parseInt(userIdInput.value, 10) : null;
@@ -406,7 +441,7 @@ async function loadGrowthTrades() {
 
 // Trigger balance growth manually for selected user
 async function triggerGrowthNow() {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   const userIdInput = document.getElementById('credit-user-id');
   const userId = userIdInput ? parseInt(userIdInput.value, 10) : null;
@@ -431,7 +466,7 @@ async function triggerGrowthNow() {
 if (creditForm) {
   creditForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const key = adminKeyInput && adminKeyInput.value ? adminKeyInput.value.trim() : '';
+    const key = getAdminKey();
     if(!key) return alert('Admin key required');
     const userIdEl = document.getElementById('credit-user-id');
     const amountEl = document.getElementById('credit-amount');
@@ -460,7 +495,7 @@ if (creditForm) {
 // Set balance button
 const setBalanceBtn = document.getElementById('set-balance-btn');
 if (setBalanceBtn) setBalanceBtn.addEventListener('click', async () => {
-  const key = adminKeyInput && adminKeyInput.value ? adminKeyInput.value.trim() : '';
+  const key = getAdminKey();
   if(!key) return alert('Admin key required');
   const userIdEl = document.getElementById('credit-user-id');
   const amountEl = document.getElementById('credit-amount');
@@ -490,7 +525,7 @@ if (setBalanceBtn) setBalanceBtn.addEventListener('click', async () => {
 const portfolioForm = document.getElementById('portfolio-form');
 if (portfolioForm) portfolioForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if(!key) return alert('Admin key required');
   const uid = document.getElementById('credit-user-id').value || document.getElementById('portfolio-user-id').value;
   if(!uid) return alert('Select a user first');
@@ -518,7 +553,7 @@ if (portfolioForm) portfolioForm.addEventListener('submit', async (e) => {
 
 async function loadDepositAddressInputs(){
   if(!depositAddressInputs || !depositAddressInputs.length) return;
-  const key = (adminKeyInput && adminKeyInput.value || '').trim();
+  const key = getAdminKey();
   if (!key) {
     // Fallback to defaults if no admin key
     depositAddressInputs.forEach(input => {
@@ -550,7 +585,7 @@ async function loadDepositAddressInputs(){
 }
 
 async function saveDepositAddresses(){
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if(!key) return alert('Admin key required');
 
   const payload = {};
@@ -583,7 +618,7 @@ if (saveDepositAddressesBtn) saveDepositAddressesBtn.addEventListener('click', a
 
 if (resetDepositAddressesBtn) resetDepositAddressesBtn.addEventListener('click', async () => {
   if (!confirm('Reset all deposit addresses to defaults?')) return;
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if(!key) return alert('Admin key required');
   
   try {
@@ -604,7 +639,7 @@ if (resetDepositAddressesBtn) resetDepositAddressesBtn.addEventListener('click',
 (async () => { await loadDepositAddressInputs(); })().catch(e => console.warn('Failed to load deposit addresses', e));
 
 async function approveDeposit(txId){
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   const uid = document.getElementById('credit-user-id').value;
   if(!key) return alert('Admin key required');
   try{
@@ -639,7 +674,7 @@ async function refreshSimulator(uid, key){
 
 if (simStartBtn) {
   simStartBtn.addEventListener('click', async () => {
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     const uid = document.getElementById('credit-user-id').value;
     if(!uid || !key) return alert('Select user and enter admin key');
     try{
@@ -656,7 +691,7 @@ if (simStartBtn) {
 }
 if (simPauseBtn) {
   simPauseBtn.addEventListener('click', async () => {
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     const uid = document.getElementById('credit-user-id').value;
     if(!uid || !key) return alert('Select user and enter admin key');
     try{
@@ -679,7 +714,7 @@ if (editBalanceBtn) {
     const val = prompt('Set new Available Balance (USD):');
     const amt = parseFloat(val);
     if (isNaN(amt)) return alert('Invalid amount');
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     if (!key) return alert('Admin key required');
     try {
       const res = await fetch(baseApi + `/admin/users/${uid}/set-balance`, { method: 'POST', headers: { 'Content-Type':'application/json', 'x-admin-key': key }, body: JSON.stringify({ amount: amt }) });
@@ -724,6 +759,24 @@ async function deleteUser(uid, key) {
     if (document.getElementById('credit-user-id').value == uid) document.getElementById('user-detail').innerHTML = 'Select a user to view details';
   } catch (e) { alert('Delete failed: ' + (e.message||e)); }
 }
+async function purgeUser(uid, key) {
+  if (!confirm('⚠️ PERMANENTLY DELETE this user and ALL their data?\n\nThis removes:\n• Account & login\n• Transactions\n• Portfolio & trades\n• Withdrawals\n• Prompts & API keys\n\nThis CANNOT be undone.')) return;
+  if (!confirm('Final confirmation: permanently purge user #' + uid + '?')) return;
+  try {
+    const res = await fetch(baseApi + `/admin/users/${uid}/purge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+      body: JSON.stringify({})
+    });
+    const j = await res.json(); if (!res.ok) throw new Error(j.error || 'purge failed');
+    alert('✓ User #' + uid + ' permanently deleted.');
+    loadUsersBtn.click();
+    if (document.getElementById('credit-user-id').value == uid) {
+      document.getElementById('user-detail').innerHTML = 'Select a user to view details';
+      document.getElementById('credit-user-id').value = '';
+    }
+  } catch (e) { alert('Purge failed: ' + (e.message||e)); }
+}
 
 // Admin prompts send handler
 const sendPromptBtn = document.getElementById('send-prompt-btn');
@@ -731,7 +784,7 @@ debug('sendPromptBtn element:', sendPromptBtn);
 if (sendPromptBtn) {
   sendPromptBtn.addEventListener('click', async () => {
     debug('Send prompt clicked');
-    const key = adminKeyInput.value.trim(); 
+    const key = getAdminKey();
     if(!key) return alert('Admin key required');
     const message = (document.getElementById('prompt-message').value || '').trim();
     const idsRaw = (document.getElementById('prompt-user-ids').value || '').trim();
@@ -766,7 +819,7 @@ if (editTotalBtn) {
     const val = prompt('Set portfolio total USD value (will update portfolio usd_value):');
     const amt = parseFloat(val);
     if (isNaN(amt)) return alert('Invalid amount');
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     if (!key) return alert('Admin key required');
     try {
       // We don't have a direct endpoint to set usd_value; set a synthetic USDT holding to reach target
@@ -799,7 +852,7 @@ if (editTotalBtn) {
 const triggerGrowthBtn = document.getElementById('trigger-growth-btn');
 if (triggerGrowthBtn) {
   triggerGrowthBtn.addEventListener('click', async () => {
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     if (!key) return alert('Admin key required');
     const userIdInput = document.getElementById('credit-user-id');
     const userId = userIdInput ? parseInt(userIdInput.value, 10) : null;
@@ -827,7 +880,7 @@ if (triggerGrowthBtn) {
 const triggerGrowthAllBtn = document.getElementById('trigger-growth-btn-all');
 if (triggerGrowthAllBtn) {
   triggerGrowthAllBtn.addEventListener('click', async () => {
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     if (!key) return alert('Admin key required');
     
     if (!confirm('⚠️ Trigger balance growth NOW for ALL users? This will immediately run the simulator for all active users.')) return;
@@ -853,7 +906,7 @@ if (triggerGrowthAllBtn) {
 const resetUserBtn = document.getElementById('reset-user-btn');
 if (resetUserBtn) {
   resetUserBtn.addEventListener('click', async () => {
-    const key = adminKeyInput.value.trim();
+    const key = getAdminKey();
     if (!key) return alert('Admin key required');
     const userIdInput = document.getElementById('credit-user-id');
     const userId = userIdInput ? parseInt(userIdInput.value, 10) : null;
@@ -880,7 +933,7 @@ if (resetUserBtn) {
 
 // Clear all trades for all users
 window.clearAllTrades = async function() {
-  const key = document.getElementById('admin-key').value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
 
   if (!confirm('⚠️ CLEAR ALL TRADES FOR ALL USERS? This will:\n\n✓ Delete all trade history\n✓ Keep user balances intact\n✓ Keep portfolio allocation intact\n\nThis action cannot be undone. Continue?')) {
@@ -919,7 +972,7 @@ window.clearAllTrades = async function() {
 // Load and display active prompts
 async function loadActivePrompts() {
   try {
-    const key = adminKeyInput.value || localStorage.getItem('adminKey');
+    const key = getAdminKey() || localStorage.getItem('adminKey');
     const res = await fetch(baseApi + '/admin/prompts', {
       method: 'GET',
       headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
@@ -955,7 +1008,7 @@ async function loadActivePrompts() {
 // Disable a single prompt
 async function disablePrompt(promptId) {
   try {
-    const key = adminKeyInput.value || localStorage.getItem('adminKey');
+    const key = getAdminKey() || localStorage.getItem('adminKey');
     const res = await fetch(baseApi + `/admin/prompts/${promptId}/disable`, {
       method: 'POST',
       headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
@@ -984,7 +1037,7 @@ window.loadDeposits = loadDeposits;
 
 // Load and display deposits
 async function loadDeposits() {
-  const key = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
+  const key = getAdminKey();
   const tbody = document.getElementById('deposits-admin-tbody');
   if (!tbody) return;
 
@@ -1026,7 +1079,7 @@ async function loadDeposits() {
 
 // Load and display withdrawals with fee status
 async function loadWithdrawals() {
-  const key = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
+  const key = getAdminKey();
   const tbody = document.getElementById('withdrawals-admin-tbody');
   if (!tbody) return;
 
@@ -1084,7 +1137,7 @@ async function loadWithdrawals() {
 
 async function confirmWithdrawalFee(withdrawalId) {
   // Kept for backwards compatibility / debugging, but the primary action is now "Complete".
-  const adminKey = document.getElementById('admin-key')?.value || sessionStorage.getItem('adminKey');
+  const adminKey = getAdminKey();
   if (!adminKey) return alert('Admin key required');
   if (!confirm('Confirm withdrawal fee?')) return;
 
@@ -1117,7 +1170,7 @@ window.confirmWithdrawalFee = confirmWithdrawalFee;
 
 // Load deposits for admin deposits tab
 async function loadAdminDeposits() {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   const tbody = document.getElementById('deposits-admin-tbody');
   if (!tbody) return;
 
@@ -1160,12 +1213,12 @@ async function loadAdminDeposits() {
       }
 
       return `<tr>
-        <td>${new Date(d.created_at).toLocaleDateString()}</td>
-        <td>${d.user_id || d.user || '—'}</td>
-        <td>${d.currency}</td>
+        <td>${new Date(d.date || d.created_at).toLocaleDateString()}</td>
+        <td>${d.user || d.user_id || '—'}</td>
+        <td>${d.method || d.currency || '—'}</td>
         <td>$${parseFloat(d.amount).toFixed(2)}</td>
         <td><span style="padding:3px 8px;border-radius:4px;font-size:11px;background:${statusColor};color:white">${d.status}</span></td>
-        <td style="font-size:11px;font-family:monospace">${(d.reference || '—').substring(0,12)}${d.reference && d.reference.length > 12 ? '...' : ''}</td>
+        <td style="font-size:11px;font-family:monospace">${((d.txid || d.reference) || '—').substring(0,12)}${(d.txid || d.reference) && (d.txid || d.reference).length > 12 ? '...' : ''}</td>
         <td>${actionBtns}</td>
       </tr>`;
     }).join('');
@@ -1179,7 +1232,7 @@ async function loadAdminDeposits() {
 
 // Complete deposit (approve)
 async function completeDeposit(depositId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('Complete this deposit? User balance will be credited.')) return;
   
@@ -1204,7 +1257,7 @@ async function completeDeposit(depositId) {
 
 // Complete withdrawal (approve withdrawal AND confirm fee)
 async function completeWithdrawal(withdrawalId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('Complete this withdrawal? This will approve the withdrawal and confirm the fee.')) return;
 
@@ -1226,7 +1279,7 @@ async function completeWithdrawal(withdrawalId) {
 
 // Mark withdrawal as failed
 async function failWithdrawal(withdrawalId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('Mark this withdrawal as failed? The user will be refunded.')) return;
 
@@ -1248,7 +1301,7 @@ async function failWithdrawal(withdrawalId) {
 
 // Delete withdrawal
 async function deleteWithdrawal(withdrawalId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('⚠️ DELETE this withdrawal permanently? Pending withdrawals will be refunded.')) return;
 
@@ -1269,7 +1322,7 @@ async function deleteWithdrawal(withdrawalId) {
 
 // Mark deposit as failed
 async function failDeposit(depositId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('Mark this deposit as failed?')) return;
   
@@ -1291,7 +1344,7 @@ async function failDeposit(depositId) {
 
 // Delete deposit
 async function deleteDeposit(depositId) {
-  const key = adminKeyInput.value.trim();
+  const key = getAdminKey();
   if (!key) return alert('Admin key required');
   if (!confirm('⚠️ DELETE this deposit permanently? This cannot be undone.')) return;
   

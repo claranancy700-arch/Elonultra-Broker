@@ -215,9 +215,9 @@ async function runTradeGeneration() {
       return;
     }
 
-    // Fetch all users with non-zero balance
+    // Fetch all eligible users (balance > 0, simulator enabled, not paused, account active)
     const usersRes = await db.query(
-      'SELECT id FROM users WHERE balance > 0 ORDER BY id'
+      'SELECT id FROM users WHERE balance > 0 AND sim_enabled = true AND sim_paused = false AND is_active = true ORDER BY id'
     );
 
     if (!usersRes.rows.length) {

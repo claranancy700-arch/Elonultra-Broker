@@ -1,1 +1,1 @@
-export { MarketsPage } from './MarketsPageAdvanced';
+export { MarketsPage } from './MarketsPageNew';

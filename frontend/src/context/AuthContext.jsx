@@ -12,7 +12,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleAuthExpired = () => {
       safeRemoveItem('token');
+      safeRemoveItem('authToken');
       safeRemoveItem('user');
+      safeRemoveItem('currentUser');
       setUser(null);
       setToken(null);
       setLoading(false);
@@ -25,8 +27,8 @@ export const AuthProvider = ({ children }) => {
   // Initialize auth from localStorage but validate token with server
   useEffect(() => {
     let mounted = true;
-    const savedToken = safeGetItem('token');
-    const savedUserString = safeGetItem('user');
+    const savedToken = safeGetItem('token') || safeGetItem('authToken');
+    const savedUserString = safeGetItem('user') || safeGetItem('currentUser');
     let savedUser = null;
 
     if (savedUserString) {
@@ -35,20 +37,34 @@ export const AuthProvider = ({ children }) => {
       } catch (parseErr) {
         console.warn('Invalid cached user payload, clearing auth cache');
         safeRemoveItem('token');
+        safeRemoveItem('authToken');
         safeRemoveItem('user');
+        safeRemoveItem('currentUser');
       }
     }
 
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(savedUser);
-      // Unblock UI immediately when a cached session exists.
-      // Server verification continues in the background and will log out if invalid.
       if (mounted) setLoading(false);
+      // Silently refresh from server in background to pick up any changes
+      // (e.g. email_verified toggled since last login) without blocking the UI.
+      API.get('/auth/me')
+        .then(res => {
+          if (mounted && res?.data?.user) {
+            const fresh = res.data.user;
+            setUser(fresh);
+            safeSetItem('user', JSON.stringify(fresh));
+            safeSetItem('currentUser', JSON.stringify(fresh));
+          }
+        })
+        .catch(() => { /* ignore — stale cache is fine as fallback */ });
+      return () => { mounted = false; };
     }
 
+    // No cached session at all — do a server check to see if there's a valid token
     const tryAuthorize = async (attempt = 1) => {
-      if (!savedToken || !savedUser) {
+      if (!savedToken) {
         if (mounted) setLoading(false);
         return;
       }
@@ -59,10 +75,14 @@ export const AuthProvider = ({ children }) => {
           setToken(savedToken);
           setUser(res.data.user);
           safeSetItem('user', JSON.stringify(res.data.user));
+          // Keep legacy key in sync for pages still reading it.
+          safeSetItem('currentUser', JSON.stringify(res.data.user));
           setLoading(false);
         } else {
           safeRemoveItem('token');
+          safeRemoveItem('authToken');
           safeRemoveItem('user');
+          safeRemoveItem('currentUser');
           if (mounted) {
             setToken(null);
             setUser(null);
@@ -83,7 +103,9 @@ export const AuthProvider = ({ children }) => {
           }
 
           safeRemoveItem('token');
+          safeRemoveItem('authToken');
           safeRemoveItem('user');
+          safeRemoveItem('currentUser');
           if (mounted) {
             setToken(null);
             setUser(null);
@@ -114,20 +136,33 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData, authToken) => {
     safeSetItem('token', authToken);
+    safeSetItem('authToken', authToken);
     safeSetItem('user', JSON.stringify(userData));
+    safeSetItem('currentUser', JSON.stringify(userData));
     setUser(userData);
     setToken(authToken);
   };
 
   const logout = () => {
     safeRemoveItem('token');
+    safeRemoveItem('authToken');
     safeRemoveItem('user');
+    safeRemoveItem('currentUser');
     setUser(null);
     setToken(null);
   };
 
+  const updateUser = (fields) => {
+    setUser(prev => {
+      const updated = { ...prev, ...fields };
+      safeSetItem('user', JSON.stringify(updated));
+      safeSetItem('currentUser', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

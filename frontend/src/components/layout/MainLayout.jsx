@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import MobileBottomNav from '../pages/Dashboard/MobileBottomNav';
 import ThemeFab from './ThemeFab';
-import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import { PromptAlert } from '../common/PromptAlert';
 import FloatingChat from '../common/FloatingChat';
+import TestimoniesScrollBanner from '../common/TestimoniesScrollBanner';
 import './MainLayout.css';
 
 export const MainLayout = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin = user && (user.email === 'admin@elon-u.com' || user.isAdmin);
 
   // Protect all routes under MainLayout - redirect to login if not authenticated
@@ -39,7 +40,9 @@ export const MainLayout = () => {
   return (
     <>
       <Header />
-      <TestimoniesScrollBanner />
+      <div className={location.pathname === '/markets' ? 'banner-wrap banner-hide-mobile' : 'banner-wrap'}>
+        <TestimoniesScrollBanner />
+      </div>
       <PromptAlert />
       <div className="app-wrapper">
         <Sidebar />

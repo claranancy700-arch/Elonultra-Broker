@@ -17,7 +17,7 @@ function debug(...args) {
  */
 
 const CACHE_KEY = 'portfolio_cache_v1';
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes — stale-while-revalidate fallback
 
 export const portfolioCache = {
   /**

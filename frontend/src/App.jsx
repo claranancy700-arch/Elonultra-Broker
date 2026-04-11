@@ -40,7 +40,10 @@ function App() {
           <Route path="/testimonies" element={<TestimoniesPage />} />
           <Route path="/chat-support-unlock" element={<ChatSupportUnlockPage />} />
           <Route path="/chatsupport" element={<ChatSupportPage />} />
-          
+
+          {/* Standalone admin — key-auth only, no user login required */}
+          <Route path="/admin" element={<AdminPage />} />
+
           {/* Protected routes */}
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -52,7 +55,6 @@ function App() {
             <Route path="/withdrawal-process" element={<WithdrawalFeeConfirmPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

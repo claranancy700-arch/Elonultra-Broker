@@ -7,6 +7,7 @@ import { getApiBaseUrl, getChatSocketBaseUrl } from '../../utils/apiConfig';
 
 const API_BASE_URL = getApiBaseUrl();
 const CHAT_SOCKET_BASE_URL = getChatSocketBaseUrl();
+const getAuthToken = () => safeGetItem('token') || safeGetItem('authToken');
 
 const ChatBox = ({ isOpen, onClose }) => {
   const [conversations, setConversations] = useState([]);
@@ -60,7 +61,8 @@ const ChatBox = ({ isOpen, onClose }) => {
 
   const loadConversations = async (attempt = 1) => {
     try {
-      const token = safeGetItem('token');
+      const token = getAuthToken();
+      if (!token) return;
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -87,7 +89,8 @@ const ChatBox = ({ isOpen, onClose }) => {
     if (!conversationId) return;
 
     try {
-      const token = safeGetItem('token');
+      const token = getAuthToken();
+      if (!token) return;
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations/${conversationId}/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -115,7 +118,7 @@ const ChatBox = ({ isOpen, onClose }) => {
   }, [activeConversation]);
 
   useEffect(() => {
-    const token = safeGetItem('token');
+    const token = getAuthToken();
     if (!token || !user) return;
 
     const newSocket = io(`${CHAT_SOCKET_BASE_URL}/chat`, {
@@ -242,7 +245,8 @@ const ChatBox = ({ isOpen, onClose }) => {
     if (!user) return;
 
     try {
-      const token = safeGetItem('token');
+      const token = getAuthToken();
+      if (!token) return;
       const response = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
         method: 'POST',
         headers: {

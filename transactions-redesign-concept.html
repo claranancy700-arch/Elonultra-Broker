@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transactions — Redesign Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ── RESET ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:         #0f0a1e;
+  --card:       #1a1030;
+  --border:     rgba(255,255,255,0.07);
+  --text:       #f0eaf8;
+  --muted:      rgba(240,234,248,0.45);
+  --accent:     #a855f7;
+  --accent-rgb: 168,85,247;
+  --success:    #10b981;
+  --danger:     #ef4444;
+  --warning:    #f59e0b;
+  --blue:       #3b82f6;
+  --mono:       'JetBrains Mono', ui-monospace, monospace;
+  --r:          12px;
+  --t:          0.18s ease;
+}
+html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { min-height: 100vh; padding: 32px 24px 80px; }
+svg  { display: block; flex-shrink: 0; }
+a    { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+/* ── PAGE ────────────────────────────────────────────────────── */
+.tx-page { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+/* ── HEADER ──────────────────────────────────────────────────── */
+.tx-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.tx-header-left { display: flex; flex-direction: column; gap: 4px; }
+.tx-page-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--muted); display: flex; align-items: center; gap: 6px;
+}
+.tx-page-label::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 2s infinite;
+}
+.tx-page-title { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+.tx-page-sub   { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.tx-header-actions { display: flex; gap: 10px; align-items: center; }
+
+.tx-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  transition: all var(--t); border: 1px solid rgba(255,255,255,0.12); color: var(--text); background: var(--card);
+}
+.tx-btn:hover { border-color: rgba(var(--accent-rgb),0.5); color: var(--accent); }
+.tx-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tx-btn.primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* ── TABS ────────────────────────────────────────────────────── */
+.tx-tabs {
+  display: flex; gap: 2px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 4px; width: fit-content;
+}
+.tx-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 20px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  color: var(--muted); transition: all var(--t); white-space: nowrap;
+}
+.tx-tab:hover { color: var(--text); }
+.tx-tab.active {
+  background: rgba(var(--accent-rgb),0.15); color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb),0.25);
+}
+.tx-tab-count {
+  font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.07);
+  border-radius: 20px; padding: 1px 7px; font-family: var(--mono);
+}
+.tx-tab.active .tx-tab-count { background: rgba(var(--accent-rgb),0.2); color: var(--accent); }
+
+/* ── PANELS ──────────────────────────────────────────────────── */
+.tx-panel         { display: none; }
+.tx-panel.active  { display: block; }
+
+/* ── TABLE-WRAPPER  (matches project css/styles.css) ─────────── */
+.table-wrapper {
+  background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: var(--r);
+  overflow-x: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideInUp 0.4s ease-out;
+  max-width: 100%;
+}
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 6px var(--accent); }
+  50%      { box-shadow: 0 0 16px var(--accent), 0 0 28px rgba(var(--accent-rgb),0.4); }
+}
+
+/* ── TABLE-HEADER  (matches project css/styles.css) ─────────── */
+.table-header {
+  background: rgba(var(--accent-rgb), 0.06);
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.18);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.table-header-left { display: flex; align-items: center; gap: 12px; }
+.table-header-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--accent-rgb), 0.12); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+}
+.table-header-icon.th-danger { background: rgba(239,68,68,0.1);   color: var(--danger); border-color: rgba(239,68,68,0.18); }
+.table-header-icon.th-blue   { background: rgba(59,130,246,0.1);  color: var(--blue);   border-color: rgba(59,130,246,0.18); }
+.table-header-meta { display: flex; align-items: center; gap: 9px; }
+.table-header h3   { font-size: 14px; font-weight: 700; margin: 0; letter-spacing: -0.1px; }
+.table-header-badge {
+  font-size: 10px; font-weight: 700; font-family: var(--mono);
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px; padding: 2px 9px; color: var(--muted);
+}
+.table-action-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: rgba(var(--accent-rgb),0.1); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),0.2); transition: all var(--t);
+}
+.table-action-link:hover              { background: rgba(var(--accent-rgb),0.2); border-color: rgba(var(--accent-rgb),0.4); }
+.table-action-link.th-danger          { background: rgba(239,68,68,0.08); color: var(--danger); border-color: rgba(239,68,68,0.2); }
+.table-action-link.th-danger:hover    { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.38); }
+
+/* ── TABLE ───────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: rgba(255,255,255,0.025); border-bottom: 1px solid var(--border); }
+th {
+  text-align: left; padding: 10px 16px;
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--muted); white-space: nowrap;
+}
+td { padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; vertical-align: middle; }
+tbody tr { transition: background var(--t); }
+tbody tr:hover { background: rgba(255,255,255,0.025); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ── CELL COMPONENTS ─────────────────────────────────────────── */
+.tx-date      { display: flex; flex-direction: column; gap: 2px; }
+.tx-date-main { font-size: 13px; font-weight: 500; }
+.tx-date-time { font-size: 11px; color: var(--muted); }
+
+.tx-method {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 600;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border); white-space: nowrap;
+}
+
+.tx-asset     { display: inline-flex; align-items: center; gap: 8px; }
+.tx-asset-dot {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+}
+.dot-btc { background: rgba(247,147,26,0.15); color: #f7931a; }
+.dot-eth { background: rgba(98,126,234,0.15);  color: #627eea; }
+.dot-usd { background: rgba(16,185,129,0.15);  color: var(--success); }
+.dot-sol { background: rgba(153,69,255,0.15);  color: #9945ff; }
+.tx-asset-name { font-size: 13px; font-weight: 600; }
+
+.tx-amount { font-family: var(--mono); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tx-amount.pos { color: var(--success); }
+.tx-amount.neg { color: var(--danger); }
+
+.tx-txid {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  display: inline-block; max-width: 130px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer; transition: color var(--t);
+}
+.tx-txid:hover { color: var(--accent); }
+
+/* ── STATUS BADGE ────────────────────────────────────────────── */
+.tx-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; text-transform: capitalize; white-space: nowrap;
+}
+.tx-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+.tx-status.completed  { background: rgba(16,185,129,0.1);  color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.tx-status.completed::before  { background: var(--success); box-shadow: 0 0 5px var(--success); }
+.tx-status.pending    { background: rgba(245,158,11,0.1);  color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+.tx-status.pending::before    { background: var(--warning); animation: blink 1.8s infinite; }
+.tx-status.failed     { background: rgba(239,68,68,0.1);   color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
+.tx-status.failed::before     { background: var(--danger); }
+.tx-status.processing { background: rgba(59,130,246,0.1);  color: var(--blue);    border: 1px solid rgba(59,130,246,0.2); }
+.tx-status.processing::before { background: var(--blue); animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+/* ── TRADE TYPE ──────────────────────────────────────────────── */
+.trade-type { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.trade-type.buy  { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.trade-type.sell { background: rgba(239,68,68,0.12);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
+
+/* ── PAGINATION ──────────────────────────────────────────────── */
+.tx-pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-top: 1px solid rgba(var(--accent-rgb),0.12);
+  gap: 12px; flex-wrap: wrap;
+}
+.tx-page-info { font-size: 12px; color: var(--muted); }
+.tx-page-info strong { color: var(--text); }
+.tx-page-btns { display: flex; gap: 4px; }
+.tx-page-btn {
+  min-width: 32px; height: 32px; padding: 0 8px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  transition: all var(--t);
+}
+.tx-page-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.12); color: var(--text); }
+.tx-page-btn.active { background: rgba(var(--accent-rgb),0.15); border-color: rgba(var(--accent-rgb),0.3); color: var(--accent); }
+.tx-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── MOBILE CARD LIST (hidden on desktop) ────────────────────── */
+.tx-mobile-list { display: none; }
+.tx-mobile-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background var(--t);
+}
+.tx-mobile-item:last-child { border-bottom: none; }
+.tx-mobile-item:hover { background: rgba(255,255,255,0.03); }
+.tx-mobile-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tx-mobile-icon.dep  { background: rgba(16,185,129,0.12); color: var(--success); }
+.tx-mobile-icon.with { background: rgba(239,68,68,0.12);  color: var(--danger); }
+.tx-mobile-icon.buy  { background: rgba(59,130,246,0.12);  color: var(--blue); }
+.tx-mobile-icon.sell { background: rgba(245,158,11,0.12);  color: var(--warning); }
+.tx-mobile-icon.pend { background: rgba(245,158,11,0.12);  color: var(--warning); }
+.tx-mobile-icon.fail { background: rgba(239,68,68,0.12);   color: var(--danger); }
+.tx-mobile-info { flex: 1; min-width: 0; }
+.tx-mobile-title {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.tx-mobile-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.tx-mobile-right { text-align: right; flex-shrink: 0; }
+.tx-mobile-amount { font-family: var(--mono); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tx-mobile-amount.pos { color: var(--success); }
+.tx-mobile-amount.neg { color: var(--danger); }
+.tx-mobile-amount.neu { color: var(--text); }
+.tx-mobile-pl { font-size: 11px; margin-top: 2px; font-weight: 700; font-family: var(--mono); }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+/* Medium: hide less important table columns */
+@media (max-width: 860px) {
+  .col-txid    { display: none; }
+}
+@media (max-width: 700px) {
+  .col-method  { display: none; }
+}
+
+/* Mobile: hide table entirely, show card list */
+@media (max-width: 540px) {
+  body { padding: 16px 10px 72px; }
+  .tx-page { gap: 14px; }
+  .tx-page-title { font-size: 22px; }
+  .tx-header { gap: 10px; }
+  /* Icon-only action buttons */
+  .tx-btn span.btn-label { display: none; }
+  .tx-btn { padding: 9px 11px; }
+  /* Full-width tabs */
+  .tx-tabs { width: 100%; }
+  .tx-tab  { flex: 1; justify-content: center; padding: 8px 4px; font-size: 12px; gap: 4px; }
+  /* Swap table <-> cards */
+  .tx-desktop-table { display: none; }
+  .tx-mobile-list   { display: block; }
+  /* Compact pagination */
+  .tx-pagination { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<div class="tx-page">
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <div class="tx-header">
+    <div class="tx-header-left">
+      <div class="tx-page-label">Account Activity</div>
+      <h1 class="tx-page-title">Transactions</h1>
+      <p class="tx-page-sub">Deposits, withdrawals &amp; trade history</p>
+    </div>
+    <div class="tx-header-actions">
+      <a href="#" class="tx-btn primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="btn-label">Add Funds</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── TABS ─────────────────────────────────────────────────── -->
+  <div class="tx-tabs">
+    <button class="tx-tab active" data-target="panel-deposits">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Deposits <span class="tx-tab-count">18</span>
+    </button>
+    <button class="tx-tab" data-target="panel-withdrawals">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+      Withdrawals <span class="tx-tab-count">7</span>
+    </button>
+    <button class="tx-tab" data-target="panel-trades">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+      Trades <span class="tx-tab-count">142</span>
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  DEPOSITS PANEL                                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-deposits" class="tx-panel active">
+    <div class="table-wrapper">
+      <div class="table-header">
+        <div class="table-header-left">
+          <div class="table-header-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="table-header-meta">
+            <h3>Deposit History</h3>
+            <span class="table-header-badge">6 of 18</span>
+          </div>
+        </div>
+        <a href="#" class="table-action-link">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Funds
+        </a>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="tx-desktop-table">
+        <table>
+          <thead><tr>
+            <th>Date</th>
+            <th class="col-method">Method</th>
+            <th>Asset</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th class="col-txid">Transaction ID</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 10, 2026</span><span class="tx-date-time">14:32:07</span></div></td>
+              <td class="col-method"><span class="tx-method">Bank Wire</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount pos">+$5,000.00</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xf3a12b9cc8d71e4a">0xf3a12b9cc8d71e4a</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 8, 2026</span><span class="tx-date-time">09:14:55</span></div></td>
+              <td class="col-method"><span class="tx-method">Crypto Transfer</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-btc">₿</div><span class="tx-asset-name">BTC</span></div></td>
+              <td><span class="tx-amount pos">+0.1842 BTC</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xab4c219def3f7088">0xab4c219def3f7088</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 7, 2026</span><span class="tx-date-time">17:48:11</span></div></td>
+              <td class="col-method"><span class="tx-method">Card</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USDT</span></div></td>
+              <td><span class="tx-amount pos">+$1,200.00</span></td>
+              <td><span class="tx-status processing">Processing</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xcc920143aa8f56d2">0xcc920143aa8f56d2</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 2, 2026</span><span class="tx-date-time">11:05:30</span></div></td>
+              <td class="col-method"><span class="tx-method">Crypto Transfer</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-eth">Ξ</div><span class="tx-asset-name">ETH</span></div></td>
+              <td><span class="tx-amount pos">+2.5000 ETH</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xd4e12f891110bc31">0xd4e12f891110bc31</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 28, 2026</span><span class="tx-date-time">08:22:44</span></div></td>
+              <td class="col-method"><span class="tx-method">Bank Wire</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount pos">+$10,000.00</span></td>
+              <td><span class="tx-status pending">Pending</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xe99182fa002c5b41">0xe99182fa002c5b41</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 20, 2026</span><span class="tx-date-time">15:11:03</span></div></td>
+              <td class="col-method"><span class="tx-method">Card</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-sol">◎</div><span class="tx-asset-name">SOL</span></div></td>
+              <td><span class="tx-amount neg">—</span></td>
+              <td><span class="tx-status failed">Failed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0x000000000000000">0x000000000000000</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="tx-mobile-list">
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon dep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">USD Deposit <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div>
+            <div class="tx-mobile-sub">Bank Wire · Apr 10, 2026 · 14:32</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount pos">+$5,000.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon dep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">BTC Deposit <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div>
+            <div class="tx-mobile-sub">Crypto Transfer · Apr 8, 2026 · 09:14</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount pos">+0.1842 BTC</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon pend"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">USDT Deposit <span class="tx-status processing" style="font-size:10px;padding:2px 7px;">Processing</span></div>
+            <div class="tx-mobile-sub">Card · Apr 7, 2026 · 17:48</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount pos">+$1,200.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon dep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">ETH Deposit <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div>
+            <div class="tx-mobile-sub">Crypto Transfer · Apr 2, 2026 · 11:05</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount pos">+2.5000 ETH</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon pend"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">USD Deposit <span class="tx-status pending" style="font-size:10px;padding:2px 7px;">Pending</span></div>
+            <div class="tx-mobile-sub">Bank Wire · Mar 28, 2026 · 08:22</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount pos">+$10,000.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon fail"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">SOL Deposit <span class="tx-status failed" style="font-size:10px;padding:2px 7px;">Failed</span></div>
+            <div class="tx-mobile-sub">Card · Mar 20, 2026 · 15:11</div>
+          </div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">—</div></div>
+        </div>
+      </div>
+
+      <div class="tx-pagination">
+        <span class="tx-page-info">Showing <strong>1–6</strong> of <strong>18</strong></span>
+        <div class="tx-page-btns">
+          <button class="tx-page-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="tx-page-btn active">1</button>
+          <button class="tx-page-btn">2</button>
+          <button class="tx-page-btn">3</button>
+          <button class="tx-page-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  WITHDRAWALS PANEL                                       -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-withdrawals" class="tx-panel">
+    <div class="table-wrapper">
+      <div class="table-header">
+        <div class="table-header-left">
+          <div class="table-header-icon th-danger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          </div>
+          <div class="table-header-meta">
+            <h3>Withdrawal History</h3>
+            <span class="table-header-badge">7 of 7</span>
+          </div>
+        </div>
+        <a href="#" class="table-action-link th-danger">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+          Withdraw
+        </a>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="tx-desktop-table">
+        <table>
+          <thead><tr>
+            <th>Date</th>
+            <th class="col-method">Method</th>
+            <th>Asset</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th class="col-txid">Transaction ID</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 9, 2026</span><span class="tx-date-time">11:20:14</span></div></td>
+              <td class="col-method"><span class="tx-method">Bank Wire</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount neg">−$2,500.00</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xb1c3f2e8aa910d72">0xb1c3f2e8aa910d72</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 3, 2026</span><span class="tx-date-time">16:44:09</span></div></td>
+              <td class="col-method"><span class="tx-method">Crypto Transfer</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-btc">₿</div><span class="tx-asset-name">BTC</span></div></td>
+              <td><span class="tx-amount neg">−0.0500 BTC</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0x9f4a1b22cd880e61">0x9f4a1b22cd880e61</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 30, 2026</span><span class="tx-date-time">09:55:33</span></div></td>
+              <td class="col-method"><span class="tx-method">Card</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USDT</span></div></td>
+              <td><span class="tx-amount neg">−$800.00</span></td>
+              <td><span class="tx-status pending">Pending</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xa2d7b39104fc3e09">0xa2d7b39104fc3e09</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 22, 2026</span><span class="tx-date-time">14:08:51</span></div></td>
+              <td class="col-method"><span class="tx-method">Bank Wire</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount neg">−$1,200.00</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xd08f3c55ab12e790">0xd08f3c55ab12e790</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 15, 2026</span><span class="tx-date-time">10:30:22</span></div></td>
+              <td class="col-method"><span class="tx-method">Crypto Transfer</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-eth">Ξ</div><span class="tx-asset-name">ETH</span></div></td>
+              <td><span class="tx-amount neg">−0.8000 ETH</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xe71a4490cc3d1f28">0xe71a4490cc3d1f28</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Mar 5, 2026</span><span class="tx-date-time">13:17:44</span></div></td>
+              <td class="col-method"><span class="tx-method">Card</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount neg">—</span></td>
+              <td><span class="tx-status failed">Failed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0x000000000000000">0x000000000000000</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Feb 28, 2026</span><span class="tx-date-time">08:02:17</span></div></td>
+              <td class="col-method"><span class="tx-method">Bank Wire</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-usd">$</div><span class="tx-asset-name">USD</span></div></td>
+              <td><span class="tx-amount neg">−$3,200.00</span></td>
+              <td><span class="tx-status completed">Completed</span></td>
+              <td class="col-txid"><span class="tx-txid" title="0xf90c8e14bb551a03">0xf90c8e14bb551a03</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="tx-mobile-list">
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon with"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">USD Withdrawal <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div><div class="tx-mobile-sub">Bank Wire · Apr 9, 2026 · 11:20</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−$2,500.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon with"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">BTC Withdrawal <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div><div class="tx-mobile-sub">Crypto Transfer · Apr 3, 2026 · 16:44</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−0.0500 BTC</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon pend"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">USDT Withdrawal <span class="tx-status pending" style="font-size:10px;padding:2px 7px;">Pending</span></div><div class="tx-mobile-sub">Card · Mar 30, 2026 · 09:55</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−$800.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon with"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">USD Withdrawal <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div><div class="tx-mobile-sub">Bank Wire · Mar 22, 2026 · 14:08</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−$1,200.00</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon with"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">ETH Withdrawal <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div><div class="tx-mobile-sub">Crypto Transfer · Mar 15, 2026 · 10:30</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−0.8000 ETH</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon fail"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">USD Withdrawal <span class="tx-status failed" style="font-size:10px;padding:2px 7px;">Failed</span></div><div class="tx-mobile-sub">Card · Mar 5, 2026 · 13:17</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">—</div></div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon with"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info"><div class="tx-mobile-title">USD Withdrawal <span class="tx-status completed" style="font-size:10px;padding:2px 7px;">Completed</span></div><div class="tx-mobile-sub">Bank Wire · Feb 28, 2026 · 08:02</div></div>
+          <div class="tx-mobile-right"><div class="tx-mobile-amount neg">−$3,200.00</div></div>
+        </div>
+      </div>
+
+      <div class="tx-pagination">
+        <span class="tx-page-info">Showing <strong>1–7</strong> of <strong>7</strong></span>
+        <div class="tx-page-btns">
+          <button class="tx-page-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="tx-page-btn active">1</button>
+          <button class="tx-page-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  TRADES PANEL                                            -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="panel-trades" class="tx-panel">
+    <div class="table-wrapper">
+      <div class="table-header">
+        <div class="table-header-left">
+          <div class="table-header-icon th-blue">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          </div>
+          <div class="table-header-meta">
+            <h3>Trade History</h3>
+            <span class="table-header-badge">4 of 142</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="tx-desktop-table">
+        <table>
+          <thead><tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Asset</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Total</th>
+            <th>P&amp;L</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 10, 2026</span><span class="tx-date-time">13:55:02</span></div></td>
+              <td><span class="trade-type buy">▲ Buy</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-btc">₿</div><span class="tx-asset-name">BTC</span></div></td>
+              <td><span class="tx-amount">0.0520</span></td>
+              <td><span class="tx-amount" style="color:var(--muted)">$84,210.00</span></td>
+              <td><span class="tx-amount">$4,378.92</span></td>
+              <td><span class="tx-amount pos">+$142.10</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 9, 2026</span><span class="tx-date-time">10:12:44</span></div></td>
+              <td><span class="trade-type sell">▼ Sell</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-eth">Ξ</div><span class="tx-asset-name">ETH</span></div></td>
+              <td><span class="tx-amount">1.2000</span></td>
+              <td><span class="tx-amount" style="color:var(--muted)">$3,180.00</span></td>
+              <td><span class="tx-amount">$3,816.00</span></td>
+              <td><span class="tx-amount neg">−$88.40</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 7, 2026</span><span class="tx-date-time">08:30:19</span></div></td>
+              <td><span class="trade-type buy">▲ Buy</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-sol">◎</div><span class="tx-asset-name">SOL</span></div></td>
+              <td><span class="tx-amount">24.0000</span></td>
+              <td><span class="tx-amount" style="color:var(--muted)">$158.44</span></td>
+              <td><span class="tx-amount">$3,802.56</span></td>
+              <td><span class="tx-amount pos">+$218.44</span></td>
+            </tr>
+            <tr>
+              <td><div class="tx-date"><span class="tx-date-main">Apr 5, 2026</span><span class="tx-date-time">16:07:33</span></div></td>
+              <td><span class="trade-type sell">▼ Sell</span></td>
+              <td><div class="tx-asset"><div class="tx-asset-dot dot-btc">₿</div><span class="tx-asset-name">BTC</span></div></td>
+              <td><span class="tx-amount">0.0100</span></td>
+              <td><span class="tx-amount" style="color:var(--muted)">$83,900.00</span></td>
+              <td><span class="tx-amount">$839.00</span></td>
+              <td><span class="tx-amount pos">+$31.00</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="tx-mobile-list">
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon buy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">Buy BTC <span class="trade-type buy" style="font-size:10px;padding:2px 7px;">Buy</span></div>
+            <div class="tx-mobile-sub">0.0520 BTC @ $84,210 · Apr 10, 2026</div>
+          </div>
+          <div class="tx-mobile-right">
+            <div class="tx-mobile-amount neu">$4,378.92</div>
+            <div class="tx-mobile-pl" style="color:var(--success);">+$142.10</div>
+          </div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon sell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">Sell ETH <span class="trade-type sell" style="font-size:10px;padding:2px 7px;">Sell</span></div>
+            <div class="tx-mobile-sub">1.2000 ETH @ $3,180 · Apr 9, 2026</div>
+          </div>
+          <div class="tx-mobile-right">
+            <div class="tx-mobile-amount neu">$3,816.00</div>
+            <div class="tx-mobile-pl" style="color:var(--danger);">−$88.40</div>
+          </div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon buy"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">Buy SOL <span class="trade-type buy" style="font-size:10px;padding:2px 7px;">Buy</span></div>
+            <div class="tx-mobile-sub">24.0000 SOL @ $158.44 · Apr 7, 2026</div>
+          </div>
+          <div class="tx-mobile-right">
+            <div class="tx-mobile-amount neu">$3,802.56</div>
+            <div class="tx-mobile-pl" style="color:var(--success);">+$218.44</div>
+          </div>
+        </div>
+        <div class="tx-mobile-item">
+          <div class="tx-mobile-icon sell"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div>
+          <div class="tx-mobile-info">
+            <div class="tx-mobile-title">Sell BTC <span class="trade-type sell" style="font-size:10px;padding:2px 7px;">Sell</span></div>
+            <div class="tx-mobile-sub">0.0100 BTC @ $83,900 · Apr 5, 2026</div>
+          </div>
+          <div class="tx-mobile-right">
+            <div class="tx-mobile-amount neu">$839.00</div>
+            <div class="tx-mobile-pl" style="color:var(--success);">+$31.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tx-pagination">
+        <span class="tx-page-info">Showing <strong>1–4</strong> of <strong>142</strong></span>
+        <div class="tx-page-btns">
+          <button class="tx-page-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="tx-page-btn active">1</button>
+          <button class="tx-page-btn">2</button>
+          <button class="tx-page-btn">3</button>
+          <button class="tx-page-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.tx-page -->
+
+<script>
+  const tabs   = document.querySelectorAll('.tx-tab');
+  const panels = document.querySelectorAll('.tx-panel');
+
+  function switchTab(target) {
+    tabs.forEach(t   => t.classList.toggle('active', t.dataset.target === target));
+    panels.forEach(p => p.classList.toggle('active', p.id === target));
+  }
+
+  tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.target)));
+</script>
+</body>
+</html>

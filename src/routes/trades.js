@@ -155,11 +155,41 @@ async function handleUserTrades(req, res) {
 }
 
 /**
+ * GET /api/trades/stats/summary - Trade statistics (admin only)
+ * NOTE: This must be registered BEFORE /:userId to avoid being swallowed by the param route.
+ */
+router.get('/stats/summary', verifyAdmin, async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        COUNT(*) as total_trades,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
+        COUNT(DISTINCT user_id) as unique_users,
+        AVG(balance_after - balance_before) as avg_balance_change,
+        MAX(balance_after - balance_before) as max_balance_change,
+        MIN(balance_after - balance_before) as min_balance_change
+      FROM trades
+      WHERE is_simulated = TRUE
+    `);
+
+    res.json({
+      success: true,
+      stats: result.rows[0],
+    });
+  } catch (err) {
+    console.error('Fetch trade stats error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch trade stats' });
+  }
+});
+
+/**
  * GET /api/trades/:userId - Get trades for a specific user (admin only)
  */
 router.get('/:userId', verifyAdmin, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
     const limit = Math.min(parseInt(req.query.limit) || 20, 500);
     const offset = parseInt(req.query.offset) || 0;
 
@@ -185,34 +215,6 @@ router.get('/:userId', verifyAdmin, async (req, res) => {
   } catch (err) {
     console.error('Fetch user trades error:', err.message);
     res.status(500).json({ error: 'Failed to fetch user trades' });
-  }
-});
-
-/**
- * GET /api/trades/stats/summary - Trade statistics (admin only)
- */
-router.get('/stats/summary', verifyAdmin, async (req, res) => {
-  try {
-    const result = await db.query(`
-      SELECT
-        COUNT(*) as total_trades,
-        COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
-        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
-        COUNT(DISTINCT user_id) as unique_users,
-        AVG(balance_after - balance_before) as avg_balance_change,
-        MAX(balance_after - balance_before) as max_balance_change,
-        MIN(balance_after - balance_before) as min_balance_change
-      FROM trades
-      WHERE is_simulated = TRUE
-    `);
-
-    res.json({
-      success: true,
-      stats: result.rows[0],
-    });
-  } catch (err) {
-    console.error('Fetch trade stats error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch trade stats' });
   }
 });
 

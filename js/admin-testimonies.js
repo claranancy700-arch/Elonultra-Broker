@@ -242,6 +242,7 @@ if (typeof window !== 'undefined') {
   window.deleteTestimony = deleteTestimony;
   window.autoGenerateTestimonies = autoGenerateTestimonies;
   window.openTestimoniesModal = openTestimoniesModal;
+  window.loadAllTestimonies = loadAllTestimonies;
 }
 
 })();

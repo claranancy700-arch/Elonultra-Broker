@@ -12,7 +12,7 @@ const API = axios.create({
 
 // Auto-attach JWT token to requests
 API.interceptors.request.use((config) => {
-  const token = safeGetItem('token');
+  const token = safeGetItem('token') || safeGetItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -51,7 +51,9 @@ API.interceptors.response.use(
 
     if (shouldInvalidateSession) {
       safeRemoveItem('token');
+      safeRemoveItem('authToken');
       safeRemoveItem('user');
+      safeRemoveItem('currentUser');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('auth:expired'));
       }

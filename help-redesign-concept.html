@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Help &amp; Support — Redesign Concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ── RESET ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:         #0f0a1e;
+  --card:       #1a1030;
+  --border:     rgba(255,255,255,0.07);
+  --text:       #f0eaf8;
+  --muted:      rgba(240,234,248,0.45);
+  --accent:     #a855f7;
+  --accent-rgb: 168,85,247;
+  --success:    #10b981;
+  --danger:     #ef4444;
+  --warning:    #f59e0b;
+  --blue:       #3b82f6;
+  --mono:       'JetBrains Mono', ui-monospace, monospace;
+  --r:          12px;
+  --t:          0.18s ease;
+}
+html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { min-height: 100vh; padding: 32px 24px 80px; }
+svg  { display: block; flex-shrink: 0; }
+a    { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 6px var(--accent); }
+  50%      { box-shadow: 0 0 16px var(--accent), 0 0 28px rgba(var(--accent-rgb),0.4); }
+}
+
+/* ── PAGE ────────────────────────────────────────────────────── */
+.help-page { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+/* ── HEADER ──────────────────────────────────────────────────── */
+.help-header { display: flex; flex-direction: column; gap: 6px; }
+.help-page-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--muted); display: flex; align-items: center; gap: 6px;
+}
+.help-page-label::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 2s infinite;
+}
+.help-page-title { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+.help-page-sub   { font-size: 13px; color: var(--muted); }
+
+/* ── SEARCH BAR ──────────────────────────────────────────────── */
+.help-search-wrap {
+  position: relative;
+  animation: slideInUp 0.35s ease-out;
+}
+.help-search-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
+.help-search {
+  width: 100%; padding: 13px 16px 13px 44px;
+  background: var(--card); border: 1px solid rgba(var(--accent-rgb),0.2);
+  border-radius: var(--r); font-family: inherit; font-size: 14px; color: var(--text);
+  outline: none; transition: border-color var(--t), box-shadow var(--t);
+}
+.help-search::placeholder { color: var(--muted); }
+.help-search:focus {
+  border-color: rgba(var(--accent-rgb),0.5);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.08);
+}
+
+/* ── QUICK ACTIONS ───────────────────────────────────────────── */
+.help-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  animation: slideInUp 0.38s ease-out;
+}
+.help-quick-card {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 20px 14px;
+  background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
+  border: 1px solid rgba(var(--accent-rgb),0.15);
+  border-radius: var(--r);
+  transition: all var(--t); cursor: pointer;
+  text-align: center;
+}
+.help-quick-card:hover {
+  border-color: rgba(var(--accent-rgb),0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+.help-quick-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--accent-rgb),0.12); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),0.18);
+  transition: all var(--t);
+}
+.help-quick-card:hover .help-quick-icon { background: rgba(var(--accent-rgb),0.2); }
+.help-quick-icon.ic-green { background: rgba(16,185,129,0.1);  color: var(--success); border-color: rgba(16,185,129,0.18); }
+.help-quick-icon.ic-blue  { background: rgba(59,130,246,0.1);  color: var(--blue);    border-color: rgba(59,130,246,0.18); }
+.help-quick-icon.ic-warn  { background: rgba(245,158,11,0.1);  color: var(--warning); border-color: rgba(245,158,11,0.18); }
+.help-quick-label { font-size: 12px; font-weight: 700; color: var(--text); }
+.help-quick-sub   { font-size: 11px; color: var(--muted); margin-top: -4px; }
+
+/* ── SECTION WRAPPER (matches table-wrapper) ─────────────────── */
+.help-section {
+  background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%);
+  border: 1px solid rgba(var(--accent-rgb),0.2);
+  border-radius: var(--r);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideInUp 0.4s ease-out;
+  overflow: hidden;
+}
+.help-section-header {
+  background: rgba(var(--accent-rgb),0.06);
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(var(--accent-rgb),0.18);
+  display: flex; align-items: center; gap: 12px;
+}
+.help-section-icon {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--accent-rgb),0.12); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),0.18);
+}
+.help-section-icon.ic-green { background: rgba(16,185,129,0.1);  color: var(--success); border-color: rgba(16,185,129,0.18); }
+.help-section-icon.ic-blue  { background: rgba(59,130,246,0.1);  color: var(--blue);    border-color: rgba(59,130,246,0.18); }
+.help-section-title { font-size: 14px; font-weight: 700; }
+
+/* ── FAQ ─────────────────────────────────────────────────────── */
+.faq-list { display: flex; flex-direction: column; }
+.faq-item { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.faq-item:last-child { border-bottom: none; }
+.faq-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; text-align: left;
+  background: none; color: var(--text); transition: background var(--t);
+}
+.faq-btn:hover { background: rgba(255,255,255,0.025); }
+.faq-btn.open   { color: var(--accent); }
+.faq-question   { font-size: 13px; font-weight: 600; flex: 1; }
+.faq-chevron {
+  width: 18px; height: 18px; flex-shrink: 0; color: var(--muted);
+  transition: transform 0.22s ease, color 0.18s;
+}
+.faq-btn.open .faq-chevron { transform: rotate(180deg); color: var(--accent); }
+.faq-answer {
+  padding: 0 20px;
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.28s ease, padding 0.2s;
+  font-size: 13px; color: var(--muted); line-height: 1.65;
+}
+.faq-answer.open { max-height: 200px; padding: 0 20px 16px; }
+
+/* ── SUPPORT CARDS ───────────────────────────────────────────── */
+.support-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.support-card {
+  padding: 22px 20px;
+  border-right: 1px solid rgba(255,255,255,0.05);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.support-card:last-child { border-right: none; }
+.support-card-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--accent-rgb),0.1); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),0.15);
+}
+.support-card-icon.ic-green { background: rgba(16,185,129,0.1); color: var(--success); border-color: rgba(16,185,129,0.15); }
+.support-card-icon.ic-blue  { background: rgba(59,130,246,0.1); color: var(--blue);    border-color: rgba(59,130,246,0.15); }
+.support-card-title { font-size: 13px; font-weight: 700; }
+.support-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.support-card-meta  { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+.support-card-meta::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--success); box-shadow: 0 0 5px var(--success); }
+.support-card-btn {
+  margin-top: 4px; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; width: fit-content;
+  background: rgba(var(--accent-rgb),0.1); color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb),0.2); transition: all var(--t);
+}
+.support-card-btn:hover { background: rgba(var(--accent-rgb),0.2); border-color: rgba(var(--accent-rgb),0.4); }
+.support-card-btn.btn-green { background: rgba(16,185,129,0.1); color: var(--success); border-color: rgba(16,185,129,0.2); }
+.support-card-btn.btn-green:hover { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); }
+.support-card-btn.btn-blue { background: rgba(59,130,246,0.1); color: var(--blue); border-color: rgba(59,130,246,0.2); }
+.support-card-btn.btn-blue:hover { background: rgba(59,130,246,0.2); border-color: rgba(59,130,246,0.4); }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  body { padding: 16px 12px 72px; }
+  .help-page { gap: 18px; }
+  .help-page-title { font-size: 22px; }
+  .help-quick-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .support-grid { grid-template-columns: 1fr; }
+  .support-card { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .support-card:last-child { border-bottom: none; }
+}
+</style>
+</head>
+<body>
+<div class="help-page">
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <div class="help-header">
+    <div class="help-page-label">Resources</div>
+    <h1 class="help-page-title">Help &amp; Support</h1>
+    <p class="help-page-sub">Find answers, get in touch, or browse guides</p>
+  </div>
+
+  <!-- ── SEARCH ─────────────────────────────────────────────── -->
+  <div class="help-search-wrap">
+    <svg class="help-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="help-search" type="text" placeholder="Search for answers, guides, topics…" />
+  </div>
+
+  <!-- ── QUICK ACTIONS ──────────────────────────────────────── -->
+  <div class="help-quick-grid">
+    <a href="mailto:support@elon-u.com" class="help-quick-card">
+      <div class="help-quick-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <span class="help-quick-label">Email Support</span>
+      <span class="help-quick-sub">support@elon-u.com</span>
+    </a>
+    <button class="help-quick-card" onclick="this.style.borderColor='rgba(168,85,247,0.6)'">
+      <div class="help-quick-icon ic-green">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <span class="help-quick-label">Live Chat</span>
+      <span class="help-quick-sub">Avg. 2 min reply</span>
+    </button>
+    <a href="#" class="help-quick-card">
+      <div class="help-quick-icon ic-blue">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <span class="help-quick-label">Documentation</span>
+      <span class="help-quick-sub">API &amp; guides</span>
+    </a>
+    <a href="#" class="help-quick-card">
+      <div class="help-quick-icon ic-warn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <span class="help-quick-label">Report a Bug</span>
+      <span class="help-quick-sub">Submit an issue</span>
+    </a>
+  </div>
+
+  <!-- ── FAQ ────────────────────────────────────────────────── -->
+  <div class="help-section">
+    <div class="help-section-header">
+      <div class="help-section-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <span class="help-section-title">Frequently Asked Questions</span>
+    </div>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I create an account?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Click <strong>Sign Up</strong> on the landing page, fill in your email and password, then verify your email address. Your account will be active immediately.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I deposit funds?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Go to the <strong>Transactions</strong> page and click <strong>Add Funds</strong>. Select your preferred payment method — bank wire, card, or crypto — and follow the on-screen steps.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">What are the withdrawal limits?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Minimum withdrawal is <strong>$10</strong>, maximum per transaction is <strong>$50,000</strong>. Daily limit is $100,000. Withdrawals are processed within 1–3 business days.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I enable two-factor authentication?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Go to <strong>Settings → Security</strong> and click <strong>Enable 2FA</strong>. Scan the QR code with your authenticator app and enter the confirmation code.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I reset my password?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Click <strong>Forgot Password</strong> on the login page. Enter your email and check your inbox for a reset link. The link expires after 30 minutes.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I generate API keys?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Go to <strong>Settings → API Keys</strong> and click <strong>Generate New Key</strong>. Store it securely — you won't be able to view it again after creation.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">What payment methods are accepted?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">We accept credit/debit cards, bank wire transfers, and crypto transfers. All transactions are processed with SSL encryption.</div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-question">How do I view my trade history?</span>
+          <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="faq-answer">Go to <strong>Transactions</strong> and select the <strong>Trades</strong> tab. All trades are listed with date, asset, quantity, price, and P&amp;L.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── SUPPORT CHANNELS ────────────────────────────────────── -->
+  <div class="help-section">
+    <div class="help-section-header">
+      <div class="help-section-icon ic-green">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 15.92z"/></svg>
+      </div>
+      <span class="help-section-title">Contact &amp; Support Channels</span>
+    </div>
+    <div class="support-grid">
+      <div class="support-card">
+        <div class="support-card-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div class="support-card-title">Email Support</div>
+        <div class="support-card-desc">Get a detailed response from our team. Best for account issues and formal requests.</div>
+        <div class="support-card-meta">Typically within 24 hours</div>
+        <a href="mailto:support@elon-u.com" class="support-card-btn">support@elon-u.com</a>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon ic-green">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div class="support-card-title">Live Chat</div>
+        <div class="support-card-desc">Talk to a real agent instantly. Available Monday – Friday, 9 AM – 6 PM EST.</div>
+        <div class="support-card-meta">Avg. response: 2 minutes</div>
+        <button class="support-card-btn btn-green">Start Chat</button>
+      </div>
+      <div class="support-card">
+        <div class="support-card-icon ic-blue">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="support-card-title">API Documentation</div>
+        <div class="support-card-desc">Full reference with code examples, authentication guides, and endpoint specs.</div>
+        <div class="support-card-meta">Always up to date</div>
+        <a href="#" class="support-card-btn btn-blue">View Docs</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleFaq(btn) {
+    const answer  = btn.nextElementSibling;
+    const isOpen  = btn.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.faq-btn.open').forEach(b => {
+      b.classList.remove('open');
+      b.nextElementSibling.classList.remove('open');
+    });
+
+    // Open clicked (if it wasn't already open)
+    if (!isOpen) {
+      btn.classList.add('open');
+      answer.classList.add('open');
+    }
+  }
+</script>
+</body>
+</html>

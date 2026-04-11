@@ -47,14 +47,17 @@
           }
 
           function savePortfolio(){
+              if (window.__ADMIN_MODE) return; // never persist admin-selected user data
               localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(portfolioAssets));
           }
 
           function saveBalance(){
+              if (window.__ADMIN_MODE) return; // never persist admin-selected user data
               localStorage.setItem(BALANCE_KEY, availableBalance.toString());
           }
 
           function saveTotal(){
+              if (window.__ADMIN_MODE) return; // never persist admin-selected user data
               localStorage.setItem(TOTAL_KEY, (totalPortfolioValue || 0).toString());
           }
 
@@ -132,15 +135,7 @@
                   availableBalance = newBalance;
                   console.log('[CBPortfolio.setBalance]', prev, '→', newBalance);
                   saveBalance();
-                  // When balance is set to 0, also reset portfolio to ensure fresh calculation
-                  if (newBalance === 0) {
-                      console.log('[CBPortfolio.setBalance] Balance is zero, resetting portfolio assets');
-                      portfolioAssets = DEFAULT_ASSETS.map(a => ({ ...a }));
-                      totalPortfolioValue = 0;
-                      savePortfolio();
-                      saveTotal();
-                  }
-                  // Dispatch event SYNCHRONOUSLY so UI listeners react immediately even if value did not change
+                  // Dispatch event so UI listeners react immediately
                   try {
                       window.dispatchEvent(new CustomEvent('balance.updated', { detail: { previous: prev, current: newBalance } }));
                   } catch (e) { console.warn('Failed to dispatch balance.updated event', e); }
@@ -152,6 +147,8 @@
 
               // Fetch latest balance from server and update immediately
               async syncBalance() {
+                  // Never auto-sync on admin pages — data is loaded per-selected user.
+                  if (window.__ADMIN_MODE) return;
                   try {
                       if (typeof AuthService === 'undefined' || !AuthService.isAuthenticated()) return;
                       const headers = Object.assign({ 'Content-Type': 'application/json' }, AuthService.getAuthHeader());
@@ -176,6 +173,8 @@
               },
 
               startBalanceWatcher(intervalMs = 2000) {
+                  // Never run background watchers on admin pages.
+                  if (window.__ADMIN_MODE) return;
                   // SSE listener
                   try {
                       if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
@@ -308,7 +307,8 @@
 
           // Load cached portfolio & balance immediately so UI can display cached balance
           // quickly while authentication/server sync completes.
-          loadFromStorage();
+          // Skip on admin pages to avoid stale data from a previous user session.
+          if (!window.__ADMIN_MODE) loadFromStorage();
   
           window.CBPortfolio = portfolio;
 
@@ -317,6 +317,8 @@
           // poll briefly and listen for common auth events to trigger sync as soon
           // as authentication happens (prevents UI delay after login).
           (function ensureAuthSync(){
+              // Skip on admin pages — stat cards should only show explicitly selected user data.
+              if (window.__ADMIN_MODE) return;
               try {
                   if (typeof AuthService !== 'undefined' && AuthService.isAuthenticated()) {
                       portfolio.syncBalance().catch(e => console.warn('Initial syncBalance failed', e));

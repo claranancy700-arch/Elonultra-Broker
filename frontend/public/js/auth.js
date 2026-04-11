@@ -72,7 +72,7 @@ const AuthService = {
     this.setUser(data.user);
     // Sync balance and portfolio if provided by server
     try {
-      if (data.user && typeof window !== 'undefined' && window.CBPortfolio) {
+      if (data.user && typeof window !== 'undefined' && window.CBPortfolio && !window.__ADMIN_MODE) {
         if (typeof data.user.balance !== 'undefined') {
           console.log('Setting balance from server:', data.user.balance);
           window.CBPortfolio.setBalance(Number(data.user.balance) || 0);

@@ -9,6 +9,32 @@ export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    const headerEl = document.querySelector('.site-header');
+    if (!headerEl) return () => {};
+
+    const publishHeaderHeight = () => {
+      const height = Math.ceil(headerEl.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--global-header-height', `${height}px`);
+    };
+
+    publishHeaderHeight();
+
+    let observer;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => publishHeaderHeight());
+      observer.observe(headerEl);
+    }
+
+    window.addEventListener('resize', publishHeaderHeight);
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', publishHeaderHeight);
+      document.documentElement.style.setProperty('--global-header-height', '0px');
+    };
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
     };

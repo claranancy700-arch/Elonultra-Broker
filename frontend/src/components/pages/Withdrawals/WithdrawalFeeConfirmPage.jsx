@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import './WithdrawalFeeConfirmPage.css';
 
-const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const MIN_WITHDRAWAL_FEE_RATE = 0.00045; // 0.045%
+const MAX_WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
 const FEE_DISPLAY_CURRENCY = 'USD';
 const FEE_DEPOSIT_CURRENCY = 'USDT';
 
@@ -60,7 +61,8 @@ export default function WithdrawalProcessPage() {
     const amount = location.state?.amount || searchParams.get('amount');
     const currency = location.state?.currency || searchParams.get('currency');
     const id = location.state?.withdrawalId || searchParams.get('id');
-    const feeAmount = location.state?.feeAmount || (parseFloat(amount) * WITHDRAWAL_FEE_RATE).toFixed(2);
+    const fallbackRate = (MIN_WITHDRAWAL_FEE_RATE + MAX_WITHDRAWAL_FEE_RATE) / 2;
+    const feeAmount = location.state?.feeAmount || (parseFloat(amount) * fallbackRate).toFixed(2);
 
     if (!amount || !currency) {
       setError('Missing withdrawal details. Please start a new withdrawal.');

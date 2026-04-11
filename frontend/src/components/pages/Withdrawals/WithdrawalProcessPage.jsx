@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useApi } from '../../../hooks/useApi';
 import API from '../../../services/api';
+import { useApi } from '../../../hooks/useApi';
 import './WithdrawalProcessPage.css';
 
-const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
 const FEE_DISPLAY_CURRENCY = 'USD';
+const MIN_WITHDRAWAL_FEE_RATE = 0.00045;
+const MAX_WITHDRAWAL_FEE_RATE = 0.0005;
 const FEE_DEPOSIT_CURRENCY = 'USDT';
 
 export default function WithdrawalProcessPage() {
@@ -33,7 +34,12 @@ export default function WithdrawalProcessPage() {
   });
 
   const amountUsd = parseFloat(formData.amount) || 0;
-  const feeUsd = amountUsd * WITHDRAWAL_FEE_RATE;
+  const initialFeeUsd = Number(location.state?.initialData?.fee_amount ?? location.state?.feeAmount ?? 0);
+  const estimatedFeeUsd = amountUsd * ((MIN_WITHDRAWAL_FEE_RATE + MAX_WITHDRAWAL_FEE_RATE) / 2);
+  const feeUsd = initialFeeUsd > 0 ? initialFeeUsd : estimatedFeeUsd;
+  const feeRateLabel = (amountUsd > 0 && initialFeeUsd > 0)
+    ? `${((feeUsd / amountUsd) * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}%`
+    : '0.045% - 0.05%';
 
   // Pre-fill form with data from WithdrawalsPage
   useEffect(() => {
@@ -446,7 +452,7 @@ export default function WithdrawalProcessPage() {
                 <span className="value">${amountUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="review-row">
-                <span className="label">Fee (0.05%)</span>
+                <span className="label">Fee ({feeRateLabel})</span>
                 <span className="value accent">
                   ${feeUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}
                 </span>
@@ -494,7 +500,7 @@ export default function WithdrawalProcessPage() {
                 <span className="value">${amountUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="summary-item">
-                <span className="label">Processing Fee (0.05%)</span>
+                <span className="label">Processing Fee ({feeRateLabel})</span>
                 <span className="value accent">${feeUsd.toFixed(2)} {FEE_DISPLAY_CURRENCY}</span>
               </div>
               <div className="summary-divider"></div>
@@ -521,7 +527,7 @@ export default function WithdrawalProcessPage() {
                       }}
                       title="Copy address"
                     >
-                      📋 Copy
+                      ðŸ“‹ Copy
                     </button>
                   </div>
                 </div>
@@ -564,7 +570,7 @@ export default function WithdrawalProcessPage() {
                 onClick={handleSubmit}
                 disabled={submitLoading || awaitingAdmin}
               >
-                {submitLoading ? 'Recording payment…' : awaitingAdmin ? 'Awaiting admin confirmation' : 'I have completed withdrawal fee'}
+                {submitLoading ? 'Recording paymentâ€¦' : awaitingAdmin ? 'Awaiting admin confirmation' : 'I have completed withdrawal fee'}
               </button>
             </div>
           )}
@@ -573,3 +579,4 @@ export default function WithdrawalProcessPage() {
     </div>
   );
 }
+

@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard Design v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── THEME (dark) ─────────────────────────────────────────────── */
+:root {
+  --bg:           #1a0f2e;
+  --card:         #2d1b47;
+  --card2:        #241540;
+  --border:       #3d2a5a;
+  --text:         #f1f5f9;
+  --muted:        #9a8fb5;
+  --accent:       #e84d5c;
+  --accent-rgb:   232,77,92;
+  --card-rgb:     45,27,71;
+  --bg-rgb:       26,15,46;
+  --text-rgb:     241,245,249;
+  --success:      #10b981;
+  --danger:       #ef4444;
+  --gold:         #f5a623;
+  --blue:         #3b82f6;
+  --mono:         'JetBrains Mono', ui-monospace, monospace;
+  --t:            0.18s ease;
+  --r:            12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ───────────────────────────────────────────────────── */
+.dash {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── TOP BAR ──────────────────────────────────────────────────── */
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dash-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-greeting-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.dash-greeting-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.dash-greeting-name span { color: var(--accent); }
+.dash-topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+.dash-topbtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t);
+  text-decoration: none;
+}
+.dash-topbtn:hover { border-color: var(--accent); color: var(--accent); }
+.dash-topbtn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.dash-topbtn.primary:hover { opacity: 0.88; }
+.dash-topbtn svg { flex-shrink: 0; }
+
+/* ── HERO STRIP ───────────────────────────────────────────────── */
+.dash-hero {
+  background: linear-gradient(135deg, #2d1b47 0%, #1e1238 60%, #2a1040 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.dash-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,77,92,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dash-hero-left { display: flex; flex-direction: column; gap: 10px; }
+.dash-hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-hero-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 6px var(--success); }
+  50%      { box-shadow: 0 0 14px var(--success), 0 0 24px var(--success); }
+}
+.dash-hero-value {
+  font-size: 44px;
+  font-weight: 900;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  color: var(--text);
+  line-height: 1;
+}
+.dash-hero-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dash-hero-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.dash-hero-change.up { background: rgba(16,185,129,0.12); color: var(--success); }
+.dash-hero-change.dn { background: rgba(239,68,68,0.12);  color: var(--danger); }
+.dash-hero-period {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.dash-hero-right { display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
+.dash-hero-chart {
+  /* placeholder sparkline */
+  width: 200px;
+  height: 60px;
+  opacity: 0.7;
+}
+.dash-hero-stats {
+  display: flex;
+  gap: 24px;
+}
+.dash-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.dash-hero-stat-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 600;
+}
+.dash-hero-stat-val {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ── STAT CARDS ───────────────────────────────────────────────── */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.dash-stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: border-color var(--t), transform var(--t);
+}
+.dash-stat-card:hover { border-color: rgba(var(--accent-rgb),0.4); transform: translateY(-2px); }
+.dash-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--r) var(--r) 0 0;
+}
+.dash-stat-card.c-green::after  { background: linear-gradient(90deg, var(--success), transparent); }
+.dash-stat-card.c-red::after    { background: linear-gradient(90deg, var(--danger),  transparent); }
+.dash-stat-card.c-gold::after   { background: linear-gradient(90deg, var(--gold),    transparent); }
+.dash-stat-card.c-blue::after   { background: linear-gradient(90deg, var(--blue),    transparent); }
+.dash-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.dash-stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dash-stat-card.c-green .dash-stat-icon { background: rgba(16,185,129,0.12); color: var(--success); }
+.dash-stat-card.c-red   .dash-stat-icon { background: rgba(239,68,68,0.12);  color: var(--danger); }
+.dash-stat-card.c-gold  .dash-stat-icon { background: rgba(245,166,35,0.12); color: var(--gold); }
+.dash-stat-card.c-blue  .dash-stat-icon { background: rgba(59,130,246,0.12); color: var(--blue); }
+.dash-stat-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.badge-up { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-dn { background: rgba(239,68,68,0.15);  color: var(--danger); }
+.badge-neu{ background: rgba(var(--accent-rgb),0.1); color: var(--muted); }
+.dash-stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+}
+.dash-stat-val {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  color: var(--text);
+  line-height: 1;
+}
+.dash-stat-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── MAIN GRID ────────────────────────────────────────────────── */
+.dash-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── HOLDINGS ─────────────────────────────────────────────────── */
+.dash-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.dash-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.dash-panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-panel-title svg { color: var(--muted); }
+.dash-panel-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--t);
+}
+.dash-panel-link:hover { color: var(--accent); }
+
+/* holdings rows */
+.dash-holding-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 80px 80px;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background var(--t);
+  cursor: pointer;
+}
+.dash-holding-row:last-child { border-bottom: none; }
+.dash-holding-row:hover { background: rgba(255,255,255,0.03); }
+.dash-holding-asset {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.dash-h-icon {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.dash-h-names { min-width: 0; }
+.dash-h-sym {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+.dash-h-name {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-h-price {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+}
+.dash-h-val {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+}
+.dash-h-chg {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 6px;
+  justify-self: end;
+  width: fit-content;
+}
+.dash-h-chg.up { color: var(--success); background: rgba(16,185,129,0.1); }
+.dash-h-chg.dn { color: var(--danger);  background: rgba(239,68,68,0.1); }
+
+/* column labels */
+.dash-holding-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 80px 80px;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+}
+.dash-col-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  color: var(--muted);
+}
+.dash-col-lbl:not(:first-child) { text-align: right; }
+
+.dash-holdings-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── ACTIVITY FEED ────────────────────────────────────────────── */
+.dash-activity-list { padding: 8px 0; }
+.dash-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background var(--t);
+  cursor: pointer;
+}
+.dash-activity-item:last-child { border-bottom: none; }
+.dash-activity-item:hover { background: rgba(255,255,255,0.03); }
+.dash-act-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dash-act-icon.deposit  { background: rgba(16,185,129,0.12); color: var(--success); }
+.dash-act-icon.withdraw { background: rgba(239,68,68,0.12);  color: var(--danger); }
+.dash-act-icon.trade    { background: rgba(59,130,246,0.12);  color: var(--blue); }
+.dash-act-icon.pending  { background: rgba(245,166,35,0.12);  color: var(--gold); }
+.dash-act-info { flex: 1; min-width: 0; }
+.dash-act-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-act-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.badge-completed { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-pending   { background: rgba(245,166,35,0.15);  color: var(--gold); }
+.badge-failed    { background: rgba(239,68,68,0.15);   color: var(--danger); }
+.dash-act-date {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.dash-act-amount {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  flex-shrink: 0;
+}
+.dash-act-amount.pos { color: var(--success); }
+.dash-act-amount.neg { color: var(--danger); }
+.dash-act-amount.neu { color: var(--text); }
+
+/* ── RIGHT COLUMN ────────────────────────────────────────────── */
+.dash-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Quick Actions */
+.dash-quick-actions {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.dash-qa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+.dash-qa-btn {
+  background: var(--card);
+  border: none;
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background var(--t);
+}
+.dash-qa-btn:hover { background: var(--card2); }
+.dash-qa-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dash-qa-btn:nth-child(1) .dash-qa-icon { background: rgba(16,185,129,0.12); color: var(--success); }
+.dash-qa-btn:nth-child(2) .dash-qa-icon { background: rgba(239,68,68,0.12);  color: var(--danger); }
+.dash-qa-btn:nth-child(3) .dash-qa-icon { background: rgba(59,130,246,0.12); color: var(--blue); }
+.dash-qa-btn:nth-child(4) .dash-qa-icon { background: rgba(245,166,35,0.12); color: var(--gold); }
+.dash-qa-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Allocation donut area */
+.dash-allocation {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.dash-alloc-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dash-alloc-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-alloc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dash-alloc-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.dash-alloc-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.dash-alloc-pct {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+.dash-alloc-bar-bg {
+  height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dash-alloc-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+/* Performance mini card */
+.dash-perf-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dash-perf-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.dash-perf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dash-perf-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.dash-perf-item-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.dash-perf-item-val {
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.dash-perf-item-val.up   { color: var(--success); }
+.dash-perf-item-val.dn   { color: var(--danger); }
+.dash-perf-item-val.gold { color: var(--gold); }
+.dash-perf-item-val.text { color: var(--text); }
+
+/* ── TABLET (769px – 900px): hide Price col to prevent squeezing ── */
+@media (min-width: 769px) and (max-width: 900px) {
+  .dash-holding-row  { grid-template-columns: 1fr 0 80px 70px; }
+  .dash-holding-cols { grid-template-columns: 1fr 0 80px 70px; }
+  .dash-h-price, .dash-col-lbl:nth-child(2) { display: none; }
+}
+
+/* ── MOBILE (≤768px) ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dash { padding: 16px 14px 80px; gap: 16px; }
+
+  /* Carousel replaces hero on mobile */
+  .dash-hero { display: none; }
+
+  /* topbar: greeting only, actions hidden (handled by MobileBottomNav) */
+  .dash-topbar-actions { display: none; }
+  .dash-greeting-name { font-size: 18px; }
+
+  /* 2-col stat cards on mobile */
+  .dash-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dash-stat-val { font-size: 20px; }
+
+  /* main grid stacks */
+  .dash-main-grid { grid-template-columns: 1fr; }
+  .dash-right-col { flex-direction: column; }
+
+  /* holdings: hide price col on tiny screens */
+  .dash-holding-row { grid-template-columns: 1fr 0 120px 6px; }
+  .dash-holding-cols { grid-template-columns: 1fr 0 120px 6px; }
+  .dash-h-price, .dash-col-lbl:nth-child(2) { display: none; }
+
+  .mobile-portfolio-carousel { display: block; }
+}
+@media (min-width: 769px) {
+  .mobile-portfolio-carousel { display: none; }
+}
+
+/* ── SHARED UTILITIES ─────────────────────────────────────────── */
+svg { vertical-align: middle; }
+
+/* ── MOBILE PORTFOLIO CAROUSEL ───────────────────────────────── */
+.mobile-portfolio-carousel {
+  position: relative;
+  height: 240px;
+  overflow: visible;
+  user-select: none;
+  cursor: grab;
+}
+.mobile-portfolio-carousel:active { cursor: grabbing; }
+
+.carousel-card.single-card {
+  position: relative;
+  height: 220px;
+  border-radius: 16px;
+  padding: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(var(--card-rgb),0.55), rgba(var(--bg-rgb),0.55));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--text-rgb),0.08);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.4),
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 -1px 0 rgba(0,0,0,0.3) inset;
+}
+
+/* Decorative glassy card background */
+.credit-card-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(var(--accent-rgb),0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse at 60% 90%, rgba(16,185,129,0.07) 0%, transparent 50%);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  color: var(--text);
+}
+
+.carousel-slide {
+  width: 100%;
+  height: 100%;
+  animation: fadeIn 200ms ease-out;
+}
+
+/* ── Slide 0: Balance ── */
+.card-balance-modern {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+  padding: 18px 12px;
+}
+.card-balance-modern .balance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+.card-title.balance-label {
+  font-size: 11px;
+  color: rgba(var(--text-rgb),0.55);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.balance-icon svg { color: rgba(var(--text-rgb),0.4); }
+.balance-amount {
+  font-size: clamp(26px,10vw,52px);
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.metallic {
+  background: linear-gradient(135deg,#f9fafb 0%,#cbd5e1 35%,#94a3b8 65%,#6b7280 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.change-badge.metallic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+  background: linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.00));
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(99,102,241,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.change-badge.metallic.positive { color:#10b981; border-color:rgba(16,185,129,0.12); box-shadow:0 6px 18px rgba(16,185,129,0.06); }
+.change-badge.metallic.negative { color:#ef4444; border-color:rgba(239,68,68,0.12); box-shadow:0 6px 18px rgba(239,68,68,0.06); }
+.change-badge .change-arrow { font-size:12px; line-height:1; }
+.change-badge .change-text { font-weight:900; font-size:16px; }
+.change-badge .change-label { font-size:10px; color:rgba(var(--text-rgb),0.55); margin-left:6px; }
+
+/* ── Slide 1: Two-col portfolio ── */
+.card-portfolio-two-col {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+}
+.portfolio-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.card-title {
+  font-size: 11px;
+  color: rgba(var(--text-rgb),0.55);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.portfolio-value {
+  font-size: clamp(18px,7vw,30px);
+  font-weight: 900;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.portfolio-positions {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 4px;
+  background: linear-gradient(135deg,#f9fafb 0%,#cbd5e1 35%,#94a3b8 65%,#6b7280 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.portfolio-right {
+  flex: 0 0 auto;
+  min-width: min(160px,42%);
+  max-width: 55%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border-radius: 12px;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+/* ── Donut chart ── */
+.composition-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.composition-ring-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+.composition-ring-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.14));
+}
+.composition-ring-track {
+  fill: none;
+  stroke: rgba(var(--text-rgb),0.12);
+  stroke-width: 9;
+}
+.composition-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.composition-center-coin {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(var(--text-rgb),0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.25px;
+  max-width: 56px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.composition-center-pct {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+.composition-legend {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 3px 6px;
+}
+.composition-legend-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 3px 4px;
+  border-radius: 8px;
+  background: rgba(var(--card-rgb),0.18);
+  border: 1px solid rgba(var(--text-rgb),0.08);
+}
+.composition-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.composition-coin {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(var(--text-rgb),0.74);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.composition-pct {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(var(--text-rgb),0.56);
+}
+
+/* ── Dots ── */
+.carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 20;
+}
+.carousel-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(var(--accent-rgb),0.5);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.carousel-dots .dot.active {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb),0.4);
+  transform: scale(1.2);
+}
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<div class="dash">
+
+  <!-- ── TOP BAR ─────────────────────────────────────────────── -->
+  <div class="dash-topbar">
+    <div class="dash-greeting">
+      <div class="dash-greeting-sub">Good evening</div>
+      <div class="dash-greeting-name">Welcome back, <span>Alex</span></div>
+    </div>
+    <div class="dash-topbar-actions">
+      <a href="#" class="dash-topbtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M2 12h20"/>
+        </svg>
+        Deposit
+      </a>
+      <a href="#" class="dash-topbtn primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          <polyline points="17 6 23 6 23 12"/>
+        </svg>
+        Trade
+      </a>
+    </div>
+  </div>
+
+  <!-- ── MOBILE PORTFOLIO CAROUSEL ──────────────────────────── -->
+  <div class="mobile-portfolio-carousel" id="mobileCarousel">
+    <div class="carousel-card single-card">
+      <div class="credit-card-bg-gradient"></div>
+      <div class="card-content">
+
+        <!-- Slide 0: Available Balance -->
+        <div class="carousel-slide" id="carousel-slide-0">
+          <div class="card-balance-modern">
+            <div class="balance-header">
+              <div class="card-title balance-label">Available Balance</div>
+              <div class="balance-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="5" width="20" height="14" rx="3"/>
+                  <path d="M16 12h2"/>
+                  <path d="M2 10h20"/>
+                </svg>
+              </div>
+            </div>
+            <div class="balance-amount metallic">$12,450.00</div>
+            <div class="change-badge metallic positive" style="margin-top:12px">
+              <span class="change-arrow">&#9650;</span>
+              <span class="change-text">+3.42%</span>
+              <span class="change-label">24h</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 1: Portfolio Value + Donut -->
+        <div class="carousel-slide" id="carousel-slide-1" style="display:none">
+          <div class="card-portfolio-two-col">
+            <div class="portfolio-left">
+              <div class="card-title">Portfolio Value</div>
+              <div class="portfolio-value metallic">$48,320.14</div>
+              <div class="card-title" style="margin-top:12px">Positions</div>
+              <div class="portfolio-positions">5</div>
+            </div>
+            <div class="portfolio-right">
+              <div class="composition-chart">
+                <div class="composition-ring-wrap">
+                  <svg class="composition-ring-svg" viewBox="0 0 92 92">
+                    <circle class="composition-ring-track" cx="46" cy="46" r="30"/>
+                    <!-- BTC 45% -->
+                    <circle cx="46" cy="46" r="30" fill="none" stroke="#f59e0b" stroke-width="9"
+                      stroke-dasharray="84.8 103.7" stroke-dashoffset="0" transform="rotate(-90 46 46)"/>
+                    <!-- ETH 28% -->
+                    <circle cx="46" cy="46" r="30" fill="none" stroke="#22c55e" stroke-width="9"
+                      stroke-dasharray="52.8 135.7" stroke-dashoffset="-84.8" transform="rotate(-90 46 46)"/>
+                    <!-- SOL 15% -->
+                    <circle cx="46" cy="46" r="30" fill="none" stroke="#0ea5e9" stroke-width="9"
+                      stroke-dasharray="28.3 160.2" stroke-dashoffset="-137.6" transform="rotate(-90 46 46)"/>
+                    <!-- BNB 8% -->
+                    <circle cx="46" cy="46" r="30" fill="none" stroke="#f97316" stroke-width="9"
+                      stroke-dasharray="15.1 173.4" stroke-dashoffset="-165.9" transform="rotate(-90 46 46)"/>
+                    <!-- Other 4% -->
+                    <circle cx="46" cy="46" r="30" fill="none" stroke="#94a3b8" stroke-width="9"
+                      stroke-dasharray="7.5 181.0" stroke-dashoffset="-181.0" transform="rotate(-90 46 46)"/>
+                  </svg>
+                  <div class="composition-center">
+                    <div class="composition-center-coin">BTC</div>
+                    <div class="composition-center-pct">45%</div>
+                  </div>
+                </div>
+                <div class="composition-legend">
+                  <div class="composition-legend-item"><div class="composition-dot" style="background:#f59e0b"></div><span class="composition-coin">BTC</span><span class="composition-pct">45%</span></div>
+                  <div class="composition-legend-item"><div class="composition-dot" style="background:#22c55e"></div><span class="composition-coin">ETH</span><span class="composition-pct">28%</span></div>
+                  <div class="composition-legend-item"><div class="composition-dot" style="background:#0ea5e9"></div><span class="composition-coin">SOL</span><span class="composition-pct">15%</span></div>
+                  <div class="composition-legend-item"><div class="composition-dot" style="background:#f97316"></div><span class="composition-coin">BNB</span><span class="composition-pct">8%</span></div>
+                  <div class="composition-legend-item"><div class="composition-dot" style="background:#94a3b8"></div><span class="composition-coin">Other</span><span class="composition-pct">4%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="carousel-dots">
+      <button class="dot active" onclick="carouselGo(0)" aria-label="Slide 1"></button>
+      <button class="dot" onclick="carouselGo(1)" aria-label="Slide 2"></button>
+    </div>
+  </div>
+
+  <!-- ── HERO STRIP ────────────────────────────────────────────── -->
+  <div class="dash-hero">
+    <div class="dash-hero-left">
+      <div class="dash-hero-label">Total Portfolio Value</div>
+      <div class="dash-hero-value">$48,320.14</div>
+      <div class="dash-hero-row">
+        <span class="dash-hero-change up">▲ +3.42%</span>
+        <span class="dash-period">vs yesterday</span>
+        <span class="dash-hero-period">+$1,598.40 today</span>
+      </div>
+    </div>
+    <div class="dash-hero-right">
+      <!-- Sparkline SVG placeholder -->
+      <svg class="dash-hero-chart" viewBox="0 0 200 60" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#10b981" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <path d="M4,48 L20,40 L36,42 L52,34 L68,36 L84,28 L100,24 L116,18 L132,22 L148,14 L164,10 L180,8 L196,6 L196,58 L4,58 Z"
+              fill="url(#hg)"/>
+        <path d="M4,48 L20,40 L36,42 L52,34 L68,36 L84,28 L100,24 L116,18 L132,22 L148,14 L164,10 L180,8 L196,6"
+              fill="none" stroke="#10b981" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="196" cy="6" r="4" fill="#10b981"/>
+      </svg>
+      <div class="dash-hero-stats">
+        <div class="dash-hero-stat">
+          <div class="dash-hero-stat-label">Available</div>
+          <div class="dash-hero-stat-val">$3,240</div>
+        </div>
+        <div class="dash-hero-stat">
+          <div class="dash-hero-stat-label">Invested</div>
+          <div class="dash-hero-stat-val">$45,080</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAT CARDS ─────────────────────────────────────────────── -->
+  <div class="dash-stats">
+
+    <div class="dash-stat-card c-green">
+      <div class="dash-stat-top">
+        <div class="dash-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+          </svg>
+        </div>
+        <span class="dash-stat-badge badge-up">▲ 3.42%</span>
+      </div>
+      <div class="dash-stat-label">24h Change</div>
+      <div class="dash-stat-val">+$1,598</div>
+      <div class="dash-stat-sub">Compared to yesterday</div>
+    </div>
+
+    <div class="dash-stat-card c-gold">
+      <div class="dash-stat-top">
+        <div class="dash-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </div>
+        <span class="dash-stat-badge badge-neu">CASH</span>
+      </div>
+      <div class="dash-stat-label">Available Balance</div>
+      <div class="dash-stat-val">$3,240</div>
+      <div class="dash-stat-sub">Ready to deploy</div>
+    </div>
+
+    <div class="dash-stat-card c-blue">
+      <div class="dash-stat-top">
+        <div class="dash-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <span class="dash-stat-badge badge-neu">ACTIVE</span>
+      </div>
+      <div class="dash-stat-label">Open Positions</div>
+      <div class="dash-stat-val">5</div>
+      <div class="dash-stat-sub">Across 3 sectors</div>
+    </div>
+
+    <div class="dash-stat-card c-red">
+      <div class="dash-stat-top">
+        <div class="dash-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <span class="dash-stat-badge badge-dn">▼ 0.12%</span>
+      </div>
+      <div class="dash-stat-label">Unrealised P&L</div>
+      <div class="dash-stat-val">+$4,210</div>
+      <div class="dash-stat-sub">All-time gain</div>
+    </div>
+
+  </div>
+
+  <!-- ── MAIN GRID ───────────────────────────────────────────────── -->
+  <div class="dash-main-grid">
+
+    <!-- LEFT: Holdings + Activity -->
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0;">
+
+      <!-- Holdings -->
+      <div class="dash-panel">
+        <div class="dash-panel-head">
+          <div class="dash-panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
+            Your Holdings
+          </div>
+          <a href="#" class="dash-panel-link">View all →</a>
+        </div>
+        <div class="dash-holding-cols">
+          <div class="dash-col-lbl">Asset</div>
+          <div class="dash-col-lbl">Price</div>
+          <div class="dash-col-lbl">Value</div>
+          <div class="dash-col-lbl">24h</div>
+        </div>
+
+        <div class="dash-holding-row">
+          <div class="dash-holding-asset">
+            <div class="dash-h-icon" style="background:#f7931a">B</div>
+            <div class="dash-h-names">
+              <div class="dash-h-sym">BTC</div>
+              <div class="dash-h-name">Bitcoin · 0.382</div>
+            </div>
+          </div>
+          <div class="dash-h-price">$89,420</div>
+          <div class="dash-h-val">$34,158</div>
+          <div class="dash-h-chg up">+4.12%</div>
+        </div>
+
+        <div class="dash-holding-row">
+          <div class="dash-holding-asset">
+            <div class="dash-h-icon" style="background:#627eea">E</div>
+            <div class="dash-h-names">
+              <div class="dash-h-sym">ETH</div>
+              <div class="dash-h-name">Ethereum · 2.5</div>
+            </div>
+          </div>
+          <div class="dash-h-price">$3,241</div>
+          <div class="dash-h-val">$8,102</div>
+          <div class="dash-h-chg up">+1.88%</div>
+        </div>
+
+        <div class="dash-holding-row">
+          <div class="dash-holding-asset">
+            <div class="dash-h-icon" style="background:#9945ff">S</div>
+            <div class="dash-h-names">
+              <div class="dash-h-sym">SOL</div>
+              <div class="dash-h-name">Solana · 14.8</div>
+            </div>
+          </div>
+          <div class="dash-h-price">$172.40</div>
+          <div class="dash-h-val">$2,551</div>
+          <div class="dash-h-chg dn">−1.04%</div>
+        </div>
+
+        <div class="dash-holding-row">
+          <div class="dash-holding-asset">
+            <div class="dash-h-icon" style="background:#00aae4">X</div>
+            <div class="dash-h-names">
+              <div class="dash-h-sym">XRP</div>
+              <div class="dash-h-name">Ripple · 2000</div>
+            </div>
+          </div>
+          <div class="dash-h-price">$0.8120</div>
+          <div class="dash-h-val">$1,624</div>
+          <div class="dash-h-chg dn">−0.55%</div>
+        </div>
+
+        <div class="dash-holding-row">
+          <div class="dash-holding-asset">
+            <div class="dash-h-icon" style="background:#ff007a">U</div>
+            <div class="dash-h-names">
+              <div class="dash-h-sym">UNI</div>
+              <div class="dash-h-name">Uniswap · 112</div>
+            </div>
+          </div>
+          <div class="dash-h-price">$16.74</div>
+          <div class="dash-h-val">$1,874</div>
+          <div class="dash-h-chg up">+2.30%</div>
+        </div>
+
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="dash-panel">
+        <div class="dash-panel-head">
+          <div class="dash-panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Recent Activity
+          </div>
+          <a href="#" class="dash-panel-link">See all →</a>
+        </div>
+        <div class="dash-activity-list">
+
+          <div class="dash-activity-item">
+            <div class="dash-act-icon deposit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M2 12h20"/>
+              </svg>
+            </div>
+            <div class="dash-act-info">
+              <div class="dash-act-title">
+                Deposit
+                <span class="dash-act-badge badge-completed">Completed</span>
+              </div>
+              <div class="dash-act-date">Today, 14:32 · Bitcoin</div>
+            </div>
+            <div class="dash-act-amount pos">+$5,000</div>
+          </div>
+
+          <div class="dash-activity-item">
+            <div class="dash-act-icon trade">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+              </svg>
+            </div>
+            <div class="dash-act-info">
+              <div class="dash-act-title">
+                Buy — ETH
+                <span class="dash-act-badge badge-completed">Completed</span>
+              </div>
+              <div class="dash-act-date">Today, 09:18 · Ethereum</div>
+            </div>
+            <div class="dash-act-amount neg">−$1,200</div>
+          </div>
+
+          <div class="dash-activity-item">
+            <div class="dash-act-icon pending">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="dash-act-info">
+              <div class="dash-act-title">
+                Withdrawal
+                <span class="dash-act-badge badge-pending">Pending</span>
+              </div>
+              <div class="dash-act-date">Yesterday, 22:05 · USDT</div>
+            </div>
+            <div class="dash-act-amount neg">−$800</div>
+          </div>
+
+          <div class="dash-activity-item">
+            <div class="dash-act-icon deposit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M2 12h20"/>
+              </svg>
+            </div>
+            <div class="dash-act-info">
+              <div class="dash-act-title">
+                Deposit
+                <span class="dash-act-badge badge-completed">Completed</span>
+              </div>
+              <div class="dash-act-date">Apr 4, 2026 · Ethereum</div>
+            </div>
+            <div class="dash-act-amount pos">+$2,000</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="dash-right-col">
+
+      <!-- Quick Actions -->
+      <div class="dash-quick-actions">
+        <div class="dash-panel-head">
+          <div class="dash-panel-title">Quick Actions</div>
+        </div>
+        <div class="dash-qa-grid">
+          <button class="dash-qa-btn">
+            <div class="dash-qa-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M2 12h20"/>
+              </svg>
+            </div>
+            <span class="dash-qa-label">Deposit</span>
+          </button>
+          <button class="dash-qa-btn">
+            <div class="dash-qa-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V2M22 12H2"/>
+              </svg>
+            </div>
+            <span class="dash-qa-label">Withdraw</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Portfolio Allocation -->
+      <div class="dash-allocation">
+        <div class="dash-panel-head">
+          <div class="dash-panel-title">Allocation</div>
+          <span style="font-size:11px;color:var(--muted);">5 assets</span>
+        </div>
+        <div class="dash-alloc-body">
+          <div class="dash-alloc-row">
+            <div class="dash-alloc-top">
+              <div class="dash-alloc-name">
+                <div class="dash-alloc-dot" style="background:#f7931a"></div>Bitcoin
+              </div>
+              <div class="dash-alloc-pct">70.7%</div>
+            </div>
+            <div class="dash-alloc-bar-bg">
+              <div class="dash-alloc-bar-fill" style="width:70.7%;background:#f7931a;opacity:0.75;"></div>
+            </div>
+          </div>
+          <div class="dash-alloc-row">
+            <div class="dash-alloc-top">
+              <div class="dash-alloc-name">
+                <div class="dash-alloc-dot" style="background:#627eea"></div>Ethereum
+              </div>
+              <div class="dash-alloc-pct">16.8%</div>
+            </div>
+            <div class="dash-alloc-bar-bg">
+              <div class="dash-alloc-bar-fill" style="width:16.8%;background:#627eea;opacity:0.75;"></div>
+            </div>
+          </div>
+          <div class="dash-alloc-row">
+            <div class="dash-alloc-top">
+              <div class="dash-alloc-name">
+                <div class="dash-alloc-dot" style="background:#9945ff"></div>Solana
+              </div>
+              <div class="dash-alloc-pct">5.3%</div>
+            </div>
+            <div class="dash-alloc-bar-bg">
+              <div class="dash-alloc-bar-fill" style="width:5.3%;background:#9945ff;opacity:0.75;"></div>
+            </div>
+          </div>
+          <div class="dash-alloc-row">
+            <div class="dash-alloc-top">
+              <div class="dash-alloc-name">
+                <div class="dash-alloc-dot" style="background:#00aae4"></div>XRP
+              </div>
+              <div class="dash-alloc-pct">3.4%</div>
+            </div>
+            <div class="dash-alloc-bar-bg">
+              <div class="dash-alloc-bar-fill" style="width:3.4%;background:#00aae4;opacity:0.75;"></div>
+            </div>
+          </div>
+          <div class="dash-alloc-row">
+            <div class="dash-alloc-top">
+              <div class="dash-alloc-name">
+                <div class="dash-alloc-dot" style="background:#ff007a"></div>Uniswap
+              </div>
+              <div class="dash-alloc-pct">3.8%</div>
+            </div>
+            <div class="dash-alloc-bar-bg">
+              <div class="dash-alloc-bar-fill" style="width:3.8%;background:#ff007a;opacity:0.75;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance snapshot -->
+      <div class="dash-perf-card">
+        <div class="dash-perf-title">Performance Snapshot</div>
+        <div class="dash-perf-grid">
+          <div class="dash-perf-item">
+            <div class="dash-perf-item-lbl">7d Return</div>
+            <div class="dash-perf-item-val up">+6.21%</div>
+          </div>
+          <div class="dash-perf-item">
+            <div class="dash-perf-item-lbl">30d Return</div>
+            <div class="dash-perf-item-val up">+14.8%</div>
+          </div>
+          <div class="dash-perf-item">
+            <div class="dash-perf-item-lbl">All-time P&L</div>
+            <div class="dash-perf-item-val gold">+$4,210</div>
+          </div>
+          <div class="dash-perf-item">
+            <div class="dash-perf-item-lbl">Best Asset</div>
+            <div class="dash-perf-item-val text">BTC</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var current = 0;
+  var total = 2;
+  var startX = null;
+
+  function carouselGo(i) {
+    current = i;
+    for (var s = 0; s < total; s++) {
+      var el = document.getElementById('carousel-slide-' + s);
+      if (el) el.style.display = s === i ? 'block' : 'none';
+    }
+    document.querySelectorAll('.carousel-dots .dot').forEach(function(d, idx) {
+      d.classList.toggle('active', idx === i);
+    });
+  }
+
+  window.carouselGo = carouselGo;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('mobileCarousel');
+    if (!el) return;
+    el.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', function(e) {
+      if (startX === null) return;
+      var d = e.changedTouches[0].clientX - startX;
+      if (d < -40) carouselGo((current + 1) % total);
+      else if (d > 40) carouselGo((current - 1 + total) % total);
+      startX = null;
+    }, { passive: true });
+    var mouseStartX = null;
+    el.addEventListener('mousedown', function(e) { mouseStartX = e.clientX; });
+    el.addEventListener('mouseup', function(e) {
+      if (mouseStartX === null) return;
+      var d = e.clientX - mouseStartX;
+      if (d < -40) carouselGo((current + 1) % total);
+      else if (d > 40) carouselGo((current - 1 + total) % total);
+      mouseStartX = null;
+    });
+  });
+})();
+</script>
+</body>
+</html>

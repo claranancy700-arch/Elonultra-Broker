@@ -3,10 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import './WithdrawalsPage.css';
 import API from '../../../services/api';
 
+const MIN_WITHDRAWAL_FEE_RATE = 0.00045;
+const MAX_WITHDRAWAL_FEE_RATE = 0.0005;
+
 export const WithdrawalsPage = () => {
   const [crypto, setCrypto] = useState('BTC');
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
+  const [feeRate, setFeeRate] = useState(() => MIN_WITHDRAWAL_FEE_RATE + Math.random() * (MAX_WITHDRAWAL_FEE_RATE - MIN_WITHDRAWAL_FEE_RATE));
   const [loading, setLoading] = useState(false);
   const [balance, setBalance] = useState(null);
   const navigate = useNavigate();
@@ -23,10 +27,14 @@ export const WithdrawalsPage = () => {
     return () => { mounted = false; };
   }, []);
 
-  const feeRate = 0.0005; // withdrawal fee: 0.05% of USD amount
+  useEffect(() => {
+    if (!amount || Number(amount) <= 0) return;
+    setFeeRate(MIN_WITHDRAWAL_FEE_RATE + Math.random() * (MAX_WITHDRAWAL_FEE_RATE - MIN_WITHDRAWAL_FEE_RATE));
+  }, [amount]);
 
-  const fee = Number(amount || 0) * feeRate;
-  const total = Number(amount || 0) + fee;
+  const amountNum = Number(amount || 0);
+  const fee = amountNum * feeRate;
+  const total = amountNum + fee;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +42,12 @@ export const WithdrawalsPage = () => {
     if (balance != null && total > balance) return alert('Insufficient balance for amount + fee');
     try {
       setLoading(true);
-      const res = await API.post('/withdrawals', { crypto_type: crypto, amount: Number(amount), crypto_address: address });
+      const res = await API.post('/withdrawals', {
+        crypto_type: crypto,
+        amount: Number(amount),
+        crypto_address: address,
+        fee_rate: feeRate,
+      });
       const withdrawalData = res.data.withdrawal || res.data;
       // Navigate to withdrawal-fee (now contains the 4-step form) with major information needed
       navigate('/withdrawal-fee', {
@@ -88,7 +101,10 @@ export const WithdrawalsPage = () => {
           </label>
 
           <div className="fee-box">
-            <div><span>Fee ({(feeRate * 100).toFixed(2)}%)</span><strong>${fee.toFixed(2)}</strong></div>
+            <div>
+              <span>Withdrawal Fee ({(feeRate * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}%)</span>
+              <strong>${fee.toFixed(2)}</strong>
+            </div>
           </div>
 
           <label>

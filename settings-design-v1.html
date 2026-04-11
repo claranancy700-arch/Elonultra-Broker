@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings Design v1</title>
+<style>
+/* ── THEME (dark) ─────────────────────────────────────────────── */
+:root {
+  --bg:           #1a0f2e;
+  --card:         #2d1b47;
+  --card2:        #241540;
+  --border:       #3d2a5a;
+  --text:         #f1f5f9;
+  --muted:        #9a8fb5;
+  --accent:       #e84d5c;
+  --accent-rgb:   232,77,92;
+  --card-rgb:     45,27,71;
+  --bg-rgb:       26,15,46;
+  --text-rgb:     241,245,249;
+  --success:      #10b981;
+  --danger:       #ef4444;
+  --gold:         #f5a623;
+  --blue:         #3b82f6;
+  --r:            12px;
+  --t:            0.18s ease;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ───────────────────────────────────────────────────── */
+.sett-wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── HEADER ───────────────────────────────────────────────────── */
+.sett-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.sett-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--t), border-color var(--t);
+}
+.sett-back-btn:hover { color: var(--text); border-color: var(--accent); }
+.sett-header-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.sett-header-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* ── PROFILE HERO ─────────────────────────────────────────────── */
+.sett-profile-hero {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 28px 24px;
+  overflow: hidden;
+}
+.sett-hero-glow {
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-rgb),0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+.sett-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.sett-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+.sett-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.25);
+}
+.sett-avatar-badge {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--card);
+}
+.sett-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+.sett-hero-name {
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sett-hero-email {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.sett-hero-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.sett-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.sett-badge.verified {
+  background: rgba(16,185,129,0.12);
+  color: var(--success);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.sett-badge.plan {
+  background: rgba(245,166,35,0.12);
+  color: var(--gold);
+  border: 1px solid rgba(245,166,35,0.2);
+}
+.sett-badge.twofactor {
+  background: rgba(59,130,246,0.12);
+  color: var(--blue);
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.sett-hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.sett-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--t);
+}
+.sett-btn.ghost {
+  background: rgba(var(--text-rgb),0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.sett-btn.ghost:hover { background: rgba(var(--text-rgb),0.1); border-color: rgba(var(--text-rgb),0.25); }
+.sett-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+.sett-btn.primary:hover { background: #d63d4b; }
+.sett-btn.danger-soft {
+  background: rgba(239,68,68,0.1);
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.sett-btn.danger-soft:hover { background: rgba(239,68,68,0.18); }
+
+/* ── BODY: SIDEBAR + CONTENT ─────────────────────────────────── */
+.sett-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── SIDEBAR NAV ──────────────────────────────────────────────── */
+.sett-nav {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  position: sticky;
+  top: 20px;
+}
+.sett-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  border-left: 3px solid transparent;
+  transition: all var(--t);
+  text-decoration: none;
+}
+.sett-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+.sett-nav-item:hover { background: rgba(var(--text-rgb),0.04); color: var(--text); }
+.sett-nav-item.active {
+  background: rgba(var(--accent-rgb),0.08);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.sett-nav-item.active svg { opacity: 1; }
+.sett-nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+.sett-nav-item.danger { color: rgba(239,68,68,0.7); }
+.sett-nav-item.danger:hover { color: var(--danger); background: rgba(239,68,68,0.06); }
+
+/* ── CONTENT PANELS ───────────────────────────────────────────── */
+.sett-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sett-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.sett-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sett-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sett-panel-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(var(--accent-rgb),0.1);
+  border: 1px solid rgba(var(--accent-rgb),0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.sett-panel-icon.blue { background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.15); color:var(--blue); }
+.sett-panel-icon.green { background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.15); color:var(--success); }
+.sett-panel-icon.gold { background:rgba(245,166,35,0.1); border-color:rgba(245,166,35,0.2); color:var(--gold); }
+.sett-panel-icon.danger { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.15); color:var(--danger); }
+.sett-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.sett-panel-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.sett-panel-body {
+  padding: 22px;
+}
+
+/* ── FORM INPUTS ──────────────────────────────────────────────── */
+.sett-form { display: flex; flex-direction: column; gap: 16px; }
+.sett-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.sett-field { display: flex; flex-direction: column; gap: 6px; }
+.sett-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--text-rgb),0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sett-field-input {
+  width: 100%;
+  padding: 10px 13px;
+  background: rgba(var(--bg-rgb),0.6);
+  border: 1px solid rgba(var(--text-rgb),0.12);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.sett-field-input::placeholder { color: rgba(var(--text-rgb),0.3); }
+.sett-field-input:focus {
+  border-color: rgba(var(--accent-rgb),0.5);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.08);
+}
+.sett-field-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.sett-field-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.sett-input-wrap {
+  position: relative;
+}
+.sett-input-wrap .sett-field-input { padding-right: 40px; }
+.sett-input-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+  transition: color var(--t);
+}
+.sett-input-icon:hover { color: var(--text); }
+
+.sett-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* ── PASSWORD STRENGTH ────────────────────────────────────────── */
+.sett-pw-strength {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.sett-pw-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(var(--text-rgb),0.1);
+  transition: background 0.3s;
+}
+.sett-pw-bar.filled.weak { background: var(--danger); }
+.sett-pw-bar.filled.fair { background: var(--gold); }
+.sett-pw-bar.filled.strong { background: var(--success); }
+.sett-pw-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* ── TOGGLE SWITCH ────────────────────────────────────────────── */
+.sett-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(var(--text-rgb),0.06);
+}
+.sett-toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+.sett-toggle-row:first-child { padding-top: 0; }
+.sett-toggle-info { flex: 1; min-width: 0; }
+.sett-toggle-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.sett-toggle-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.sett-toggle {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sett-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.sett-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(var(--text-rgb),0.12);
+  cursor: pointer;
+  transition: background 0.25s;
+}
+.sett-toggle input:checked + .sett-toggle-track { background: var(--accent); }
+.sett-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.sett-toggle input:checked + .sett-toggle-track::after { transform: translateX(18px); }
+
+/* ── PROFILE INFO ROWS (view mode) ────────────────────────────── */
+.sett-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.sett-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--text-rgb),0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.sett-info-val {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+.sett-info-val.placeholder { color: var(--muted); font-style: italic; }
+
+/* ── API KEYS TABLE ───────────────────────────────────────────── */
+.sett-table-wrap { overflow-x: auto; margin-top: 4px; max-width: 100%; }
+.sett-table { min-width: 480px; }
+.sett-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.sett-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(var(--text-rgb),0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+}
+.sett-table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(var(--text-rgb),0.06);
+  color: var(--text);
+  vertical-align: middle;
+}
+.sett-table tr:last-child td { border-bottom: none; }
+.sett-table code {
+  background: rgba(var(--bg-rgb),0.8);
+  border: 1px solid rgba(var(--text-rgb),0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'SF Mono','Cascadia Code',ui-monospace,monospace;
+  font-size: 12px;
+  color: rgba(var(--text-rgb),0.7);
+}
+.sett-table-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── BANK GRID (2 col: banking + verification) ───────────────── */
+.sett-bank-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .sett-bank-grid { grid-template-columns: 1fr; }
+}
+
+/* Send-code inline row */
+.sett-send-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.sett-send-row .sett-field-input { flex: 1; }
+.sett-btn.sm {
+  padding: 0 14px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+
+/* Banking status badge */
+.bank-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(16,185,129,0.1);
+  color: var(--success);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* Verified state in verification panel */
+.sett-verified-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0 8px;
+  text-align: center;
+}
+.sett-verified-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(16,185,129,0.12);
+  border: 2px solid rgba(16,185,129,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+}
+.sett-verified-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.sett-verified-sub { font-size: 12px; color: var(--muted); }
+
+/* ── DANGER ZONE ──────────────────────────────────────────────── */
+.sett-danger-panel {
+  background: rgba(239,68,68,0.04);
+  border-color: rgba(239,68,68,0.18);
+}
+.sett-danger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(239,68,68,0.08);
+}
+.sett-danger-row:last-child { border-bottom: none; padding-bottom: 0; }
+.sett-danger-row:first-child { padding-top: 0; }
+.sett-danger-info-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.sett-danger-info-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.sett-btn.outline-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(239,68,68,0.35);
+  white-space: nowrap;
+}
+.sett-btn.outline-danger:hover {
+  background: rgba(239,68,68,0.08);
+  border-color: var(--danger);
+}
+
+/* ── VERIFICATION BANNER ──────────────────────────────────────── */
+.sett-verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(245,166,35,0.07);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 10px;
+  margin-bottom: 0;
+}
+.sett-verify-icon { flex-shrink: 0; color: var(--gold); }
+.sett-verify-text { flex: 1; font-size: 13px; }
+.sett-verify-text strong { color: var(--gold); }
+
+/* ── ALERT ────────────────────────────────────────────────────── */
+.sett-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.sett-alert.success {
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.2);
+  color: var(--success);
+}
+.sett-alert.error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: var(--danger);
+}
+
+/* ── MOBILE ───────────────────────────────────────────────────── */
+/* ── MOBILE HAMBURGER DRAWER ──────────────────────────────────── */
+
+/* Hamburger trigger bar — hidden on desktop */
+.sett-mob-bar {
+  display: none;
+}
+
+/* Full-screen overlay */
+.sett-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.sett-nav-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .sett-wrap { padding: 16px 14px 80px; gap: 16px; }
+  .sett-body {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  /* Show hamburger trigger bar */
+  .sett-mob-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    z-index: 210;
+  }
+  .sett-mob-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .sett-mob-bar-left svg { color: var(--accent); }
+  .sett-mob-bar-arrow {
+    color: var(--muted);
+    transition: transform 0.2s ease;
+  }
+  .sett-mob-bar.open .sett-mob-bar-arrow { transform: rotate(180deg); }
+
+  /* Dropdown popup anchored below trigger bar */
+  .sett-nav {
+    position: absolute;
+    top: calc(48px + 8px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    z-index: 300;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition:
+      max-height 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity 0.22s ease,
+      transform 0.22s ease,
+      padding 0.22s ease;
+    pointer-events: none;
+  }
+  .sett-nav.open {
+    max-height: 480px;
+    opacity: 1;
+    transform: translateY(0);
+    padding: 6px 6px 8px;
+    pointer-events: auto;
+  }
+
+  /* Hide the drawer-only header inside the popup */
+  .sett-nav-drawer-head { display: none; }
+
+  /* Nav items in popup */
+  .sett-nav-item {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    border-radius: 8px;
+    gap: 10px;
+  }
+  .sett-nav-item span { display: block; font-size: 14px; }
+  .sett-nav-item svg { width: 16px; height: 16px; }
+  .sett-nav-divider { display: block; margin: 4px 0; }
+
+  .sett-hero-actions { display: none; }
+  .sett-row-2 { grid-template-columns: 1fr; }
+  .sett-info-grid { grid-template-columns: 1fr; }
+
+  .sett-profile-hero { padding: 20px; }
+  .sett-avatar-circle { width: 58px; height: 58px; font-size: 20px; }
+  .sett-hero-name { font-size: 17px; }
+  .sett-panel-head { padding: 14px 16px 12px; }
+  .sett-panel-body { padding: 16px; }
+
+  /* Danger rows stack on small screens */
+  .sett-danger-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sett-wrap">
+
+  <!-- ── PAGE HEADER ─────────────────────────────────────────── -->
+  <div class="sett-header">
+    <a href="#" class="sett-back-btn" aria-label="Back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
+    <div>
+      <div class="sett-header-title">Account Settings</div>
+      <div class="sett-header-sub">Manage your profile, security, and preferences</div>
+    </div>
+  </div>
+
+  <!-- ── PROFILE HERO ────────────────────────────────────────── -->
+  <div class="sett-profile-hero">
+    <div class="sett-hero-glow"></div>
+    <div class="sett-hero-inner">
+      <div class="sett-avatar">
+        <div class="sett-avatar-circle">AJ</div>
+        <div class="sett-avatar-badge"></div>
+      </div>
+      <div class="sett-hero-info">
+        <div class="sett-hero-name">Alex Johnson</div>
+        <div class="sett-hero-email">alex.johnson@email.com</div>
+        <div class="sett-hero-badges">
+          <span class="sett-badge verified">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Verified
+          </span>
+          <span class="sett-badge plan">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Pro Plan
+          </span>
+          <span class="sett-badge twofactor">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            2FA On
+          </span>
+        </div>
+      </div>
+      <div class="sett-hero-actions">
+        <button class="sett-btn ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Change Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BODY: SIDEBAR + PANELS ─────────────────────────────── -->
+  <div class="sett-body">
+
+    <!-- Mobile hamburger trigger bar -->
+    <div class="sett-mob-bar" id="settMobBar" onclick="toggleNavDrawer()">
+      <div class="sett-mob-bar-left">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <span id="settMobBarLabel">Profile</span>
+      </div>
+      <svg class="sett-mob-bar-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+
+    <!-- Overlay (mobile only) -->
+    <div class="sett-nav-overlay" id="settNavOverlay" onclick="closeNavDrawer()"></div>
+
+    <!-- Sidebar nav -->
+    <nav class="sett-nav" id="settNav" aria-label="Settings sections">
+      <!-- Drawer header (mobile only) -->
+      <div class="sett-nav-drawer-head">
+        <span class="sett-nav-drawer-title">Settings</span>
+        <button class="sett-nav-close-btn" onclick="closeNavDrawer()" aria-label="Close menu">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <button class="sett-nav-item active" onclick="showSection('profile', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+        <span>Profile</span>
+      </button>
+      <button class="sett-nav-item" onclick="showSection('security', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Security</span>
+      </button>
+      <button class="sett-nav-item" onclick="showSection('notifications', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span>Notifications</span>
+      </button>
+      <button class="sett-nav-item" onclick="showSection('banking', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Banking &amp; Verification</span>
+      </button>
+      <button class="sett-nav-item" onclick="showSection('apikeys', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span>API Keys</span>
+      </button>
+      <div class="sett-nav-divider"></div>
+      <button class="sett-nav-item danger" onclick="showSection('danger', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Danger Zone</span>
+      </button>
+    </nav>
+
+    <!-- Content area -->
+    <div class="sett-content">
+
+      <!-- ── PROFILE SECTION ─────────────────────────────────── -->
+      <div class="sett-section" id="section-profile">
+
+        <!-- View panel -->
+        <div class="sett-panel" id="profile-view-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Profile Information</div>
+                <div class="sett-panel-sub">Your personal details</div>
+              </div>
+            </div>
+            <button class="sett-btn ghost" onclick="toggleProfileEdit(true)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-info-grid">
+              <div class="sett-info-item">
+                <div class="sett-info-label">Full Name</div>
+                <div class="sett-info-val">Alex Johnson</div>
+              </div>
+              <div class="sett-info-item">
+                <div class="sett-info-label">Email Address</div>
+                <div class="sett-info-val">alex.johnson@email.com</div>
+              </div>
+              <div class="sett-info-item">
+                <div class="sett-info-label">Phone Number</div>
+                <div class="sett-info-val placeholder">Not set</div>
+              </div>
+              <div class="sett-info-item">
+                <div class="sett-info-label">Member Since</div>
+                <div class="sett-info-val">Jan 2024</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit panel (hidden by default) -->
+        <div class="sett-panel" id="profile-edit-panel" style="display:none">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Edit Profile</div>
+                <div class="sett-panel-sub">Update your personal details</div>
+              </div>
+            </div>
+            <button class="sett-btn ghost" onclick="toggleProfileEdit(false)">Cancel</button>
+          </div>
+          <div class="sett-panel-body">
+            <form class="sett-form" onsubmit="return false;">
+              <div class="sett-row-2">
+                <div class="sett-field">
+                  <label class="sett-field-label">Full Name</label>
+                  <input class="sett-field-input" type="text" value="Alex Johnson" placeholder="Your full name" />
+                </div>
+                <div class="sett-field">
+                  <label class="sett-field-label">Phone Number</label>
+                  <input class="sett-field-input" type="tel" value="" placeholder="+1 (555) 000-0000" />
+                </div>
+              </div>
+              <div class="sett-field">
+                <label class="sett-field-label">Email Address</label>
+                <input class="sett-field-input" type="email" value="alex.johnson@email.com" disabled />
+                <span class="sett-field-hint">Email cannot be changed here. Contact support.</span>
+              </div>
+              <div class="sett-form-footer">
+                <button type="button" class="sett-btn ghost" onclick="toggleProfileEdit(false)">Cancel</button>
+                <button type="submit" class="sett-btn primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Email Verification -->
+        <div class="sett-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon green">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Email Verification</div>
+                <div class="sett-panel-sub">Confirm your email address</div>
+              </div>
+            </div>
+            <span class="sett-badge verified">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Verified
+            </span>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-alert success">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Your email address alex.johnson@email.com is verified.
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /section-profile -->
+
+      <!-- ── SECURITY SECTION ────────────────────────────────── -->
+      <div class="sett-section" id="section-security" style="display:none">
+        <div class="sett-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon blue">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Change Password</div>
+                <div class="sett-panel-sub">Use a strong, unique password</div>
+              </div>
+            </div>
+          </div>
+          <div class="sett-panel-body">
+            <form class="sett-form" onsubmit="return false;">
+              <div class="sett-field">
+                <label class="sett-field-label">Current Password</label>
+                <div class="sett-input-wrap">
+                  <input class="sett-field-input" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
+                  <span class="sett-input-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </span>
+                </div>
+              </div>
+              <div class="sett-row-2">
+                <div class="sett-field">
+                  <label class="sett-field-label">New Password</label>
+                  <div class="sett-input-wrap">
+                    <input class="sett-field-input" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" oninput="updatePwStrength(this.value)" />
+                    <span class="sett-input-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                  </div>
+                  <div class="sett-pw-strength">
+                    <div class="sett-pw-bar" id="pwb1"></div>
+                    <div class="sett-pw-bar" id="pwb2"></div>
+                    <div class="sett-pw-bar" id="pwb3"></div>
+                    <div class="sett-pw-bar" id="pwb4"></div>
+                  </div>
+                  <div class="sett-pw-label" id="pwlabel">Min. 8 characters</div>
+                </div>
+                <div class="sett-field">
+                  <label class="sett-field-label">Confirm New Password</label>
+                  <div class="sett-input-wrap">
+                    <input class="sett-field-input" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
+                    <span class="sett-input-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="sett-form-footer">
+                <button type="submit" class="sett-btn primary">Update Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 2FA panel -->
+        <div class="sett-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon blue">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Two-Factor Authentication</div>
+                <div class="sett-panel-sub">Extra layer of login security</div>
+              </div>
+            </div>
+            <span class="sett-badge twofactor">Enabled</span>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-toggle-row" style="padding-top:0">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Authenticator App</div>
+                <div class="sett-toggle-desc">Require a 6-digit code from your authenticator on each login</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" checked />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-toggle-row">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Login Notifications</div>
+                <div class="sett-toggle-desc">Email alert whenever a new device signs in</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" checked />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div><!-- /section-security -->
+
+      <!-- ── NOTIFICATIONS SECTION ───────────────────────────── -->
+      <div class="sett-section" id="section-notifications" style="display:none">
+        <div class="sett-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon gold">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Notification Preferences</div>
+                <div class="sett-panel-sub">Choose what you want to hear about</div>
+              </div>
+            </div>
+            <button class="sett-btn primary" style="font-size:12px;padding:8px 14px;">Save</button>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-toggle-row" style="padding-top:0">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Trade Confirmations</div>
+                <div class="sett-toggle-desc">Email me when a buy or sell order is filled</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" checked />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-toggle-row">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Price Alerts</div>
+                <div class="sett-toggle-desc">Notify me when an asset moves more than 5% in 24 h</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-toggle-row">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Deposit &amp; Withdrawal</div>
+                <div class="sett-toggle-desc">Confirm every fund movement via email</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" checked />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-toggle-row">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Weekly Portfolio Report</div>
+                <div class="sett-toggle-desc">Summary of performance and holdings every Monday</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" checked />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-toggle-row">
+              <div class="sett-toggle-info">
+                <div class="sett-toggle-label">Marketing &amp; News</div>
+                <div class="sett-toggle-desc">Product updates, promotions, and platform news</div>
+              </div>
+              <label class="sett-toggle">
+                <input type="checkbox" />
+                <span class="sett-toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div><!-- /section-notifications -->
+
+      <!-- ── BANKING SECTION ─────────────────────────────────── -->
+      <div class="sett-section" id="section-banking" style="display:none">
+
+        <!-- Section heading -->
+        <div style="display:flex;align-items:center;gap:10px;padding:2px 0 4px;">
+          <div class="sett-panel-icon green" style="width:28px;height:28px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:800;">Account Banking &amp; Verification</div>
+            <div style="font-size:11px;color:var(--muted);">Banking registration and email verification</div>
+          </div>
+        </div>
+
+        <div class="sett-bank-grid">
+
+          <!-- ── Banking / Registration card ─────────────────── -->
+          <div>
+            <!-- View mode -->
+            <div class="sett-panel" id="banking-view-panel">
+              <div class="sett-panel-head">
+                <div class="sett-panel-title-wrap">
+                  <div class="sett-panel-icon green">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  </div>
+                  <div>
+                    <div class="sett-panel-title">Banking / Registration</div>
+                    <div class="sett-panel-sub">Your withdrawal details</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span class="bank-status-badge">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Saved
+                  </span>
+                  <button class="sett-btn ghost" onclick="toggleBankEdit(true)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                  </button>
+                </div>
+              </div>
+              <div class="sett-panel-body">
+                <div class="sett-form" style="gap:10px;">
+                  <div class="sett-info-item"><div class="sett-info-label">Country</div><div class="sett-info-val placeholder">Not set</div></div>
+                  <div class="sett-info-item"><div class="sett-info-label">Account Number</div><div class="sett-info-val placeholder">Not set</div></div>
+                  <div class="sett-info-item"><div class="sett-info-label">Account Name</div><div class="sett-info-val placeholder">Not set</div></div>
+                  <div class="sett-info-item"><div class="sett-info-label">Personal ID</div><div class="sett-info-val placeholder">Not set</div></div>
+                  <div class="sett-info-item"><div class="sett-info-label">Branch</div><div class="sett-info-val placeholder">Not set</div></div>
+                  <div class="sett-info-item"><div class="sett-info-label">Email</div><div class="sett-info-val">alex.johnson@email.com</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit mode -->
+            <div class="sett-panel" id="banking-edit-panel" style="display:none">
+              <div class="sett-panel-head">
+                <div class="sett-panel-title-wrap">
+                  <div class="sett-panel-icon green">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </div>
+                  <div>
+                    <div class="sett-panel-title">Edit Banking Details</div>
+                    <div class="sett-panel-sub">Used for withdrawal processing</div>
+                  </div>
+                </div>
+                <button class="sett-btn ghost" onclick="toggleBankEdit(false)">Cancel</button>
+              </div>
+              <div class="sett-panel-body">
+                <form class="sett-form" onsubmit="return false;">
+                  <div class="sett-field">
+                    <label class="sett-field-label">Country</label>
+                    <select class="sett-field-input" style="cursor:pointer">
+                      <option value="" disabled selected>Select country</option>
+                      <option>United States</option>
+                      <option>United Kingdom</option>
+                      <option>Canada</option>
+                      <option>Australia</option>
+                      <option>Nigeria</option>
+                      <option>Kenya</option>
+                      <option>Ghana</option>
+                      <option>South Africa</option>
+                      <option>Egypt</option>
+                      <option>Uganda</option>
+                      <option>Tanzania</option>
+                      <option>India</option>
+                      <option>Pakistan</option>
+                      <option>Bangladesh</option>
+                      <option>Philippines</option>
+                      <option>Singapore</option>
+                      <option>Malaysia</option>
+                      <option>Thailand</option>
+                      <option>Indonesia</option>
+                      <option>Vietnam</option>
+                      <option>Brazil</option>
+                      <option>Mexico</option>
+                      <option>Argentina</option>
+                      <option>Colombia</option>
+                      <option>Chile</option>
+                      <option>Germany</option>
+                      <option>France</option>
+                      <option>Spain</option>
+                      <option>Italy</option>
+                      <option>Netherlands</option>
+                      <option>Belgium</option>
+                      <option>Switzerland</option>
+                      <option>Austria</option>
+                      <option>Sweden</option>
+                      <option>Norway</option>
+                      <option>Denmark</option>
+                      <option>Ireland</option>
+                    </select>
+                  </div>
+                  <div class="sett-field">
+                    <label class="sett-field-label">Account Number</label>
+                    <input class="sett-field-input" type="text" placeholder="1234567890" />
+                  </div>
+                  <div class="sett-field">
+                    <label class="sett-field-label">Account Name</label>
+                    <input class="sett-field-input" type="text" placeholder="Full name on account" />
+                  </div>
+                  <div class="sett-field">
+                    <label class="sett-field-label">Personal ID</label>
+                    <input class="sett-field-input" type="text" placeholder="National ID / Passport" />
+                    <span class="sett-field-hint">Required for identity verification during withdrawals.</span>
+                  </div>
+                  <div class="sett-field">
+                    <label class="sett-field-label">Branch</label>
+                    <input class="sett-field-input" type="text" placeholder="Branch name or code" />
+                  </div>
+                  <div class="sett-field">
+                    <label class="sett-field-label">Email</label>
+                    <input class="sett-field-input" type="email" placeholder="you@example.com" value="alex.johnson@email.com" />
+                  </div>
+                  <div class="sett-form-footer">
+                    <button type="button" class="sett-btn ghost" onclick="toggleBankEdit(false)">Cancel</button>
+                    <button type="submit" class="sett-btn primary">Save Details</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div><!-- /banking col -->
+
+          <!-- ── Email Verification card ──────────────────────── -->
+          <div class="sett-panel">
+            <div class="sett-panel-head">
+              <div class="sett-panel-title-wrap">
+                <div class="sett-panel-icon gold">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <div class="sett-panel-title">Email Verification</div>
+                  <div class="sett-panel-sub">Confirm your email address</div>
+                </div>
+              </div>
+            </div>
+            <div class="sett-panel-body">
+
+              <!-- Verified state (shown when verified) -->
+              <div id="verify-done" style="display:none">
+                <div class="sett-verified-state">
+                  <div class="sett-verified-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div class="sett-verified-title">Email Verified</div>
+                  <div class="sett-verified-sub" id="verify-email-display">alex.johnson@email.com</div>
+                </div>
+              </div>
+
+              <!-- Unverified form -->
+              <div id="verify-form">
+                <form class="sett-form" onsubmit="handleVerify(event)">
+                  <div class="sett-field">
+                    <label class="sett-field-label">Email Address</label>
+                    <div class="sett-send-row">
+                      <input class="sett-field-input" id="verify-email-input" type="email" placeholder="you@example.com" value="alex.johnson@email.com" />
+                      <button type="button" class="sett-btn primary sm" id="send-code-btn" onclick="handleSendCode()">
+                        Send Code
+                      </button>
+                    </div>
+                  </div>
+                  <div class="sett-field" id="verify-code-field" style="display:none">
+                    <label class="sett-field-label">Verification Code</label>
+                    <input class="sett-field-input" id="verify-code-input" type="text" placeholder="Enter code from email" maxlength="8" />
+                    <span class="sett-field-hint" id="verify-code-hint">Check your inbox &mdash; code expires in 10 minutes.</span>
+                  </div>
+                  <div class="sett-form-footer" id="verify-submit-row" style="display:none">
+                    <button type="button" class="sett-btn ghost" onclick="resetVerify()">Resend</button>
+                    <button type="submit" class="sett-btn primary">Verify Email</button>
+                  </div>
+                </form>
+              </div>
+
+            </div>
+          </div><!-- /verification card -->
+
+        </div><!-- /sett-bank-grid -->
+      </div><!-- /section-banking -->
+
+      <!-- ── API KEYS SECTION ────────────────────────────────── -->
+      <div class="sett-section" id="section-apikeys" style="display:none">
+        <div class="sett-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon blue">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">API Keys</div>
+                <div class="sett-panel-sub">Programmatic access to your account</div>
+              </div>
+            </div>
+            <button class="sett-btn primary">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg>
+              Generate Key
+            </button>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-table-wrap">
+              <table class="sett-table">
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Created</th>
+                    <th>Last Used</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>sk_live_4xK9m...7qRz</code></td>
+                    <td style="color:var(--muted)">Mar 12, 2024</td>
+                    <td style="color:var(--muted)">2 days ago</td>
+                    <td><button class="sett-btn danger-soft" style="padding:5px 10px;font-size:12px">Revoke</button></td>
+                  </tr>
+                  <tr>
+                    <td><code>sk_live_9pL2n...3wBt</code></td>
+                    <td style="color:var(--muted)">Jan 5, 2024</td>
+                    <td style="color:var(--muted)">Never</td>
+                    <td><button class="sett-btn danger-soft" style="padding:5px 10px;font-size:12px">Revoke</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div><!-- /section-apikeys -->
+
+      <!-- ── DANGER ZONE SECTION ─────────────────────────────── -->
+      <div class="sett-section" id="section-danger" style="display:none">
+        <div class="sett-panel sett-danger-panel">
+          <div class="sett-panel-head">
+            <div class="sett-panel-title-wrap">
+              <div class="sett-panel-icon danger">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <div class="sett-panel-title">Danger Zone</div>
+                <div class="sett-panel-sub">Irreversible account actions</div>
+              </div>
+            </div>
+          </div>
+          <div class="sett-panel-body">
+            <div class="sett-danger-row" style="padding-top:0">
+              <div>
+                <div class="sett-danger-info-title">Export Account Data</div>
+                <div class="sett-danger-info-desc">Download a full archive of your trades, portfolio history, and profile data.</div>
+              </div>
+              <button class="sett-btn ghost">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+            </div>
+            <div class="sett-danger-row">
+              <div>
+                <div class="sett-danger-info-title">Deactivate Account</div>
+                <div class="sett-danger-info-desc">Temporarily disable your account. You can reactivate by logging in again.</div>
+              </div>
+              <button class="sett-btn outline-danger">Deactivate</button>
+            </div>
+            <div class="sett-danger-row">
+              <div>
+                <div class="sett-danger-info-title">Delete Account</div>
+                <div class="sett-danger-info-desc">Permanently delete your account and all associated data. This cannot be undone.</div>
+              </div>
+              <button class="sett-btn outline-danger">Delete Account</button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /section-danger -->
+
+    </div><!-- /sett-content -->
+  </div><!-- /sett-body -->
+
+</div><!-- /sett-wrap -->
+
+<script>
+// ── Mobile nav drawer ─────────────────────────────────────────
+function toggleNavDrawer() {
+  var nav = document.getElementById('settNav');
+  var overlay = document.getElementById('settNavOverlay');
+  var bar = document.getElementById('settMobBar');
+  var isOpen = nav.classList.contains('open');
+  if (isOpen) {
+    closeNavDrawer();
+  } else {
+    nav.classList.add('open');
+    overlay.classList.add('open');
+    bar.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeNavDrawer() {
+  var nav = document.getElementById('settNav');
+  var overlay = document.getElementById('settNavOverlay');
+  var bar = document.getElementById('settMobBar');
+  nav.classList.remove('open');
+  overlay.classList.remove('open');
+  bar.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── Section tab switching ──────────────────────────────────────
+function showSection(id, btn) {
+  document.querySelectorAll('.sett-section').forEach(function(el) {
+    el.style.display = 'none';
+  });
+  var active = document.getElementById('section-' + id);
+  if (active) active.style.display = 'flex';
+  document.querySelectorAll('.sett-nav-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  if (btn) btn.classList.add('active');
+  // Update hamburger bar label and close drawer on mobile
+  var label = document.getElementById('settMobBarLabel');
+  if (label && btn) label.textContent = btn.querySelector('span') ? btn.querySelector('span').textContent : id;
+  closeNavDrawer();
+}
+
+// Make sections flex-column
+document.querySelectorAll('.sett-section').forEach(function(el) {
+  el.style.flexDirection = 'column';
+  el.style.gap = '16px';
+  if (el.style.display !== 'none') el.style.display = 'flex';
+});
+
+// ── Profile edit toggle ────────────────────────────────────────
+function toggleProfileEdit(editing) {
+  document.getElementById('profile-view-panel').style.display = editing ? 'none' : 'block';
+  document.getElementById('profile-edit-panel').style.display = editing ? 'block' : 'none';
+}
+
+// ── Bank edit toggle ───────────────────────────────────────────
+function toggleBankEdit(editing) {
+  document.getElementById('banking-view-panel').style.display = editing ? 'none' : 'block';
+  document.getElementById('banking-edit-panel').style.display = editing ? 'block' : 'none';
+}
+
+// ── Email verification flow ────────────────────────────────────
+function handleSendCode() {
+  var email = document.getElementById('verify-email-input').value.trim();
+  if (!email) return;
+  document.getElementById('verify-code-field').style.display = 'flex';
+  document.getElementById('verify-submit-row').style.display = 'flex';
+  var btn = document.getElementById('send-code-btn');
+  btn.textContent = 'Resend';
+  btn.style.background = 'rgba(var(--text-rgb),0.06)';
+  btn.style.color = 'var(--text)';
+  btn.style.border = '1px solid var(--border)';
+  document.getElementById('verify-code-hint').textContent =
+    'Code sent to ' + email + ' — expires in 10 minutes.';
+}
+
+function handleVerify(e) {
+  e.preventDefault();
+  var code = document.getElementById('verify-code-input').value.trim();
+  if (!code) return;
+  var email = document.getElementById('verify-email-input').value.trim();
+  document.getElementById('verify-form').style.display = 'none';
+  document.getElementById('verify-done').style.display = 'block';
+  document.getElementById('verify-email-display').textContent = email;
+}
+
+function resetVerify() {
+  document.getElementById('verify-code-field').style.display = 'none';
+  document.getElementById('verify-submit-row').style.display = 'none';
+  document.getElementById('verify-code-input').value = '';
+  var btn = document.getElementById('send-code-btn');
+  btn.textContent = 'Send Code';
+  btn.style = '';
+}
+
+// ── Password strength indicator ────────────────────────────────
+function updatePwStrength(val) {
+  var bars = [
+    document.getElementById('pwb1'),
+    document.getElementById('pwb2'),
+    document.getElementById('pwb3'),
+    document.getElementById('pwb4')
+  ];
+  var label = document.getElementById('pwlabel');
+  var n = val.length;
+  var level = 0;
+  if (n >= 4) level = 1;
+  if (n >= 8) level = 2;
+  if (n >= 8 && /[A-Z]/.test(val) && /[0-9]/.test(val)) level = 3;
+  if (n >= 12 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val)) level = 4;
+
+  var cls = level <= 1 ? 'weak' : level <= 2 ? 'fair' : 'strong';
+  var labels = ['', 'Too short', 'Fair', 'Good', 'Strong'];
+  bars.forEach(function(b, i) {
+    b.className = 'sett-pw-bar' + (i < level ? ' filled ' + cls : '');
+  });
+  label.textContent = labels[level] || 'Min. 8 characters';
+  label.style.color = level >= 3 ? 'var(--success)' : level === 2 ? 'var(--gold)' : 'var(--danger)';
+  if (!val) { label.textContent = 'Min. 8 characters'; label.style.color = ''; }
+}
+</script>
+</body>
+</html>

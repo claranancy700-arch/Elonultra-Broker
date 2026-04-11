@@ -1,4 +1,10 @@
 /* Main Layout Styles */
+.banner-wrap { display: contents; }
+
+@media (max-width: 768px) {
+  .banner-hide-mobile { display: none; }
+}
+
 .app-wrapper {
   display: flex;
   min-height: calc(100vh - 70px);

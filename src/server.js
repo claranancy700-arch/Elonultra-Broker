@@ -50,7 +50,42 @@ app.use((req, res, next) => {
 // Simple health endpoint (no DB dependency) - register FIRST so it's always available
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Run DB init and route registration - THEN start server
+// Startup guard: return 503 for all /api routes until route registration completes
+let routesReady = false;
+app.use('/api', (req, res, next) => {
+  if (!routesReady) {
+    return res.status(503).json({ error: 'Server is starting up. Please retry in a moment.' });
+  }
+  next();
+});
+
+// Bind to port immediately so the proxy never gets ECONNREFUSED during startup
+// Routes are registered below once DB init completes
+const tryListen = (startPort, attempts = 10) => {
+  const basePort = Number(startPort) || 5001;
+  let p = basePort;
+  const attempt = () => {
+    const srv = server.listen(p, () => {
+      console.log(`✓ Server listening on port ${p}`);
+    });
+    srv.on('error', (err) => {
+      if (err && err.code === 'EADDRINUSE') {
+        console.warn(`Port ${p} in use, trying ${p + 1}...`);
+        p += 1;
+        if (p <= basePort + attempts) { setTimeout(attempt, 200); return; }
+        console.error('No available ports found, exiting.');
+        process.exit(1);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+  };
+  attempt();
+};
+tryListen(port, 10);
+
+// Run DB init and route registration asynchronously after server is already listening
 (async () => {
   try {
     const { ensureSchema } = require('./db/init');
@@ -81,10 +116,12 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     const promptsRoutes = require('./routes/prompts');
     const chatRoutes = require('./routes/chat');
     const adminChatRoutes = require('./routes/admin-chat');
+    const usersRoutes = require('./routes/users');
     
     app.use('/api/auth', authRoutes);
     app.use('/auth', authRoutes); // backward compatibility for existing deployed requests
 
+    app.use('/api/users', usersRoutes);
     app.use('/api/markets', marketsRoutes);
     app.use('/api/contact', contactRoutes);
     app.use('/api/withdrawals', withdrawalRoutes);
@@ -103,6 +140,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     app.use('/api/chat', chatRoutes);
     app.use('/api/admin/chat', adminChatRoutes);
     
+    routesReady = true;
     console.log('All routes loaded successfully');
     
     // Make io instance available to routes
@@ -331,38 +369,10 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
     res.status(404).send('Not Found');
   });
 
-  // Apply centralized error handler middleware (MUST be last middleware)
+  // Apply centralized error handler (must be after all routes)
   app.use(errorHandler);
 
-  // START THE SERVER - after routes are registered
-  // Try to listen on configured port, but if it's in use, try the next few ports
-  const tryListen = (startPort, attempts = 5) => {
-    const basePort = Number(startPort) || 5001;
-    let p = basePort;
-    const attempt = () => {
-      const srv = server.listen(p, () => {
-        console.log(`✓ Server listening on port ${p}`);
-      });
-      srv.on('error', (err) => {
-        if (err && err.code === 'EADDRINUSE') {
-          console.warn(`Port ${p} in use, trying ${p + 1}...`);
-          p += 1;
-          if (p <= basePort + attempts) {
-            setTimeout(attempt, 200);
-            return;
-          }
-          console.error('No available ports found, exiting.');
-          process.exit(1);
-        } else {
-          console.error('Server error:', err);
-          process.exit(1);
-        }
-      });
-    };
-    attempt();
-  };
-
-  tryListen(port, 10);
+  // (Server is already listening — bound before schema init started)
 
   // Graceful shutdown
   process.on('SIGTERM', () => {

@@ -25,7 +25,7 @@ const CONFIG = {
 
 // maximum safe value that still fits in our Postgres numeric columns (30 precision, 8 scale)
 // numeric(30,8) allows 22 digits before the decimal point; we round down just in case.
-const MAX_DB_BALANCE = 9_999_999_999_999_999_999_9999.99999999;
+const MAX_DB_BALANCE = 9_999_999_999_999_999_999_999.99999999;
 
 
 // Helper: Check if today is a trading day (Monday-Friday)

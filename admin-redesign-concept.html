@@ -137,23 +137,23 @@
     }
     .topbar-title { font-weight: 700; font-size: 15px; flex: 1; }
     .topbar-sub    { font-size: 12px; color: var(--text-2); }
-    .topbar-key-wrap {
-      position: relative; flex-shrink: 0;
+    .topbar-key-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; }
+    .topbar-key-btn {
       width: 30px; height: 30px; border-radius: 6px;
       border: none; background: transparent;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; color: var(--text-3);
       transition: color .15s, background .15s;
     }
-    .topbar-key-wrap:hover { color: var(--text); background: var(--bg-3); }
-    .topbar-key-wrap svg { width: 15px; height: 15px; }
-    .topbar-key-wrap .topbar-key-dot {
+    .topbar-key-btn:hover { color: var(--text); background: var(--bg-3); }
+    .topbar-key-btn svg { width: 15px; height: 15px; }
+    .topbar-key-btn .topbar-key-dot {
       position: absolute; top: 5px; right: 5px;
       width: 6px; height: 6px; border-radius: 50%;
       background: transparent; transition: background .2s;
       pointer-events: none;
     }
-    .topbar-key-wrap .topbar-key-dot.active { background: var(--success); }
+    .topbar-key-btn .topbar-key-dot.active { background: var(--success); }
     .topbar-key-popup {
       display: none;
       position: fixed;
@@ -341,7 +341,7 @@
       background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
       z-index: 200; align-items: center; justify-content: center; padding: 20px;
     }
-    .modal-overlay.open, .modal-overlay.active { display: flex; }
+    .modal-overlay.open { display: flex; }
     .modal {
       background: var(--bg-2); border: 1px solid var(--border-2);
       border-radius: 12px; width: 100%; max-width: 540px;
@@ -506,128 +506,22 @@
     /* Prevent any child from blowing out the layout */
     .card, .stat-card, .danger-card { max-width: 100%; overflow: hidden; }
     img, svg { max-width: 100%; }
-
-    /* ─── AUTH GATE ──────────────────────────────────────────── */
-    #auth-gate {
-      position: fixed; inset: 0; z-index: 9999;
-      background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      padding: 20px;
-    }
-    #auth-gate.hidden { display: none; }
-    .auth-card {
-      background: var(--bg-2); border: 1px solid var(--border-2);
-      border-radius: 14px; padding: 36px 32px;
-      width: 100%; max-width: 380px;
-      display: flex; flex-direction: column; gap: 20px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
-    }
-    .auth-logo {
-      display: flex; align-items: center; gap: 12px;
-    }
-    .auth-logo-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 800; color: #fff; flex-shrink: 0;
-    }
-    .auth-logo-text { font-weight: 800; font-size: 16px; color: var(--text); }
-    .auth-logo-sub  { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
-    .auth-title { font-size: 20px; font-weight: 800; color: var(--text); }
-    .auth-sub   { font-size: 13px; color: var(--text-2); margin-top: -12px; }
-    .auth-field { display: flex; flex-direction: column; gap: 6px; }
-    .auth-field label { font-size: 11px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.6px; }
-    .auth-input-wrap { position: relative; display: flex; }
-    .auth-input-wrap input {
-      flex: 1; background: var(--bg-3); border: 1px solid var(--border-2);
-      color: var(--text); border-radius: var(--radius-sm);
-      padding: 10px 40px 10px 12px; font-size: 14px;
-      font-family: 'SFMono-Regular', 'Consolas', monospace;
-      outline: none; letter-spacing: 0.05em; width: 100%;
-      transition: border-color var(--transition);
-    }
-    .auth-input-wrap input:focus { border-color: var(--accent); }
-    .auth-show-btn {
-      position: absolute; right: 0; top: 0; bottom: 0;
-      width: 38px; display: flex; align-items: center; justify-content: center;
-      background: none; border: none; color: var(--text-3); cursor: pointer;
-      font-size: 15px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    }
-    .auth-show-btn:hover { color: var(--text); }
-    .auth-error {
-      font-size: 12px; color: var(--danger);
-      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
-      border-radius: var(--radius-sm); padding: 8px 12px;
-      display: none;
-    }
-    .auth-error.visible { display: block; }
-    .auth-btn {
-      background: var(--accent); color: #fff;
-      border: none; border-radius: var(--radius-sm);
-      padding: 11px 16px; font-size: 14px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: opacity 0.15s, transform 0.15s;
-    }
-    .auth-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-    .auth-btn:active { transform: translateY(0); }
-    .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .auth-btn-spinner { display: none; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-
-<!-- ══════════════════════════════════════════════════════════════
-     AUTH GATE — shown until valid admin key is entered
-══════════════════════════════════════════════════════════════ -->
-<div id="auth-gate">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="auth-logo-icon">E</div>
-      <div>
-        <div class="auth-logo-text">ELON-ULTRA</div>
-        <div class="auth-logo-sub">Admin Console</div>
-      </div>
-    </div>
-    <div>
-      <div class="auth-title">Sign in to Admin</div>
-      <div class="auth-sub">Enter your admin key to continue</div>
-    </div>
-    <div class="auth-field">
-      <label for="auth-key-input">Admin Key</label>
-      <div class="auth-input-wrap">
-        <input type="password" id="auth-key-input" placeholder="Paste your x-admin-key here…" autocomplete="off" />
-        <button class="auth-show-btn" type="button" id="auth-show-btn" title="Show / hide key" aria-label="Toggle key visibility">
-          <i data-lucide="eye" id="auth-eye-icon"></i>
-        </button>
-      </div>
-    </div>
-    <div class="auth-error" id="auth-error">Incorrect admin key. Please try again.</div>
-    <button class="auth-btn" id="auth-submit-btn" type="button">
-      <span class="auth-btn-spinner" id="auth-spinner"></span>
-      <span id="auth-btn-label">Access Admin Panel</span>
-    </button>
-  </div>
-</div>
-
-<!-- Main layout — hidden until auth passes -->
-<div id="admin-wrapper" style="display:none;height:100%;">
 
 <!-- ══════════════════════════════════════════════════════════════
      MODALS
 ══════════════════════════════════════════════════════════════ -->
 
 <!-- Users Modal -->
-<div class="modal-overlay" id="users-modal">
-  <div class="modal" style="max-width:540px">
+<div class="modal-overlay" id="modal-users">
+  <div class="modal" style="max-width:480px">
     <div class="modal-header">
       <h3>Select User</h3>
-      <button class="modal-close" onclick="closeModal('users-modal')">&times;</button>
+      <button class="modal-close" onclick="closeModal('modal-users')">&times;</button>
     </div>
-    <div style="padding:12px 20px;border-bottom:1px solid var(--border)">
-      <input type="text" id="users-search" placeholder="Search by name or email…" oninput="filterUsersList(this.value)" style="width:100%;box-sizing:border-box" />
-    </div>
-    <div class="modal-body" id="users-list-container" style="padding:14px 16px">
+    <div class="modal-body" id="users-list-body">
       <div style="text-align:center;color:var(--text-3);padding:32px 0">
         Enter admin key &amp; click "Load Users" first.
       </div>
@@ -662,13 +556,13 @@
     <div class="modal-body">
       <div class="stack">
         <div class="form-grid form-2">
-          <label><span>Client Name *</span><input id="testimony-name" placeholder="John Doe" /></label>
-          <label><span>Title / Position</span><input id="testimony-title" placeholder="CEO, Tech Co." /></label>
+          <label><span>Client Name *</span><input id="t-name" placeholder="John Doe" /></label>
+          <label><span>Title / Position</span><input id="t-title" placeholder="CEO, Tech Co." /></label>
         </div>
         <div class="form-grid form-2">
-          <label><span>Image URL</span><input id="testimony-image" type="url" placeholder="https://..." /></label>
+          <label><span>Image URL</span><input id="t-image" type="url" placeholder="https://..." /></label>
           <label><span>Rating</span>
-            <select id="testimony-rating">
+            <select id="t-rating">
               <option value="5">5 ★★★★★</option>
               <option value="4">4 ★★★★☆</option>
               <option value="3">3 ★★★☆☆</option>
@@ -677,17 +571,16 @@
             </select>
           </label>
         </div>
-        <label><span>Testimony *</span><textarea id="testimony-content" placeholder="Share the client's experience…"></textarea></label>
+        <label><span>Testimony *</span><textarea id="t-content" placeholder="Share the client's experience…"></textarea></label>
         <label style="display:flex;align-items:center;gap:8px">
-          <input type="hidden" id="testimony-id" />
-          <input type="checkbox" id="testimony-featured" />
+          <input type="checkbox" id="t-featured" />
           <span style="display:inline;text-transform:none;font-size:13px;color:var(--text)">Feature on landing page</span>
         </label>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-testimony')">Cancel</button>
-      <button class="btn btn-primary" type="button" onclick="document.getElementById('testimony-form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));closeModal('modal-testimony')">Save Testimony</button>
+      <button class="btn btn-primary">Save Testimony</button>
     </div>
   </div>
 </div>
@@ -796,9 +689,23 @@
         <div class="topbar-title" id="page-title">Dashboard</div>
       </div>
 
+      <!-- Admin Key button -->
+      <div class="topbar-key-wrap" id="topbar-key-wrap">
+        <button class="topbar-key-btn" id="topbar-key-btn" title="" aria-label="">
+          <i data-lucide="lock"></i>
+          <span class="topbar-key-dot" id="topbar-key-dot"></span>
+        </button>
+        <div class="topbar-key-popup" id="topbar-key-popup">
+          <label>Access Key</label>
+          <input type="password" id="admin-key-topbar" placeholder="Enter key…" autocomplete="off" />
+          <span class="key-save" id="key-save-hint"></span>
+        </div>
+      </div>
+
       <!-- Active User pill -->
-      <div class="user-pill" onclick="openModal('users-modal')" style="cursor:pointer" title="Click to change user">
-        <span style="font-size:11px">👤</span> Viewing: <strong id="active-user-name">—</strong>
+      <div class="user-pill">
+        Viewing: <strong id="active-user-name">—</strong>
+        <span class="user-pill-change" onclick="openModal('modal-users')">change ↗</span>
       </div>
 
       <!-- Theme toggle -->
@@ -829,6 +736,23 @@
       <div class="page active" id="page-dashboard">
         <div class="stack">
 
+          <!-- Admin Key Access -->
+          <div class="card card-sm">
+            <div class="section-header" style="margin-bottom:10px">
+              <div>
+                <div class="section-title">Admin Access</div>
+                <div class="section-sub">Enter key and load users</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <div class="key-row" style="flex:1;min-width:200px">
+                <input type="password" id="admin-key" placeholder="x-admin-key" />
+                <button class="btn btn-primary" id="load-users-btn">Load Users</button>
+              </div>
+              <button class="btn btn-ghost" onclick="openModal('modal-users')"><i data-lucide="users"></i> View Users</button>
+            </div>
+          </div>
+
           <!-- Stats row -->
           <div class="stat-grid">
 
@@ -839,10 +763,10 @@
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
                   </svg>
                 </div>
-                <span class="stat-badge badge-neu" id="stat-total-badge">—</span>
+                <span class="stat-badge badge-up" id="stat-total-badge">▲ 0%</span>
               </div>
               <div class="stat-label">Total Portfolio</div>
-              <div class="stat-val" id="total-value" title="Click to edit">—</div>
+              <div class="stat-val" id="stat-total" title="Click to edit">$0.00</div>
               <div class="stat-sub" id="stat-change">vs. yesterday</div>
               <div class="stat-edit-hint">click to edit</div>
             </div>
@@ -857,8 +781,8 @@
                 <span class="stat-badge badge-neu" id="stat-24h-badge">24H</span>
               </div>
               <div class="stat-label">24h Change</div>
-              <div class="stat-val" id="change-24h" title="Click to edit">—</div>
-              <div class="stat-sub" id="stat-24h-pct">—</div>
+              <div class="stat-val" id="stat-24h" title="Click to edit">+$0.00</div>
+              <div class="stat-sub" id="stat-24h-pct">+0% today</div>
               <div class="stat-edit-hint">click to edit</div>
             </div>
 
@@ -872,7 +796,7 @@
                 <span class="stat-badge badge-neu">CASH</span>
               </div>
               <div class="stat-label">Available Balance</div>
-              <div class="stat-val" id="available-balance" title="Click to edit">—</div>
+              <div class="stat-val" id="stat-balance" title="Click to edit">$0.00</div>
               <div class="stat-sub">Ready to deploy</div>
               <div class="stat-edit-hint">click to edit</div>
             </div>
@@ -887,7 +811,7 @@
                 <span class="stat-badge badge-neu">ACTIVE</span>
               </div>
               <div class="stat-label">Active Positions</div>
-              <div class="stat-val" id="active-positions" title="Click to edit">—</div>
+              <div class="stat-val" id="stat-positions" title="Click to edit">0</div>
               <div class="stat-sub">Holdings</div>
               <div class="stat-edit-hint">click to edit</div>
             </div>
@@ -902,8 +826,8 @@
                 <div class="section-title"><i data-lucide="cpu"></i> Simulator</div>
               </div>
               <div style="font-size:13px;color:var(--text-2);margin-bottom:10px">
-                Status: <span id="sim-status" style="color:var(--success);font-weight:600">—</span><br>
-                Next run: <span id="sim-next" style="color:var(--text-3)">—</span>
+                Status: <span id="dash-sim-status" style="color:var(--success);font-weight:600">—</span><br>
+                Next run: <span id="dash-sim-next" style="color:var(--text-3)">—</span>
               </div>
               <div class="btn-group">
                 <button class="btn btn-success btn-xs" id="sim-start"><i data-lucide="play"></i> Start</button>
@@ -924,8 +848,8 @@
                   </select>
                 </div>
                 <div class="btn-group">
-                  <button class="btn btn-primary btn-xs" type="button" id="quick-credit-btn" onclick="(function(){var a=document.getElementById('credit-amount'),q=document.getElementById('quick-amount'),c=document.getElementById('credit-currency'),qc=document.getElementById('quick-currency');if(a&&q)a.value=q.value;if(c&&qc)c.value=qc.value;var f=document.getElementById('credit-form');if(f)f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));})()">Credit</button>
-                  <button class="btn btn-ghost btn-xs" type="button" id="quick-set-btn" onclick="(function(){var a=document.getElementById('credit-amount'),q=document.getElementById('quick-amount'),c=document.getElementById('credit-currency'),qc=document.getElementById('quick-currency');if(a&&q)a.value=q.value;if(c&&qc)c.value=qc.value;var b=document.getElementById('edit-balance-btn');if(b)b.click();})()">Set</button>
+                  <button class="btn btn-primary btn-xs">Credit</button>
+                  <button class="btn btn-ghost btn-xs">Set</button>
                 </div>
               </div>
             </div>
@@ -939,8 +863,8 @@
                 Trigger balance growth immediately.
               </div>
               <div class="btn-group">
-                <button class="btn btn-primary btn-xs" id="trigger-growth-btn">This User</button>
-                <button class="btn btn-ghost btn-xs" id="trigger-growth-btn-all">All Users</button>
+                <button class="btn btn-primary btn-xs">This User</button>
+                <button class="btn btn-ghost btn-xs">All Users</button>
               </div>
             </div>
           </div>
@@ -949,12 +873,12 @@
           <div class="card card-sm">
             <div class="section-header">
               <div class="section-title">User Holdings</div>
-              <a href="#" style="font-size:12px;color:var(--accent);cursor:pointer" onclick="showPage('page-balance',null);return false">Full view →</a>
+              <a style="font-size:12px;color:var(--accent);cursor:pointer" onclick="showPage('page-balance',null)">Full view →</a>
             </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Asset</th><th>Amount</th><th>Price</th><th>Value</th><th>% of Portfolio</th><th>Actions</th></tr></thead>
-                <tbody id="holdings-body">
+                <tbody id="dash-holdings-body">
                   <tr class="empty-row"><td colspan="6">Select a user to see holdings.</td></tr>
                 </tbody>
               </table>
@@ -968,48 +892,31 @@
       <!-- ══ PAGE: USERS ════════════════════════════════════ -->
       <div class="page" id="page-users">
         <div class="stack">
-
-          <!-- toolbar -->
           <div class="card card-sm">
-            <div class="section-header" style="margin-bottom:0">
+            <div class="section-header">
               <div>
-                <div class="section-title"><i data-lucide="users"></i> User Management</div>
-                <div class="section-sub">Browse, select, and manage individual user accounts</div>
+                <div class="section-title">User Management</div>
+                <div class="section-sub">Browse, select, and manage individual users</div>
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" id="load-users"><i data-lucide="refresh-cw"></i> Load Users</button>
-                <button class="btn btn-ghost" id="users-list-btn" onclick="openModal('users-modal')"><i data-lucide="list"></i> User List</button>
-                <a class="btn btn-ghost" href="/admin-chat.html" target="_blank" rel="noopener"><i data-lucide="message-circle"></i> Chat</a>
+                <button class="btn btn-primary" onclick="openModal('modal-users')"><i data-lucide="users"></i> Open Users List</button>
+                <a class="btn btn-ghost" href="/admin-chat.html" target="_blank" rel="noopener"><i data-lucide="message-circle"></i> Chat Support</a>
               </div>
             </div>
-          </div>
-
-          <!-- users table -->
-          <div class="card">
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Balance</th>
-                    <th>Status</th>
-                    <th>Verified</th>
-                    <th>Joined</th>
-                    <th>Actions</th>
+                    <th>ID</th><th>Name</th><th>Email</th><th>Balance</th>
+                    <th>Verified</th><th>Joined</th><th>Actions</th>
                   </tr>
                 </thead>
-                <tbody id="users-tbody">
-                  <tr class="empty-row"><td colspan="8" style="text-align:center;color:var(--text-3)">Click <strong>Load Users</strong> to fetch user accounts.</td></tr>
+                <tbody id="users-table-body">
+                  <tr class="empty-row"><td colspan="7">Load users via admin key.</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
-
-          <!-- Hidden compat elements for admin.js -->
-          <div id="user-detail" style="display:none"></div>
-          <table style="display:none"><tbody id="transactions-tbody"></tbody></table>
         </div>
       </div><!-- /page-users -->
 
@@ -1024,7 +931,6 @@
               <div class="section-title"><i data-lucide="dollar-sign"></i> Balance Management</div>
             </div>
             <form id="credit-form">
-              <input type="hidden" id="credit-user-id" />
               <div class="form-grid form-3" style="margin-bottom:12px">
                 <label><span>Amount</span><input id="credit-amount" type="number" step="0.01" required placeholder="0.00" /></label>
                 <label><span>Currency</span>
@@ -1036,8 +942,8 @@
               </div>
               <div class="btn-group">
                 <button type="submit" class="btn btn-primary">Credit (Add)</button>
-                <button type="button" class="btn btn-ghost" id="edit-balance-btn">Set Balance</button>
-                <button type="button" class="btn btn-ghost" id="edit-total-btn">Edit Total Value</button>
+                <button type="button" class="btn btn-ghost">Set Balance</button>
+                <button type="button" class="btn btn-ghost" onclick="openModal('modal-edit-value')">Edit Total Value</button>
               </div>
             </form>
           </div>
@@ -1048,9 +954,8 @@
               <div class="section-title"><i data-lucide="briefcase"></i> Portfolio Holdings</div>
             </div>
             <form id="portfolio-form">
-              <input type="hidden" id="portfolio-user-id" />
               <div style="margin-bottom:12px">
-                <button type="button" class="btn btn-ghost btn-xs" id="add-asset-btn" onclick="openModal('modal-add-asset')">+ Add Asset</button>
+                <button type="button" class="btn btn-ghost btn-xs" onclick="openModal('modal-add-asset')">+ Add Asset</button>
               </div>
               <div id="portfolio-fields" class="stack" style="max-height:220px;overflow-y:auto;margin-bottom:12px">
                 <div style="text-align:center;color:var(--text-3);font-size:13px;padding:18px">No assets added.</div>
@@ -1067,7 +972,7 @@
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Asset</th><th>Amount</th><th>Price</th><th>Value</th><th>% Portfolio</th><th>Actions</th></tr></thead>
-                <tbody id="balance-holdings-body">
+                <tbody id="holdings-table-body">
                   <tr class="empty-row"><td colspan="6">No holdings. Select a user.</td></tr>
                 </tbody>
               </table>
@@ -1082,7 +987,7 @@
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Date</th><th>Type</th><th>Asset</th><th>Amount</th><th>Price</th><th>Total</th></tr></thead>
-                <tbody id="recent-trades-user">
+                <tbody id="recent-trades-body">
                   <tr class="empty-row"><td colspan="6">Select a user to view trades.</td></tr>
                 </tbody>
               </table>
@@ -1099,16 +1004,16 @@
           <div class="section-header">
             <div class="section-title">Transaction Management</div>
             <div class="btn-group">
-              <button class="btn btn-ghost btn-xs" onclick="window.ADMIN_TX?.fetchTransactions()">Refresh All</button>
-              <button class="btn btn-danger btn-xs" onclick="clearAllTrades()"><i data-lucide="trash-2"></i> Clear All Trades</button>
+              <button class="btn btn-ghost btn-xs">Refresh All</button>
+              <button class="btn btn-danger btn-xs"><i data-lucide="trash-2"></i> Clear All Trades</button>
             </div>
           </div>
 
           <div class="tab-bar">
-            <button class="tab-btn active" onclick="adminSwitchTab(event,'tx-deposits')">Deposits</button>
-            <button class="tab-btn" onclick="adminSwitchTab(event,'tx-withdrawals')">Withdrawals</button>
-            <button class="tab-btn" onclick="adminSwitchTab(event,'tx-growth')">Growth Trades</button>
-            <button class="tab-btn" onclick="adminSwitchTab(event,'tx-all')">All Transactions</button>
+            <button class="tab-btn active" onclick="switchTab(event,'tx-deposits')">Deposits</button>
+            <button class="tab-btn" onclick="switchTab(event,'tx-withdrawals')">Withdrawals</button>
+            <button class="tab-btn" onclick="switchTab(event,'tx-growth')">Growth Trades</button>
+            <button class="tab-btn" onclick="switchTab(event,'tx-all')">All Transactions</button>
           </div>
 
           <!-- Deposits -->
@@ -1116,14 +1021,14 @@
             <div class="section-header">
               <span class="section-title" style="font-size:13px">Deposit History</span>
               <div class="btn-group">
-                <button class="btn btn-ghost btn-xs" onclick="if(typeof loadAdminDeposits==='function')loadAdminDeposits()">Refresh</button>
-                <button class="btn btn-primary btn-xs" onclick="if(typeof addNewTransaction==='function')addNewTransaction('deposit')">+ Add Deposit</button>
+                <button class="btn btn-ghost btn-xs">Refresh</button>
+                <button class="btn btn-primary btn-xs">+ Add Deposit</button>
               </div>
             </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Date</th><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>TxID</th><th>Actions</th></tr></thead>
-                <tbody id="deposits-admin-tbody">
+                <tbody id="deposits-tbody">
                   <tr class="empty-row"><td colspan="7">No deposits yet.</td></tr>
                 </tbody>
               </table>
@@ -1135,14 +1040,14 @@
             <div class="section-header">
               <span class="section-title" style="font-size:13px">Withdrawal History</span>
               <div class="btn-group">
-                <button class="btn btn-ghost btn-xs" onclick="if(typeof loadWithdrawals==='function')loadWithdrawals()">Refresh</button>
-                <button class="btn btn-primary btn-xs" onclick="if(typeof addNewTransaction==='function')addNewTransaction('withdrawal')">+ Add Withdrawal</button>
+                <button class="btn btn-ghost btn-xs">Refresh</button>
+                <button class="btn btn-primary btn-xs">+ Add Withdrawal</button>
               </div>
             </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Date</th><th>User</th><th>Method</th><th>Amount</th><th>Status</th><th>Fee Status</th><th>TxID</th><th>Actions</th></tr></thead>
-                <tbody id="withdrawals-admin-tbody">
+                <tbody id="withdrawals-tbody">
                   <tr class="empty-row"><td colspan="8">No withdrawals yet.</td></tr>
                 </tbody>
               </table>
@@ -1154,32 +1059,32 @@
             <div class="section-header" style="margin-bottom:14px">
               <span class="section-title" style="font-size:13px">Balance Growth Trades</span>
               <div class="btn-group">
-                <button class="btn btn-ghost btn-xs" onclick="if(typeof loadGrowthTrades==='function')loadGrowthTrades()">Refresh</button>
-                <button class="btn btn-primary btn-xs" onclick="if(typeof triggerGrowthNow==='function')triggerGrowthNow()">Trigger Now</button>
+                <button class="btn btn-ghost btn-xs">Refresh</button>
+                <button class="btn btn-primary btn-xs">Trigger Now</button>
               </div>
             </div>
             <div class="growth-stats">
               <div class="growth-stat">
                 <div class="growth-stat-label">Total Trades</div>
-                <div class="growth-stat-value" id="growth-total-trades">—</div>
+                <div class="growth-stat-value" id="growth-total">—</div>
               </div>
               <div class="growth-stat">
                 <div class="growth-stat-label">Total Volume</div>
-                <div class="growth-stat-value" id="growth-total-volume">—</div>
+                <div class="growth-stat-value" id="growth-volume">—</div>
               </div>
               <div class="growth-stat">
                 <div class="growth-stat-label">Avg Boost / Trade</div>
-                <div class="growth-stat-value" style="color:var(--success)" id="growth-avg-boost">—</div>
+                <div class="growth-stat-value" style="color:var(--success)" id="growth-avg">—</div>
               </div>
               <div class="growth-stat">
                 <div class="growth-stat-label">Peak Balance</div>
-                <div class="growth-stat-value" id="growth-peak-balance">—</div>
+                <div class="growth-stat-value" id="growth-peak">—</div>
               </div>
             </div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>Date</th><th>Type</th><th>Asset</th><th>Amount</th><th>Price</th><th>Total</th><th>Before</th><th>After</th><th>Boost %</th></tr></thead>
-                <tbody id="growth-trades-tbody">
+                <tbody id="growth-tbody">
                   <tr class="empty-row"><td colspan="9">Select a user to view growth trades.</td></tr>
                 </tbody>
               </table>
@@ -1195,7 +1100,7 @@
             <div class="table-wrap">
               <table>
                 <thead><tr><th>ID</th><th>User</th><th>Type</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody id="all-transactions-tbody">
+                <tbody id="all-tx-tbody">
                   <tr class="empty-row"><td colspan="7">No transactions.</td></tr>
                 </tbody>
               </table>
@@ -1211,13 +1116,13 @@
         <div class="stack">
           <div class="section-header">
             <div class="section-title"><i data-lucide="trending-up"></i> Live Market Overview</div>
-            <button class="btn btn-ghost btn-xs" onclick="adminRefreshMarket()"><i data-lucide="refresh-cw"></i> Refresh Prices</button>
+            <button class="btn btn-ghost btn-xs">Refresh Prices</button>
           </div>
           <div class="table-wrap">
             <table id="market-table">
-              <thead><tr><th>Asset</th><th>Price</th><th>24h Change</th><th>High</th><th>Low</th><th>Volume</th><th>Market Cap</th></tr></thead>
-              <tbody id="market-tbody">
-                <tr class="empty-row"><td colspan="7">Loading market data…</td></tr>
+              <thead><tr><th>Asset</th><th>Price</th><th>24h Change</th><th>Volume</th><th>Action</th></tr></thead>
+              <tbody id="market-body">
+                <tr class="empty-row"><td colspan="5">Loading market data…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1242,10 +1147,10 @@
                 <textarea id="prompt-message" placeholder="Message to show as a prompt to users…"></textarea>
               </label>
               <label><span>Target User IDs (leave blank to broadcast)</span>
-                <input id="prompt-user-ids" placeholder="e.g. 1, 2, 5  — or leave empty for all" />
+                <input id="prompt-targets" placeholder="e.g. 1, 2, 5  — or leave empty for all" />
               </label>
               <div>
-                <button class="btn btn-primary" id="send-prompt-btn">Send Prompt</button>
+                <button class="btn btn-primary">Send Prompt</button>
               </div>
             </div>
           </div>
@@ -1257,7 +1162,7 @@
                 <div class="section-title"><i data-lucide="bell"></i> Active Prompts</div>
                 <div class="section-sub">Disable to stop showing to users</div>
               </div>
-              <button class="btn btn-ghost btn-xs" id="refresh-prompts-btn">Refresh</button>
+              <button class="btn btn-ghost btn-xs">Refresh</button>
             </div>
             <div class="stack" id="active-prompts-list">
               <!-- Example item (populated via JS) -->
@@ -1288,7 +1193,7 @@
           <div class="section-header">
             <div class="section-title"><i data-lucide="message-square"></i> Testimonies</div>
             <div class="btn-group">
-              <button class="btn btn-ghost btn-xs" onclick="if(typeof window.loadAllTestimonies==='function')window.loadAllTestimonies()">Refresh</button>
+              <button class="btn btn-ghost btn-xs">Refresh</button>
               <button class="btn btn-primary btn-xs" onclick="openModal('modal-testimony')">+ Add Testimony</button>
             </div>
           </div>
@@ -1344,10 +1249,6 @@
               </div>
             </div>
           </div>
-          <!-- Hidden compat containers for admin-testimonies.js -->
-          <div id="testimonies-list" style="display:none"></div>
-          <div class="testimonies-mobile-view" style="display:none"><button>View Testimonies</button></div>
-          <form id="testimony-form" style="display:none"></form>
         </div>
       </div><!-- /page-testimonies -->
 
@@ -1365,14 +1266,14 @@
               </div>
             </div>
             <div class="addr-grid" style="margin-bottom:14px">
-              <label><span>BTC</span><input id="deposit-address-BTC" data-deposit-symbol="BTC" placeholder="bc1…" /></label>
-              <label><span>ETH</span><input id="deposit-address-ETH" data-deposit-symbol="ETH" placeholder="0x…" /></label>
-              <label><span>USDT</span><input id="deposit-address-USDT" data-deposit-symbol="USDT" placeholder="T…" /></label>
-              <label><span>USDC</span><input id="deposit-address-USDC" data-deposit-symbol="USDC" placeholder="0x…" /></label>
+              <label><span>BTC</span><input id="dep-btc" placeholder="bc1…" /></label>
+              <label><span>ETH</span><input id="dep-eth" placeholder="0x…" /></label>
+              <label><span>USDT</span><input id="dep-usdt" placeholder="T…" /></label>
+              <label><span>USDC</span><input id="dep-usdc" placeholder="0x…" /></label>
             </div>
             <div class="btn-group">
-              <button class="btn btn-primary" id="save-deposit-addresses">Save Addresses</button>
-              <button class="btn btn-ghost" id="reset-deposit-addresses">Reset to Defaults</button>
+              <button class="btn btn-primary">Save Addresses</button>
+              <button class="btn btn-ghost">Reset to Defaults</button>
             </div>
           </div>
 
@@ -1389,10 +1290,10 @@
               &nbsp;·&nbsp; Next run: <span style="color:var(--text-3)">in 4 min</span>
             </div>
             <div class="btn-group">
-              <button class="btn btn-success" id="sim-start-settings" onclick="document.getElementById('sim-start').click()"><i data-lucide="play"></i> Start Simulator</button>
-              <button class="btn btn-warn" id="sim-pause-settings" onclick="document.getElementById('sim-pause').click()"><i data-lucide="pause"></i> Pause Simulator</button>
-              <button class="btn btn-primary" id="trigger-growth-btn-settings" onclick="document.getElementById('trigger-growth-btn').click()">Trigger Growth — This User</button>
-              <button class="btn btn-ghost" id="trigger-growth-btn-all-settings" onclick="document.getElementById('trigger-growth-btn-all').click()">Trigger Growth — All Users</button>
+              <button class="btn btn-success"><i data-lucide="play"></i> Start Simulator</button>
+              <button class="btn btn-warn"><i data-lucide="pause"></i> Pause Simulator</button>
+              <button class="btn btn-primary">Trigger Growth — This User</button>
+              <button class="btn btn-ghost">Trigger Growth — All Users</button>
             </div>
           </div>
 
@@ -1408,7 +1309,7 @@
               <select id="current-user-select" style="min-width:220px">
                 <option value="">— none —</option>
               </select>
-              <button class="btn btn-primary" id="set-preview-user-btn" type="button" onclick="document.getElementById('current-user-select').dispatchEvent(new Event('change'))">Set Preview User</button>
+              <button class="btn btn-primary">Set Preview User</button>
             </div>
           </div>
 
@@ -1427,13 +1328,12 @@
                 <div class="section-title"><i data-lucide="shield"></i> Email Verification Codes</div>
                 <div class="section-sub">OTP codes requested by users — valid 10 minutes</div>
               </div>
-              <button class="btn btn-ghost btn-xs" id="ver-refresh-btn" onclick="loadVerificationCodes()"><i data-lucide="refresh-cw"></i> Refresh</button>
+              <button class="btn btn-ghost btn-xs"><i data-lucide="refresh-cw"></i> Refresh</button>
             </div>
-            <div id="ver-status" style="display:none;font-size:12px;padding:8px 10px;border-radius:6px;margin-bottom:10px"></div>
             <div class="table-wrap">
               <table>
                 <thead><tr><th>User</th><th>Email</th><th style="text-align:center">Code</th><th style="text-align:center">Expires In</th><th>Requested At</th></tr></thead>
-                <tbody id="ver-codes-body">
+                <tbody id="otp-tbody">
                   <tr class="empty-row"><td colspan="5">Enter admin key and click Refresh.</td></tr>
                 </tbody>
               </table>
@@ -1447,11 +1347,11 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="form-2-danger">
               <div>
                 <div class="danger-desc">Delete all trade history for every user. This cannot be undone.</div>
-                <button class="btn btn-danger" onclick="clearAllTrades()"><i data-lucide="trash-2"></i> Clear All Trades</button>
+                <button class="btn btn-danger"><i data-lucide="trash-2"></i> Clear All Trades</button>
               </div>
               <div>
                 <div class="danger-desc">Wipe all data for the currently selected user.</div>
-                <button class="btn btn-danger" id="reset-user-btn">Reset Selected User</button>
+                <button class="btn btn-danger">Reset Selected User</button>
               </div>
             </div>
           </div>
@@ -1464,123 +1364,11 @@
   </div><!-- /main-area -->
 </div><!-- /layout -->
 
-</div><!-- /admin-wrapper -->
 
 <!-- ══════════════════════════════════════════════════════════════
      SCRIPT — Navigation & UI Logic
 ══════════════════════════════════════════════════════════════ -->
 <script>
-  // ── Navigation ──────────────────────────────────────────────
-  // ── Auth Gate ─────────────────────────────────────────────────
-  (function () {
-    const gate      = document.getElementById('auth-gate');
-    const wrapper   = document.getElementById('admin-wrapper');
-    const keyInput  = document.getElementById('auth-key-input');
-    const showBtn   = document.getElementById('auth-show-btn');
-    const eyeIcon   = document.getElementById('auth-eye-icon');
-    const errEl     = document.getElementById('auth-error');
-    const submitBtn = document.getElementById('auth-submit-btn');
-    const spinner   = document.getElementById('auth-spinner');
-    const btnLabel  = document.getElementById('auth-btn-label');
-
-    // Show / hide toggle
-    let visible = false;
-    showBtn.addEventListener('click', () => {
-      visible = !visible;
-      keyInput.type = visible ? 'text' : 'password';
-      eyeIcon.setAttribute('data-lucide', visible ? 'eye-off' : 'eye');
-      if (window.lucide) lucide.createIcons();
-    });
-
-    function unlock(key) {
-      sessionStorage.setItem('adminKey', key);
-      sessionStorage.setItem('admin_key', key);
-      gate.classList.add('hidden');
-      wrapper.style.display = '';
-      // Re-init Lucide icons now that the full layout is visible
-      if (window.lucide) lucide.createIcons();
-      // Wipe any stale portfolio data that portfolio.js loaded from localStorage
-      // or pulled from AuthService before we got here.
-      if (window.CBPortfolio) window.CBPortfolio.clearAll();
-      // Reset stat cards to a neutral placeholder so they show nothing
-      // until the admin explicitly selects a target user.
-      ['total-value','change-24h','available-balance'].forEach(function(id){
-        var el = document.getElementById(id);
-        if (el) el.textContent = '$\u2014';
-      });
-      var posEl = document.getElementById('active-positions');
-      if (posEl) posEl.textContent = '\u2014';
-      var badge = document.getElementById('stat-total-badge');
-      if (badge) { badge.textContent = '\u2014'; badge.className = 'stat-badge badge-neu'; }
-      var badge24 = document.getElementById('stat-24h-badge');
-      if (badge24) { badge24.textContent = '24H'; badge24.className = 'stat-badge badge-neu'; }
-      var sub24 = document.getElementById('stat-24h-pct');
-      if (sub24) sub24.textContent = '\u2014';
-    }
-
-    function setLoading(on) {
-      submitBtn.disabled = on;
-      spinner.style.display = on ? 'inline-flex' : 'none';
-      btnLabel.textContent = on ? 'Verifying…' : 'Access Admin Panel';
-    }
-
-    function showError(msg) {
-      errEl.textContent = msg || 'Incorrect admin key. Please try again.';
-      errEl.classList.add('visible');
-    }
-
-    let _retryTimer = null;
-    async function tryAuth(key, isAutoRetry) {
-      if (!key) { showError('Please enter your admin key.'); return; }
-      if (!isAutoRetry) errEl.classList.remove('visible');
-      setLoading(true);
-
-      const apiBase = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-        ? 'http://localhost:5001/api'
-        : location.origin + '/api';
-
-      try {
-        const res = await fetch(`${apiBase}/admin/users`, {
-          headers: { 'x-admin-key': key }
-        });
-        if (res.ok) {
-          if (_retryTimer) { clearTimeout(_retryTimer); _retryTimer = null; }
-          unlock(key);
-        } else if (res.status === 503 || res.status === 404) {
-          // Server still starting — retry silently up to 10 times (20s total)
-          const prev = parseInt(submitBtn.dataset.retries || '0', 10);
-          if (prev < 10) {
-            submitBtn.dataset.retries = prev + 1;
-            btnLabel.textContent = 'Server starting…';
-            _retryTimer = setTimeout(() => tryAuth(key, true), 2000);
-          } else {
-            showError('Server is taking too long to start. Refresh and try again.');
-          }
-        } else {
-          delete submitBtn.dataset.retries;
-          showError('Incorrect admin key. Please try again.');
-        }
-      } catch (e) {
-        showError('Could not reach server. Check your connection.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    // Submit on button click or Enter key
-    submitBtn.addEventListener('click', () => { delete submitBtn.dataset.retries; tryAuth(keyInput.value.trim()); });
-    keyInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { delete submitBtn.dataset.retries; tryAuth(keyInput.value.trim()); }
-    });
-
-    // Auto-unlock if key already saved in session
-    const saved = sessionStorage.getItem('adminKey') || sessionStorage.getItem('admin_key');
-    if (saved) {
-      keyInput.value = saved;
-      tryAuth(saved);
-    }
-  })();
-
   // ── Navigation ──────────────────────────────────────────────
   const pageTitles = {
     'page-dashboard':    'Dashboard',
@@ -1603,14 +1391,6 @@
     localStorage.setItem('admin_last_page', id);
     // close sidebar on mobile
     if (window.innerWidth <= 900) closeSidebar();
-    // Lazy-load market data the first time this page is shown
-    if (id === 'page-market') {
-      const tbody = document.getElementById('market-tbody');
-      const isEmpty = !tbody || tbody.querySelector('.empty-row') || tbody.innerHTML.trim() === '';
-      if (isEmpty && typeof window.adminRefreshMarket === 'function') {
-        window.adminRefreshMarket();
-      }
-    }
   }
 
   // Restore last visited page on load
@@ -1635,27 +1415,8 @@
   }
 
   // ── Modals ───────────────────────────────────────────────────
-  function openModal(id) {
-    document.getElementById(id)?.classList.add('open');
-    // Auto-load users list when the modal opens if it has no loaded cards yet
-    if (id === 'users-modal') {
-      const container = document.getElementById('users-list-container');
-      const hasCards  = container && container.querySelector('.user-card');
-      if (!hasCards) {
-        const key = (document.getElementById('admin-key')?.value ||
-                     sessionStorage.getItem('adminKey') || '').trim();
-        if (key) document.getElementById('load-users')?.click();
-      }
-    }
-  }
+  function openModal(id) { document.getElementById(id)?.classList.add('open'); }
   function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
-  function filterUsersList(q) {
-    const norm = (q || '').toLowerCase().trim();
-    document.querySelectorAll('#users-list-container .user-card').forEach(card => {
-      const text = card.textContent.toLowerCase();
-      card.style.display = (!norm || text.includes(norm)) ? '' : 'none';
-    });
-  }
 
   // Close modal on overlay click
   document.querySelectorAll('.modal-overlay').forEach(el => {
@@ -1663,18 +1424,14 @@
   });
 
   // ── Tabs ─────────────────────────────────────────────────────
-  function adminSwitchTab(e, paneId) {
-    const btn = e.target.closest('.tab-btn') || e.target;
-    const bar = btn.closest('.tab-bar');
+  function switchTab(e, paneId) {
+    const bar = e.target.closest('.tab-bar');
     bar?.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Use style.display directly — overrides flex container CSS reliably
-    bar?.parentElement?.querySelectorAll('.tab-pane').forEach(p => {
-      p.style.display = 'none';
-      p.classList.remove('active');
-    });
-    const target = document.getElementById(paneId);
-    if (target) { target.style.display = 'block'; target.classList.add('active'); }
+    e.target.classList.add('active');
+
+    const container = bar?.nextElementSibling?.parentNode;
+    container?.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById(paneId)?.classList.add('active');
   }
 
   // ── Theme ────────────────────────────────────────────────────
@@ -1682,13 +1439,59 @@
     const html = document.documentElement;
     const isDark = html.getAttribute('data-theme') === 'dark';
     html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('icon-sun').style.display  = isDark ? 'none' : '';
-    document.getElementById('icon-moon').style.display = isDark ? '' : 'none';
+    document.getElementById('icon-sun').style.display  = isDark ? 'none' : 'inline-flex';
+    document.getElementById('icon-moon').style.display = isDark ? 'inline-flex' : 'none';
     document.getElementById('theme-label').textContent = isDark ? 'Dark' : 'Light';
   }
 
+  // ── Mock: populate sample user cards in modal ────────────────
+  const mockUsers = [
+    { id: 1, name: 'Alice Mercer',  email: 'alice@example.com',  balance: '$14,320.50', verified: true  },
+    { id: 2, name: 'Bob Tran',      email: 'bob@example.com',    balance: '$3,800.00',  verified: true  },
+    { id: 3, name: 'Carol Singh',   email: 'carol@example.com',  balance: '$88,200.00', verified: false },
+    { id: 4, name: 'David Kim',     email: 'david@example.com',  balance: '$500.00',    verified: true  },
+  ];
+
+  function renderUserModal() {
+    const body = document.getElementById('users-list-body');
+    body.innerHTML = mockUsers.map(u => `
+      <div class="user-card" onclick="selectUser(${u.id},'${u.name}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="user-card-name">${u.name}</div>
+            <div class="user-card-email">${u.email}</div>
+            <div class="user-card-balance">${u.balance}</div>
+          </div>
+          <span class="badge ${u.verified ? 'badge-green' : 'badge-red'}">${u.verified ? 'Verified' : 'Unverified'}</span>
+        </div>
+        <div class="user-card-meta">
+          <span class="badge badge-gray">#${u.id}</span>
+          <button class="btn btn-primary btn-xs">Select</button>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('nav-users-count').textContent = mockUsers.length;
+  }
+
+  function selectUser(id, name) {
+    document.getElementById('active-user-name').textContent = name;
+    closeModal('modal-users');
+  }
+
+  // Simulate load users on key entry
+  document.getElementById('load-users-btn')?.addEventListener('click', () => {
+    const key = document.getElementById('admin-key').value.trim();
+    if (!key) { alert('Enter admin key first.'); return; }
+    renderUserModal();
+    openModal('modal-users');
+  });
+
+  // Init with sample data shown on modal open
+  renderUserModal();
+
   // ── Topbar admin-key popup + sync ────────────────────────────
   (function () {
+    const btn        = document.getElementById('topbar-key-btn');
     const popup      = document.getElementById('topbar-key-popup');
     const wrap       = document.getElementById('topbar-key-wrap');
     const topbarInput= document.getElementById('admin-key-topbar');
@@ -1699,12 +1502,12 @@
     function syncDot(val) { dot.classList.toggle('active', val.length > 0); }
     function setHint(msg) { hint.textContent = msg; setTimeout(() => { hint.textContent = ''; }, 1800); }
 
-    wrap.addEventListener('click', (e) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = popup.classList.contains('open');
       popup.classList.toggle('open');
       if (!isOpen) {
-        const r = wrap.getBoundingClientRect();
+        const r = btn.getBoundingClientRect();
         popup.style.top  = (r.bottom + 6) + 'px';
         // keep popup inside viewport on mobile
         const pw = 210;
@@ -1713,9 +1516,6 @@
         popup.style.left  = 'auto';
         topbarInput.focus();
       }
-    });
-    wrap.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wrap.click(); }
     });
 
     // Close on outside click
@@ -1734,25 +1534,19 @@
     topbarInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         sessionStorage.setItem('admin_key', topbarInput.value);
-        sessionStorage.setItem('adminKey', topbarInput.value); // admin.js compat
         setHint('saved ✓');
         popup.classList.remove('open');
       }
       if (e.key === 'Escape') popup.classList.remove('open');
     });
 
-    // Restore from sessionStorage on refresh (check both key formats)
-    const saved = sessionStorage.getItem('adminKey') || sessionStorage.getItem('admin_key');
+    // Restore from sessionStorage on refresh
+    const saved = sessionStorage.getItem('admin_key');
     if (saved) { topbarInput.value = saved; dashInput.value = saved; syncDot(saved); }
   })();
 
   // Initialise all Lucide icons
   lucide.createIcons();
-
-  // Initialise tab-pane display states (force inline style so flex container can't override)
-  document.querySelectorAll('.tab-pane').forEach(p => {
-    p.style.display = p.classList.contains('active') ? 'block' : 'none';
-  });
 
   // ── Inline-editable stat values ──────────────────────────────
   document.querySelectorAll('.stat-val').forEach(el => {
@@ -1760,101 +1554,22 @@
       if (el.contentEditable === 'true') return;
       el.contentEditable = 'true';
       el.focus();
+      // Select all text
       const range = document.createRange();
       range.selectNodeContents(el);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
     });
-    el.addEventListener('blur', () => { el.contentEditable = 'false'; });
+    el.addEventListener('blur', () => {
+      el.contentEditable = 'false';
+    });
     el.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
       if (e.key === 'Escape') { e.preventDefault(); el.blur(); }
     });
   });
-
-  // ── Email Verification Codes ──────────────────────────────────
-  function loadVerificationCodes() {
-    const key = document.getElementById('admin-key')?.value?.trim()
-             || sessionStorage.getItem('adminKey') || '';
-    const statusEl = document.getElementById('ver-status');
-    const tbody = document.getElementById('ver-codes-body');
-    if (!key) {
-      if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.style.background = 'rgba(239,68,68,0.12)';
-        statusEl.style.color = '#ef4444';
-        statusEl.textContent = 'Enter your admin key first.';
-      }
-      return;
-    }
-    const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : location.origin + '/api');
-    fetch(`${apiBase}/admin/verification-codes`, { headers: { 'x-admin-key': key } })
-      .then(r => r.json())
-      .then(data => {
-        const codes = data.codes || data || [];
-        if (!tbody) return;
-        if (!codes.length) {
-          tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No active verification codes.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = codes.map(c => {
-          const exp = c.expires_at ? Math.max(0, Math.round((new Date(c.expires_at) - Date.now()) / 60000)) : '?';
-          return `<tr>
-            <td>${c.user_name || c.user_id || '—'}</td>
-            <td>${c.email || '—'}</td>
-            <td style="text-align:center"><span class="otp-code">${c.code}</span></td>
-            <td style="text-align:center">${exp} min</td>
-            <td>${c.created_at ? new Date(c.created_at).toLocaleString() : '—'}</td>
-          </tr>`;
-        }).join('');
-      })
-      .catch(() => {
-        if (tbody) tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Failed to load codes.</td></tr>';
-      });
-  }
-
-  // ── Clear All Trades ─────────────────────────────────────────
-  function clearAllTrades() {
-    if (!confirm('Delete ALL trade history for every user? This cannot be undone.')) return;
-    const key = document.getElementById('admin-key')?.value?.trim()
-             || sessionStorage.getItem('adminKey') || '';
-    if (!key) { alert('Admin key required'); return; }
-    const apiBase = window.__apiBase || (location.hostname === 'localhost' ? 'http://localhost:5001/api' : location.origin + '/api');
-    fetch(`${apiBase}/admin/clear-trades`, {
-      method: 'POST',
-      headers: { 'x-admin-key': key, 'Content-Type': 'application/json' }
-    }).then(r => r.ok ? alert('All trades cleared.') : alert('Failed to clear trades.'))
-      .catch(() => alert('Error clearing trades.'));
-  }
 </script>
-
-<!-- API base + theme init -->
-<script>
-  (function() {
-    var host = (typeof location !== 'undefined' && location.hostname) || 'localhost';
-    var isLocal = host === 'localhost' || host === '127.0.0.1';
-    if (!window.__apiBase) {
-      window.__apiBase = isLocal ? 'http://localhost:5001/api' : location.origin + '/api';
-    }
-    // Prevent portfolio.js from auto-populating stat cards with the authenticated
-    // user's own data. The admin picks a target user explicitly.
-    window.__ADMIN_MODE = true;
-  })();
-</script>
-
-<!-- Backend JS -->
-<script src="/js/portfolio.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/animations.js"></script>
-<script src="/js/markets.js"></script>
-<script src="/js/dashboard.js"></script>
-<script src="/js/main.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/testimonies.js"></script>
-<script src="/js/admin-testimonies.js"></script>
-<script src="/js/admin-transactions.js"></script>
-<script src="/js/admin.js"></script>
 
 </body>
 </html>

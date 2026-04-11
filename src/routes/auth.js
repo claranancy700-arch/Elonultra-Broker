@@ -65,7 +65,7 @@ router.post('/login', async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      'SELECT id, email, password_hash, name, phone, fullName FROM users WHERE email=$1',
+      'SELECT id, email, password_hash, name, phone, fullName, COALESCE(email_verified, FALSE) AS email_verified FROM users WHERE email=$1',
       [email]
     );
 
@@ -93,7 +93,9 @@ router.post('/login', async (req, res) => {
         email: user.email,
         name: user.name || user.fullname || null,
         fullName: user.fullname || user.name || null,
-        phone: user.phone || null
+        phone: user.phone || null,
+        email_verified: user.email_verified,
+        emailVerified: user.email_verified
       }
     });
   } catch (err) {
@@ -113,7 +115,7 @@ router.get('/me', verifyToken, async (req, res) => {
     
     // Fetch user and portfolio in parallel to speed up response time
     const [userResult, portfolioResult] = await Promise.all([
-      db.query('SELECT id, name, email, phone, fullName, COALESCE(balance,0) as balance, COALESCE(portfolio_value,0) as portfolio_value, sim_enabled, sim_paused, created_at FROM users WHERE id=$1', [userId]),
+      db.query('SELECT id, name, email, phone, fullName, COALESCE(balance,0) as balance, COALESCE(portfolio_value,0) as portfolio_value, sim_enabled, sim_paused, created_at, email_verified FROM users WHERE id=$1', [userId]),
       // Try to fetch portfolio in parallel, but don't fail if it doesn't exist
       db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance FROM portfolio WHERE user_id=$1', [userId])
         .catch(e => ({ rows: [] }))

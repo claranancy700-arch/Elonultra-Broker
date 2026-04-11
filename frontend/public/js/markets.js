@@ -220,6 +220,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderMarketTable();
   renderTrending();
 
+  // Expose refresh helper for the admin panel's Refresh Prices button and page navigation
+  window.adminRefreshMarket = async function() {
+    const tbody = document.getElementById('market-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-3)">Refreshing…</td></tr>';
+    const ok = await fetchMarketData();
+    if (!ok) useMockData();
+    renderMarketTable();
+    renderTrending();
+  };
+
   // Search filter
   const searchEl = document.getElementById('market-search');
   if (searchEl) {

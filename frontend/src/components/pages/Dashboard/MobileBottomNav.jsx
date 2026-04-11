@@ -1,80 +1,87 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './MobileBottomNav.css';
+
+const navItems = [
+  {
+    path: '/dashboard',
+    label: 'Home',
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    ),
+  },
+  {
+    path: '/markets',
+    label: 'Markets',
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+        <polyline points="16 7 22 7 22 13"/>
+      </svg>
+    ),
+  },
+  {
+    path: '/transactions',
+    label: 'Activity',
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <line x1="2" y1="10" x2="22" y2="10"/>
+        <line x1="6" y1="15" x2="10" y2="15"/>
+      </svg>
+    ),
+  },
+  {
+    path: '/help',
+    label: 'Help',
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+        <circle cx="12" cy="17" r="0.5" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    path: '/settings',
+    label: 'Profile',
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
+];
 
 const MobileBottomNav = () => {
   const location = useLocation();
 
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-    { path: '/markets', label: 'Markets', icon: 'markets' },
-    { path: '/transactions', label: 'Transactions', icon: 'history' },
-    { path: '/help', label: 'Help', icon: 'help' },
-    { path: '/settings', label: 'Account', icon: 'account' },
-  ];
-
-  const getIcon = (iconName) => {
-    switch (iconName) {
-      case 'dashboard':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-        );
-      case 'markets':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            <polyline points="17 6 23 6 23 12"></polyline>
-          </svg>
-        );
-      case 'history':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-        );
-      case 'account':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path>
-            <path d="M12 14c-4 0-6 2-6 4v2h12v-2c0-2-2-4-6-4z"></path>
-          </svg>
-        );
-      case 'help':
-        return (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 12a8 8 0 0116 0"></path>
-            <rect x="3" y="12" width="4" height="6" rx="1.5"></rect>
-            <rect x="17" y="12" width="4" height="6" rx="1.5"></rect>
-            <path d="M8 20h8"></path>
-          </svg>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
-    <nav className="mobile-bottom-nav">
-      {navItems.map((item) => (
-        <Link
-          key={item.path}
-          to={item.path}
-          className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-          title={item.label}
-        >
-          <div className="nav-icon">
-            {getIcon(item.icon)}
-          </div>
-          <span className="nav-label">{item.label}</span>
-        </Link>
-      ))}
+    <nav className="mobile-bottom-nav" aria-label="Main navigation">
+      <div className="nav-inner">
+        {navItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`nav-item${isActive ? ' active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <div className="nav-icon-wrap">{item.icon}</div>
+              <span className="nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 };
+
 export default MobileBottomNav;

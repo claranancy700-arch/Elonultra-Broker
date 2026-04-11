@@ -274,34 +274,35 @@ async function loadUserDetails(id, key){
               amount: Number(amount) || 0,
               value: 0
             }));
-            
+
             // IMPORTANT: Clear old portfolio data first
             window.CBPortfolio.setAssets([]);
-            // Set balance to user's cash balance
-            const userBalance = Number(u.balance) || 0;
+            // Use API-returned balance (may have been auto-corrected by sync logic), fall back to user record
+            const userBalance = Number(p.balance != null ? p.balance : u.balance) || 0;
             window.CBPortfolio.setBalance(userBalance);
-            // Update the available-balance display element
-            const availableBalanceEl = document.getElementById('available-balance');
-            if (availableBalanceEl) {
-              availableBalanceEl.textContent = '$' + userBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            }
-            // Set assets AFTER setting balance
+            // Set assets AFTER setBalance so the zero-balance reset doesn't wipe them
             if (assetsList.length > 0) {
               window.CBPortfolio.setAssets(assetsList);
             }
-            // If server provided a portfolio total value, use it (more accurate than calculating)
-            if (typeof p.portfolio_value !== 'undefined' && window.CBPortfolio.setTotalValue) {
-              window.CBPortfolio.setTotalValue(Number(p.portfolio_value) || 0);
+            // API returns 'totalValue' (not 'portfolio_value') — use it for the Total Portfolio card
+            const serverTotal = Number(p.totalValue != null ? p.totalValue : p.portfolio_value) || 0;
+            if (serverTotal > 0 && window.CBPortfolio.setTotalValue) {
+              window.CBPortfolio.setTotalValue(serverTotal);
             }
-            
-            // OPTIMIZATION: Skip refreshPrices call here - use cached prices instead
-            // The prices were already fetched by backend /api/portfolio endpoint
-            // Only render the cards with existing price data to avoid extra API calls
+
+            // Render immediately with balance / total we already have, then kick off a
+            // price refresh so holdings table shows real per-asset prices and values.
             if (window.renderPortfolioCards) window.renderPortfolioCards();
             if (window.renderHoldings) window.renderHoldings();
-            // Skip renderMarketOverview for now - it makes another CoinGecko call
-            // if (window.renderMarketOverview) window.renderMarketOverview();
-            console.log('[Admin] Portfolio summary cards rendered (no price refresh)');
+            if (window.CBPortfolio.refreshPrices) {
+              window.CBPortfolio.refreshPrices()
+                .then(() => {
+                  if (window.renderPortfolioCards) window.renderPortfolioCards();
+                  if (window.renderHoldings) window.renderHoldings();
+                })
+                .catch(e => debugWarn('Price refresh failed', e));
+            }
+            console.log('[Admin] Portfolio cards rendered; live price refresh requested');
           }
         }catch(e){ debugWarn('Failed to populate broker preview', e); }
       })

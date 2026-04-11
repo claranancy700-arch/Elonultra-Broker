@@ -5,12 +5,17 @@ const { verifyToken } = require('../middleware/auth');
 const { recordLossIfApplicable } = require('../services/balanceChanges');
 const sse = require('../sse/broadcaster');
 
-const WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const MIN_WITHDRAWAL_FEE_RATE = 0.00045; // 0.045%
+const MAX_WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
 const FEE_CURRENCY = 'USD';
 
-// POST: Request a new withdrawal (adds 0.05% fee requirement, PENDING until admin approval)
+function getRandomWithdrawalFeeRate() {
+  return MIN_WITHDRAWAL_FEE_RATE + Math.random() * (MAX_WITHDRAWAL_FEE_RATE - MIN_WITHDRAWAL_FEE_RATE);
+}
+
+// POST: Request a new withdrawal (adds a randomized fee in 0.045%-0.05%, PENDING until admin approval)
 router.post('/', verifyToken, async (req, res) => {
-  const { amount, crypto_type, crypto_address } = req.body;
+  const { amount, crypto_type, crypto_address, fee_rate } = req.body;
   const userId = req.userId;
   console.log('[WITHDRAWAL REQUEST] Incoming request from user:', userId, 'payload:', { amount, crypto_type, crypto_address });
 
@@ -48,17 +53,28 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const currentBalance = parseFloat(balRes.rows[0].balance) || 0;
-    const feeAmount = amt * WITHDRAWAL_FEE_RATE;
+    const parsedFeeRate = Number(fee_rate);
+    const feeRate = Number.isFinite(parsedFeeRate)
+      ? parsedFeeRate
+      : getRandomWithdrawalFeeRate();
+
+    if (feeRate < MIN_WITHDRAWAL_FEE_RATE || feeRate > MAX_WITHDRAWAL_FEE_RATE) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Invalid withdrawal fee rate' });
+    }
+
+    const feeAmount = amt * feeRate;
     const totalRequired = amt + feeAmount;
+    const feePercent = (feeRate * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
     
     // Validate user has sufficient funds, but don't deduct yet
     if (currentBalance < totalRequired) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + 0.05% fee), Available: $${currentBalance.toFixed(2)}` });
+      return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + ${feePercent}% fee), Available: $${currentBalance.toFixed(2)}` });
     }
     const balanceSnapshot = currentBalance;
 
-    console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount, feeCurrency: FEE_CURRENCY });
+    console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount, feeRate, feeCurrency: FEE_CURRENCY });
     const withdrawalResult = await client.query(
       `INSERT INTO withdrawals(user_id, amount, crypto_type, crypto_address, status, balance_snapshot, fee_amount, fee_currency, fee_status)
        VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'required')
@@ -91,6 +107,7 @@ router.post('/', verifyToken, async (req, res) => {
         status: withdrawal.status,
         created_at: withdrawal.created_at,
         fee_amount: withdrawal.fee_amount,
+        fee_rate: feeRate,
         fee_currency: withdrawal.fee_currency,
         fee_status: withdrawal.fee_status,
         balance_snapshot: withdrawal.balance_snapshot,

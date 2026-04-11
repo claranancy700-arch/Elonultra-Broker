@@ -1,4 +1,6 @@
 /* global AuthService */
+window.renderPortfolioCards = renderPortfolioCards;
+window.renderHoldings = renderHoldings;
 function renderPortfolioCards(){
   // Guard against missing CBPortfolio
   if (!window.CBPortfolio) {
@@ -72,27 +74,59 @@ function renderHoldings(){
     console.warn('CBPortfolio not loaded');
     return;
   }
-  
+
   const assets = window.CBPortfolio.getAssets();
-  const total = window.CBPortfolio.getTotalValue();
+  const total  = window.CBPortfolio.getTotalValue();
+  const active = assets.filter(a => a.amount > 0);
+
+  const fmt2 = v => Number(v || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  // ── Quick-view table (dashboard page) ─────────────────────────
   const tbody = document.getElementById('holdings-body');
-  
-  if(!tbody) {
-    console.warn('holdings-body element not found');
-    return;
+  if (tbody) {
+    if (active.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No holdings for this user.</td></tr>';
+    } else {
+      tbody.innerHTML = active.map(asset => `
+        <tr>
+          <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name || ''}</span></td>
+          <td>${asset.amount.toLocaleString()}</td>
+          <td>$${fmt2(asset.price)}</td>
+          <td>$${fmt2(asset.value)}</td>
+          <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : '0.0'}%</td>
+          <td>—</td>
+        </tr>
+      `).join('');
+    }
   }
 
-  tbody.innerHTML = assets
-    .filter(a => a.amount > 0)
-    .map(asset => `
-      <tr>
-        <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name || ''}</span></td>
-        <td>${asset.amount.toLocaleString()}</td>
-        <td>$${(asset.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-        <td>$${asset.value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-        <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : 0}%</td>
-      </tr>
-    `).join('');
+  // ── Full Holdings Overview table (Balance & Portfolio page) ───
+  const tbodyFull = document.getElementById('balance-holdings-body');
+  if (tbodyFull) {
+    if (active.length === 0) {
+      tbodyFull.innerHTML = '<tr class="empty-row"><td colspan="6">No holdings. Select a user.</td></tr>';
+    } else {
+      tbodyFull.innerHTML = active.map(asset => `
+        <tr>
+          <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name || ''}</span></td>
+          <td>${asset.amount.toLocaleString()}</td>
+          <td>$${fmt2(asset.price)}</td>
+          <td>$${fmt2(asset.value)}</td>
+          <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : '0.0'}%</td>
+          <td>
+            <button class="btn btn-small btn-ghost"
+              onclick="(function(){
+                var rows = document.querySelectorAll('#portfolio-fields .asset-row');
+                rows.forEach(function(r){
+                  var sel = r.querySelector('.pf-symbol');
+                  if (sel && sel.value === '${asset.symbol}') r.querySelector('.pf-amount').focus();
+                });
+              })()">Edit</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
 }
 
 async function renderMarketOverview(){
@@ -214,6 +248,9 @@ function logout(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Do not auto-populate cards on the admin page — data comes from the selected user only.
+  if (window.__ADMIN_MODE) return;
+
   // First, fetch user profile to populate balance/portfolio from server
   async function initializeDashboard(){
     console.log('initializeDashboard starting; isAuthenticated=', AuthService.isAuthenticated());

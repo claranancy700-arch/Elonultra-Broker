@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: elonu-elon-web
+    name: financeorg-web
     env: node
     plan: free
     branch: main
@@ -13,7 +13,11 @@ services:
         value: 5001
       - key: FRONTEND_URL
         value: https://financeorg.online
+      - key: DATABASE_URL
+        sync: false
       - key: JWT_SECRET
-        value: your_secure_jwt_secret_here_change_this
+        sync: false
       - key: ADMIN_API_KEY
-        value: your_secure_admin_key_here_change_this
+        sync: false
+      - key: BALANCE_GROWTH_ENABLED
+        value: "true"

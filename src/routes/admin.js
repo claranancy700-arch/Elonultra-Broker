@@ -572,7 +572,7 @@ router.get('/users', async (req, res) => {
     }
 
     console.log('[Admin] Key valid, fetching users...');
-    const q = await db.query('SELECT id, email, COALESCE(balance,0) as balance, COALESCE(is_active,TRUE) AS is_active, created_at FROM users ORDER BY id LIMIT 500');
+    const q = await db.query('SELECT id, name, email, COALESCE(balance,0) as balance, COALESCE(is_active,TRUE) AS is_active, COALESCE(email_verified,FALSE) AS is_verified, created_at FROM users ORDER BY id LIMIT 500');
     console.log(`[Admin] Returning ${q.rows.length} users`);
     
     // Return as direct array for consistency with PRO-admin version
@@ -703,6 +703,9 @@ router.post('/users/:id/set-portfolio', async (req, res) => {
 
 // GET /api/admin/users/:id/portfolio - return portfolio with live prices (consistent with user endpoint)
 router.get('/users/:id/portfolio', async (req, res) => {
+  // Fallback prices shared with user portfolio endpoint
+  const FALLBACK_PRICES = { BTC: 43500, ETH: 2300, USDT: 1.00, USDC: 1.00, XRP: 2.50, ADA: 1.15 };
+
   try {
     const provided = req.headers['x-admin-key'];
     const ADMIN_KEY = getAdminKey();
@@ -712,48 +715,40 @@ router.get('/users/:id/portfolio', async (req, res) => {
     const userId = parseInt(req.params.id, 10);
     if (isNaN(userId)) return res.status(400).json({ error: 'invalid user id' });
 
-    // Get user balance and portfolio with live prices
     const userRes = await db.query('SELECT balance, portfolio_value FROM users WHERE id = $1', [userId]);
     if (!userRes.rows.length) return res.status(404).json({ error: 'User not found' });
 
-    let userBalance = parseFloat(userRes.rows[0].balance) || 0;
-    const portfolioValue = parseFloat(userRes.rows[0].portfolio_value) || 0;
+    const userBalance = parseFloat(userRes.rows[0].balance) || 0;
     const portfolioRes = await db.query('SELECT btc_balance, eth_balance, usdt_balance, usdc_balance, xrp_balance, ada_balance, usd_value, updated_at FROM portfolio WHERE user_id = $1', [userId]);
     const portfolio = portfolioRes.rows[0] || {};
 
-    // Fetch live prices from CoinGecko (no mock fallback)
-    let prices = { 'BTC': 0, 'ETH': 0, 'USDT': 0, 'USDC': 0, 'XRP': 0, 'ADA': 0 };
+    // Fetch live prices — always fall back to cached/hardcoded rather than returning 503
+    let prices = { ...FALLBACK_PRICES };
+    let priceSource = 'fallback';
     try {
       const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,usd-coin,ripple,cardano&vs_currencies=usd';
-      const res = await fetch(url, { timeout: 10000 });
-      if (!res.ok) {
-        throw new Error(`CoinGecko API returned ${res.status}`);
+      const cgRes = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (cgRes.ok) {
+        const data = await cgRes.json();
+        const live = {
+          BTC: data.bitcoin?.usd,
+          ETH: data.ethereum?.usd,
+          USDT: data.tether?.usd,
+          USDC: data['usd-coin']?.usd,
+          XRP: data.ripple?.usd,
+          ADA: data.cardano?.usd,
+        };
+        if (Object.values(live).every(Boolean)) {
+          prices = live;
+          priceSource = 'live';
+        }
       }
-      const data = await res.json();
-      prices = {
-        'BTC': data.bitcoin?.usd,
-        'ETH': data.ethereum?.usd,
-        'USDT': data.tether?.usd,
-        'USDC': data['usd-coin']?.usd,
-        'XRP': data.ripple?.usd,
-        'ADA': data.cardano?.usd,
-      };
-      
-      // Verify all prices are present
-      const missingPrices = Object.entries(prices).filter(([_, price]) => !price).map(([coin]) => coin);
-      if (missingPrices.length > 0) {
-        throw new Error(`Missing prices from CoinGecko for: ${missingPrices.join(', ')}`);
-      }
-      
-      console.log('[Admin Portfolio] Successfully fetched live prices from CoinGecko');
     } catch (err) {
-      console.error('[Admin Portfolio] Failed to fetch live prices from CoinGecko:', err.message);
-      // Don't silently use fallback - let caller know prices are unavailable
-      return res.status(503).json({ error: 'Unable to fetch live prices. Please try again later.' });
+      console.warn('[Admin Portfolio] CoinGecko unavailable, using fallback prices:', err.message);
     }
 
-    // Build response in assets format for PRO admin (map of coin: amount)
-    const coins = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
+    // Build assets map and calculate holdings value
+    const coins   = ['BTC', 'ETH', 'USDT', 'USDC', 'XRP', 'ADA'];
     const columns = ['btc_balance', 'eth_balance', 'usdt_balance', 'usdc_balance', 'xrp_balance', 'ada_balance'];
     const assets = {};
     let assetsValue = 0;
@@ -766,36 +761,18 @@ router.get('/users/:id/portfolio', async (req, res) => {
       }
     });
 
-    // CRITICAL FIX: Ensure balance syncs with portfolio_value
-    // These should ALWAYS be equal and represent total account value
-    if (userBalance !== portfolioValue) {
-      // Mismatch detected - use the non-zero value
-      const correctBalance = Math.max(userBalance, portfolioValue);
-      console.log(`[Admin Portfolio SYNC] ⚠️  Mismatch for user ${userId}: balance=${userBalance}, portfolio_value=${portfolioValue}, using=${correctBalance}`);
-      
-      try {
-        // Set both to the correct value
-        await db.query(
-          'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
-          [correctBalance, userId]
-        );
-        userBalance = correctBalance;
-        console.log(`[Admin Portfolio SYNC] ✓ Fixed user ${userId}: both now = $${correctBalance.toFixed(2)}`);
-      } catch (err) {
-        console.warn('[Admin Portfolio SYNC] ⚠️  Could not persist fix:', err.message);
-        // Still use corrected in response
-        userBalance = correctBalance;
-      }
-    }
+    // totalValue = live market value of coin holdings ONLY.
+    // balance is returned separately; adding it here would double-count
+    // because the coin holdings represent that same balance in crypto form.
+    const totalValue = assetsValue;
 
-    const totalPortfolioValue = userBalance + assetsValue;
-
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       assets,
       balance: parseFloat(userBalance.toFixed(2)),
       assetsValue: parseFloat(assetsValue.toFixed(2)),
-      totalValue: parseFloat(totalPortfolioValue.toFixed(2))
+      totalValue: parseFloat(totalValue.toFixed(2)),
+      priceSource,
     });
   } catch (err) {
     console.error('Admin get portfolio error:', err.message || err);
@@ -864,6 +841,36 @@ router.post('/users/:id/delete', async (req, res) => {
     try { await db.query('INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)', [req.headers['x-admin-key'], 'delete-user', JSON.stringify({ userId: uid })]); } catch(e){/*ignore*/}
     return res.json({ success: true, userId: uid, deleted: true });
   } catch (err) { console.error('Delete user error:', err.message || err); return res.status(500).json({ error: 'failed to delete user' }); }
+});
+
+// POST /api/admin/users/:id/purge — hard delete: removes user + all data (CASCADE)
+router.post('/users/:id/purge', async (req, res) => {
+  const guard = requireAdminKey(req, res); if (!guard.ok) return res.status(guard.code).json({ error: guard.msg });
+  const uid = parseInt(req.params.id, 10);
+  if (isNaN(uid)) return res.status(400).json({ error: 'invalid user id' });
+  try {
+    // Fetch user info before deletion for audit log
+    const userRow = await db.query('SELECT email FROM users WHERE id=$1', [uid]);
+    if (!userRow.rows.length) return res.status(404).json({ error: 'user not found' });
+    const email = userRow.rows[0].email;
+
+    // Hard delete — child tables (transactions, portfolio, withdrawals, trades,
+    // admin_prompts, api_keys) all have ON DELETE CASCADE so they are wiped automatically.
+    await db.query('DELETE FROM users WHERE id=$1', [uid]);
+
+    try {
+      await db.query(
+        'INSERT INTO admin_audit(admin_key, action, details) VALUES($1,$2,$3)',
+        [req.headers['x-admin-key'], 'purge-user', JSON.stringify({ userId: uid, email })]
+      );
+    } catch(e){/*ignore audit failure*/}
+
+    console.log(`[Admin] User ${uid} (${email}) permanently purged.`);
+    return res.json({ success: true, userId: uid, email, purged: true });
+  } catch (err) {
+    console.error('Purge user error:', err.message || err);
+    return res.status(500).json({ error: 'failed to purge user' });
+  }
 });
 
 // -------------------------------

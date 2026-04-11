@@ -2,61 +2,74 @@ import React, { useEffect, useState } from 'react';
 import './TestimoniesScrollBanner.css';
 import API from '../../services/api';
 
-export default function TestimoniesScrollBanner() {
-  const [testimonies, setTestimonies] = useState([]);
+const CYCLE_MS = 5000;      // ms each card is shown
 
+const DEFAULT_TESTIMONIES = [
+  { id: 1, name: 'John Smith',     rating: 5, text: 'The trading service has been honest, transparent, and consistently efficient.' },
+  { id: 2, name: 'Sarah Johnson',  rating: 5, text: 'Best crypto trading platform I have used. The customer support is exceptional.' },
+  { id: 3, name: 'Michael Chen',   rating: 5, text: 'The real-time data and low fees make this my go-to platform for daily trades.' },
+  { id: 4, name: 'Emily Davis',    rating: 5, text: 'Fast withdrawals and a clean interface. Highly recommend to anyone serious about crypto.' },
+  { id: 5, name: 'Robert Kim',     rating: 5, text: 'Transparent fees and reliable performance. My portfolio has grown steadily.' },
+];
+
+export default function TestimoniesScrollBanner() {
+  const [testimonies, setTestimonies] = useState(DEFAULT_TESTIMONIES);
+  const [cycleIndex, setCycleIndex] = useState(0);
+
+  // Auto-cycle
   useEffect(() => {
+    const timer = setInterval(() => {
+      setCycleIndex(i => i + 1);
+    }, CYCLE_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Fetch real testimonies from API
+  useEffect(() => {
+    const fetchTestimonies = async (attempt = 1) => {
+      try {
+        const response = await API.get('/testimonies');
+        if (response.data && response.data.length > 0) {
+          setTestimonies(response.data.map(t => ({
+            id: t.id,
+            name: t.client_name,
+            rating: t.rating || 5,
+            text: t.content,
+          })));
+        }
+      } catch {
+        if (attempt < 3) setTimeout(() => fetchTestimonies(attempt + 1), 2000 * attempt);
+      }
+    };
     fetchTestimonies();
   }, []);
 
-  const fetchTestimonies = async (attempt = 1) => {
-    try {
-      const response = await API.get('/testimonies');
-      if (response.data && response.data.length > 0) {
-        const mappedTestimonies = response.data.map(t => ({
-          id: t.id,
-          name: t.client_name,
-          rating: t.rating || 5,
-          text: t.content
-        }));
-        setTestimonies(mappedTestimonies);
-      } else {
-        setTestimonies(getDefaultTestimonies());
-      }
-    } catch (err) {
-      console.error('Failed to fetch testimonies (attempt', attempt, '):', err);
-      if (attempt < 5) {
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000);
-        setTimeout(() => fetchTestimonies(attempt + 1), delay);
-      } else {
-        setTestimonies(getDefaultTestimonies());
-      }
-    }
-  };
+  const len = testimonies.length;
 
-  const getDefaultTestimonies = () => [
-    { id: 1, name: 'John Smith', rating: 5, text: 'The trading service has been honest, transparent, and consistently efficient.' },
-    { id: 2, name: 'Sarah Johnson', rating: 5, text: 'Best crypto trading platform I have used. The customer support is exceptional.' },
-    { id: 3, name: 'Michael Chen', rating: 5, text: 'The real-time data and low fees make this my go-to platform.' }
-  ];
+  // Single card for both desktop and mobile
+  const activeCard = testimonies[cycleIndex % len];
 
-  if (!testimonies.length) {
-    return null;
-  }
-
-  // Duplicate testimonies for seamless infinite scroll loop
-  const repeatedTestimonies = [...testimonies, ...testimonies];
+  const renderCard = (testimony, key) => (
+    <article key={key} className="testimonies-banner-item">
+      <div className="testimonies-banner-item-header">
+        <span className="testimonies-banner-kicker">Client Pulse</span>
+        <span className="testimonies-banner-rating" aria-label={`${testimony.rating} stars`}>
+          {'★'.repeat(Math.max(1, Math.min(5, testimony.rating || 5)))}
+        </span>
+      </div>
+      <strong className="testimonies-banner-name">{testimony.name}</strong>
+      <p className="testimonies-banner-item-text">{testimony.text}</p>
+    </article>
+  );
 
   return (
-    <div className="testimonies-banner">
-      <div className="testimonies-banner-content">
-        {repeatedTestimonies.map((testimony, index) => (
-          <div key={index} className="testimonies-banner-item">
-            <strong>★ {testimony.name}</strong>
-            <p className="testimonies-banner-item-text">{testimony.text}</p>
-          </div>
-        ))}
+    <section className="testimonies-banner" aria-label="Client testimonies">
+      <div className="testimonies-banner-shell">
+
+        {/* Single card — same on desktop and mobile */}
+        {renderCard(activeCard, `c-${cycleIndex}`)}
+
       </div>
-    </div>
+    </section>
   );
 }

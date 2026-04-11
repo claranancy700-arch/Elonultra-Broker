@@ -1,4 +1,5 @@
 const db = require('../db');
+const { recordLossIfApplicable } = require('../services/balanceChanges');
 
 /**
  * Portfolio Simulator: Hourly balance reallocation across crypto coins
@@ -194,7 +195,7 @@ async function updatePortfolio(userId, allocation, newBalance) {
       await client.query(
         `INSERT INTO trades (user_id, type, asset, amount, price, total, balance_before, balance_after, is_simulated, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9)`,
-        [userId, 'allocate', coin, amount, price, valueUSD, 0, newBalance, 'completed']
+        [userId, 'allocate', coin, amount, price, valueUSD, oldBalance, newBalance, 'completed']
       );
     }
     
@@ -242,7 +243,7 @@ async function runPortfolioSimulation() {
   
   try {
     const usersRes = await db.query(
-      'SELECT id, balance FROM users WHERE balance > 0 ORDER BY id'
+      'SELECT id, balance FROM users WHERE balance > 0 AND is_active = true ORDER BY id'
     );
     
     if (!usersRes.rows.length) {

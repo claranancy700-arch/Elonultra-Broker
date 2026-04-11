@@ -1,5 +1,6 @@
 /* Default light theme variables */
 :root {
+  --global-header-height: 0px;
   --bg: #ffffff;
   --card: #e1e5f2;
   --border: #bfdbf7;

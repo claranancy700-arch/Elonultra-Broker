@@ -206,36 +206,16 @@ router.get('/', verifyToken, async (req, res) => {
     // Sort by value descending
     positions.sort((a, b) => b.value - a.value);
 
-    // CRITICAL FIX: Ensure balance syncs with portfolio_value
-    // These should ALWAYS be equal and represent total account value
-    if (balance !== portfolio_value_db) {
-      // Mismatch detected - use the non-zero value
-      const correctBalance = Math.max(balance, portfolio_value_db);
-      console.log(`[Portfolio SYNC] ⚠️  Mismatch detected for user ${userId}:`);
-      console.log(`   balance=${balance}, portfolio_value=${portfolio_value_db}, using=${correctBalance}`);
-      
-      try {
-        // Set both to the correct value
-        await db.query(
-          'UPDATE users SET balance = $1, portfolio_value = $1, updated_at = NOW() WHERE id = $2',
-          [correctBalance, userId]
-        );
-        balance = correctBalance;
-        console.log(`[Portfolio SYNC] ✓ Fixed user ${userId}: both now = $${correctBalance.toFixed(2)}`);
-      } catch (err) {
-        console.warn('[Portfolio SYNC] ⚠️  Could not persist fix:', err.message);
-        // Still use corrected balance in response
-        balance = correctBalance;
-      }
-    }
-
-    // Calculate account value
-    let totalAccountValue = balance + totalHoldingsValue;
+    // Calculate account value — total_value is the live market value of holdings ONLY.
+    // balance (users.balance) is shown separately as "available cash" and must NOT be
+    // added here because the coin holdings ARE that balance already
+    // represented in crypto form.  Adding them together would double-count.
+    let totalAccountValue = totalHoldingsValue;
 
     const response = {
-      balance: parseFloat(balance.toFixed(2)),                     // User's Available Balance
-      assets_value: parseFloat(totalHoldingsValue.toFixed(2)),     // Value of holdings
-      total_value: parseFloat(totalAccountValue.toFixed(2)),       // Total account value = balance + holdings
+      balance: parseFloat(balance.toFixed(2)),
+      assets_value: parseFloat(totalHoldingsValue.toFixed(2)),
+      total_value: parseFloat(totalAccountValue.toFixed(2)),
       positions,
       change_24h: parseFloat(change24hWeightedSum.toFixed(2)),
       timestamp: new Date().toISOString(),

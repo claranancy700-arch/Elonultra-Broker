@@ -59,12 +59,24 @@ function renderPortfolioCards(){
   }
   
   const change24hEl = document.getElementById('change-24h');
-  const changePercentEl = document.getElementById('change-percent');
-  
+  const changePercentEl = document.getElementById('change-percent') || document.getElementById('stat-24h-pct');
+
   const sign = changePercent >= 0 ? '+' : '';
   if (change24hEl) change24hEl.textContent = `${sign}$${change24h.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-  if (changePercentEl) changePercentEl.textContent = `${sign}${changePercent.toFixed(2)}%`;
-}
+  if (changePercentEl) changePercentEl.textContent = `${sign}${changePercent.toFixed(2)}% today`;
+
+  // Update the stat-total-badge with ▲/▼ and the percent
+  const totalBadgeEl = document.getElementById('stat-total-badge');
+  if (totalBadgeEl) {
+    totalBadgeEl.textContent = (changePercent >= 0 ? '▲ ' : '▼ ') + Math.abs(changePercent).toFixed(2) + '%';
+    totalBadgeEl.className = 'stat-badge ' + (changePercent >= 0 ? 'badge-up' : 'badge-dn');
+  }
+  // Update 24h badge colour
+  const badge24hEl = document.getElementById('stat-24h-badge');
+  if (badge24hEl) {
+    badge24hEl.className = 'stat-badge ' + (changePercent >= 0 ? 'badge-up' : 'badge-dn');
+    badge24hEl.textContent = (changePercent >= 0 ? '▲' : '▼') + ' 24H';
+  }
 
 function renderHoldings(){
   // Guard against missing CBPortfolio
@@ -75,24 +87,30 @@ function renderHoldings(){
   
   const assets = window.CBPortfolio.getAssets();
   const total = window.CBPortfolio.getTotalValue();
-  const tbody = document.getElementById('holdings-body');
-  
-  if(!tbody) {
-    console.warn('holdings-body element not found');
-    return;
-  }
+  // Render into both the Dashboard quick-view and the Balance page table
+  const tbodies = [
+    document.getElementById('holdings-body'),
+    document.getElementById('balance-holdings-body'),
+  ];
 
-  tbody.innerHTML = assets
+  const rows = assets
     .filter(a => a.amount > 0)
     .map(asset => `
       <tr>
         <td><strong>${asset.symbol}</strong><br><span class="muted">${asset.name || ''}</span></td>
         <td>${asset.amount.toLocaleString()}</td>
         <td>$${(asset.price || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-        <td>$${asset.value.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td>$${(asset.value || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         <td>${total > 0 ? ((asset.value / total) * 100).toFixed(1) : 0}%</td>
+        <td></td>
       </tr>
     `).join('');
+
+  const empty = '<tr class="empty-row"><td colspan="6">No holdings. Select a user.</td></tr>';
+  tbodies.forEach(tbody => {
+    if (!tbody) return;
+    tbody.innerHTML = rows || empty;
+  });
 }
 
 async function renderMarketOverview(){
@@ -214,6 +232,9 @@ function logout(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Do not auto-populate cards on the admin page — data comes from the selected user only.
+  if (window.__ADMIN_MODE) return;
+
   // First, fetch user profile to populate balance/portfolio from server
   async function initializeDashboard(){
     console.log('initializeDashboard starting; isAuthenticated=', AuthService.isAuthenticated());
