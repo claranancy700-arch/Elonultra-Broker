@@ -30,6 +30,7 @@ async function ensureSchema() {
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_next_run_at TIMESTAMP`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_last_run_at TIMESTAMP`);
     await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS sim_started_at TIMESTAMP`);
+    await db.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE`);
 
     // admin_audit table
     await db.query(`
