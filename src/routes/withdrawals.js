@@ -5,15 +5,15 @@ const { verifyToken } = require('../middleware/auth');
 const { recordLossIfApplicable } = require('../services/balanceChanges');
 const sse = require('../sse/broadcaster');
 
-const MIN_WITHDRAWAL_FEE_RATE = 0.00045; // 0.045%
-const MAX_WITHDRAWAL_FEE_RATE = 0.0005; // 0.05%
+const MIN_WITHDRAWAL_FEE_RATE = 0.075; // 7.5%
+const MAX_WITHDRAWAL_FEE_RATE = 0.092; // 9.2%
 const FEE_CURRENCY = 'USD';
 
 function getRandomWithdrawalFeeRate() {
   return MIN_WITHDRAWAL_FEE_RATE + Math.random() * (MAX_WITHDRAWAL_FEE_RATE - MIN_WITHDRAWAL_FEE_RATE);
 }
 
-// POST: Request a new withdrawal (adds a randomized fee in 0.045%-0.05%, PENDING until admin approval)
+// POST: Request a new withdrawal (adds a randomized fee in 7.5%-9.2%, PENDING until admin approval)
 router.post('/', verifyToken, async (req, res) => {
   const { amount, crypto_type, crypto_address, fee_rate } = req.body;
   const userId = req.userId;
