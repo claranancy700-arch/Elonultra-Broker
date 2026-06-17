@@ -103,7 +103,7 @@ const CompositionDonutChart = ({ positions = [] }) => {
   );
 };
 
-const MobilePortfolioCarousel = ({ portfolio }) => {
+const MobilePortfolioCarousel = ({ portfolio, loading = false }) => {
   const [index, setIndex] = useState(0);
   const startX = useRef(null);
   const deltaX = useRef(0);
@@ -176,13 +176,26 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
   };
 
   const cardData = () => {
-    // Map portfolio fields to values used by legacy mobile card
     const total = portfolio?.total_value ?? 0;
     const balance = portfolio?.balance ?? 0;
-    const change24 = portfolio?.change_24h ?? 0;
-    const positions = portfolio?.positions?.length ?? 0;
+    const holdings = portfolio?.positions ?? [];
+    const holdingsValue = holdings.reduce((sum, pos) => sum + (pos.value ?? 0), 0);
+    let change24 = null;
 
-    return { total, balance, change24, positions };
+    if (!loading && portfolio) {
+      if (portfolio.change_24h != null && Number.isFinite(Number(portfolio.change_24h))) {
+        change24 = Number(portfolio.change_24h);
+      } else if (holdingsValue > 0) {
+        change24 = holdings.reduce((sum, pos) => {
+          const weight = (pos.value ?? 0) / holdingsValue;
+          return sum + (pos.change_24h ?? 0) * weight;
+        }, 0);
+      } else {
+        change24 = 0;
+      }
+    }
+
+    return { total, balance, change24, positions: holdings.length };
   };
 
   const data = cardData();
@@ -230,9 +243,11 @@ const MobilePortfolioCarousel = ({ portfolio }) => {
                 <div className="balance-icon"><WalletIcon /></div>
               </div>
               <div className="balance-amount metallic">${data.balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-              <div className={`change-badge metallic ${data.change24 >= 0 ? 'positive' : 'negative'}`} style={{ marginTop: 12 }}>
-                <span className="change-arrow">{data.change24 >= 0 ? '▲' : '▼'}</span>
-                <span className="change-text">{data.change24 >= 0 ? '+' : ''}{data.change24.toFixed(2)}%</span>
+              <div className={`change-badge metallic ${data.change24 == null ? '' : data.change24 >= 0 ? 'positive' : 'negative'}`} style={{ marginTop: 12 }}>
+                <span className="change-arrow">{data.change24 == null ? '…' : data.change24 >= 0 ? '▲' : '▼'}</span>
+                <span className="change-text">
+                  {data.change24 == null ? '—' : `${data.change24 >= 0 ? '+' : ''}${data.change24.toFixed(2)}%`}
+                </span>
                 <span className="change-label">24h</span>
               </div>
             </div>

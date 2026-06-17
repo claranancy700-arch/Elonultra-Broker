@@ -23,6 +23,21 @@ const getGreeting = () => {
 const fmt = (n, dp = 2) =>
   Number(n ?? 0).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
+const computeChange24h = (portfolio, positions) => {
+  if (portfolio?.change_24h != null && Number.isFinite(Number(portfolio.change_24h))) {
+    return Number(portfolio.change_24h);
+  }
+  const holdingsValue = positions.reduce((sum, pos) => sum + (pos.value ?? 0), 0);
+  if (holdingsValue <= 0) return null;
+  return positions.reduce((sum, pos) => {
+    const weight = (pos.value ?? 0) / holdingsValue;
+    return sum + (pos.change_24h ?? 0) * weight;
+  }, 0);
+};
+
+const computeChange24hValue = (positions) =>
+  positions.reduce((sum, pos) => sum + ((pos.value ?? 0) * ((pos.change_24h ?? 0) / 100)), 0);
+
 export const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -109,10 +124,11 @@ export const DashboardPage = () => {
 
   const total        = portfolio?.total_value ?? 0;
   const balance      = portfolio?.balance ?? 0;
-  const change24h    = portfolio?.change_24h ?? 0;
   const positions    = portfolio?.positions ?? [];
-  // change_24h_value is not sent by the API — derive it from each position's dollar change
-  const change24hVal = positions.reduce((sum, pos) => sum + ((pos.value ?? 0) * ((pos.change_24h ?? 0) / 100)), 0);
+  const portfolioLoading = loading && !portfolio;
+  const change24h    = portfolioLoading ? null : computeChange24h(portfolio, positions);
+  const change24hVal = portfolioLoading ? null : computeChange24hValue(positions);
+  const hasHoldings  = positions.length > 0;
   const posCount     = positions.length;
   const unrealisedPnl = positions.reduce((s, p) => s + (p.unrealised_pnl ?? 0), 0);
   const allocTotal   = total > 0 ? total : 1;
@@ -171,7 +187,7 @@ export const DashboardPage = () => {
       </div>
 
       {/* ── MOBILE CAROUSEL (basicCreditCard.svg inside) ──────── */}
-      <MobilePortfolioCarousel portfolio={portfolio} />
+      <MobilePortfolioCarousel portfolio={portfolio} loading={portfolioLoading} />
 
 
 
@@ -181,11 +197,15 @@ export const DashboardPage = () => {
           <div className="dash-hero-label">Total Portfolio Value</div>
           <div className="dash-hero-value">${fmt(total)}</div>
           <div className="dash-hero-row">
-            <span className={`dash-hero-change ${change24h >= 0 ? 'up' : 'dn'}`}>
-              {change24h >= 0 ? '▲' : '▼'} {change24h >= 0 ? '+' : ''}{fmt(change24h)}%
+            <span className={`dash-hero-change ${change24h == null ? '' : change24h >= 0 ? 'up' : 'dn'}`}>
+              {change24h == null ? '—' : (
+                <>{change24h >= 0 ? '▲' : '▼'} {change24h >= 0 ? '+' : ''}{fmt(change24h)}%</>
+              )}
             </span>
             <span className="dash-hero-period">
-              {change24hVal >= 0 ? '+' : ''}${fmt(Math.abs(change24hVal))} today
+              {change24hVal == null ? 'Loading…' : !hasHoldings ? 'No holdings yet' : (
+                <>{change24hVal >= 0 ? '+' : ''}${fmt(Math.abs(change24hVal))} today</>
+              )}
             </span>
           </div>
         </div>
@@ -193,13 +213,13 @@ export const DashboardPage = () => {
           <svg className="dash-hero-chart" viewBox="0 0 200 60" preserveAspectRatio="none">
             <defs>
               <linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={change24h >= 0 ? '#10b981' : '#ef4444'} stopOpacity="0.3"/>
-                <stop offset="100%" stopColor={change24h >= 0 ? '#10b981' : '#ef4444'} stopOpacity="0.02"/>
+                <stop offset="0%" stopColor={(change24h ?? 0) >= 0 ? '#10b981' : '#ef4444'} stopOpacity="0.3"/>
+                <stop offset="100%" stopColor={(change24h ?? 0) >= 0 ? '#10b981' : '#ef4444'} stopOpacity="0.02"/>
               </linearGradient>
             </defs>
             <path d="M4,48 L20,40 L36,42 L52,34 L68,36 L84,28 L100,24 L116,18 L132,22 L148,14 L164,10 L180,8 L196,6 L196,58 L4,58 Z" fill="url(#hg)"/>
-            <path d="M4,48 L20,40 L36,42 L52,34 L68,36 L84,28 L100,24 L116,18 L132,22 L148,14 L164,10 L180,8 L196,6" fill="none" stroke={change24h >= 0 ? '#10b981' : '#ef4444'} strokeWidth="2" strokeLinejoin="round"/>
-            <circle cx="196" cy="6" r="4" fill={change24h >= 0 ? '#10b981' : '#ef4444'}/>
+            <path d="M4,48 L20,40 L36,42 L52,34 L68,36 L84,28 L100,24 L116,18 L132,22 L148,14 L164,10 L180,8 L196,6" fill="none" stroke={(change24h ?? 0) >= 0 ? '#10b981' : '#ef4444'} strokeWidth="2" strokeLinejoin="round"/>
+            <circle cx="196" cy="6" r="4" fill={(change24h ?? 0) >= 0 ? '#10b981' : '#ef4444'}/>
           </svg>
           <div className="dash-hero-stats">
             <div className="dash-hero-stat">
@@ -221,13 +241,17 @@ export const DashboardPage = () => {
             <div className="dash-stat-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
-            <span className={`dash-stat-badge ${change24h >= 0 ? 'badge-up' : 'badge-dn'}`}>
-              {change24h >= 0 ? '▲' : '▼'} {fmt(Math.abs(change24h))}%
+            <span className={`dash-stat-badge ${change24h == null ? 'badge-neu' : change24h >= 0 ? 'badge-up' : 'badge-dn'}`}>
+              {change24h == null ? '…' : <>{change24h >= 0 ? '▲' : '▼'} {fmt(Math.abs(change24h))}%</>}
             </span>
           </div>
           <div className="dash-stat-label">24h Change</div>
-          <div className="dash-stat-val">{change24hVal >= 0 ? '+' : ''}${fmt(Math.abs(change24hVal))}</div>
-          <div className="dash-stat-sub">Compared to yesterday</div>
+          <div className="dash-stat-val">
+            {change24hVal == null ? '—' : !hasHoldings ? '$0.00' : (
+              <>{change24hVal >= 0 ? '+' : ''}${fmt(Math.abs(change24hVal))}</>
+            )}
+          </div>
+          <div className="dash-stat-sub">{!hasHoldings && !portfolioLoading ? 'Allocate funds to track change' : 'Compared to yesterday'}</div>
         </div>
 
         <div className="dash-stat-card c-gold">
@@ -408,8 +432,8 @@ export const DashboardPage = () => {
             <div className="dash-perf-grid">
               <div className="dash-perf-item">
                 <div className="dash-perf-item-lbl">24h Return</div>
-                <div className={`dash-perf-item-val ${change24h >= 0 ? 'up' : 'dn'}`}>
-                  {change24h >= 0 ? '+' : ''}{fmt(change24h)}%
+                <div className={`dash-perf-item-val ${change24h == null ? 'text' : change24h >= 0 ? 'up' : 'dn'}`}>
+                  {change24h == null ? '—' : <>{change24h >= 0 ? '+' : ''}{fmt(change24h)}%</>}
                 </div>
               </div>
               <div className="dash-perf-item">
