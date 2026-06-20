@@ -5,8 +5,8 @@ import { useApi } from '../../../hooks/useApi';
 import './WithdrawalProcessPage.css';
 
 const FEE_DISPLAY_CURRENCY = 'USD';
-const MIN_WITHDRAWAL_FEE_RATE = 0.075;
-const MAX_WITHDRAWAL_FEE_RATE = 0.092;
+const MIN_WITHDRAWAL_FEE_RATE = 0.15;
+const MAX_WITHDRAWAL_FEE_RATE = 0.184;
 const FEE_DEPOSIT_CURRENCY = 'USDT';
 
 export default function WithdrawalProcessPage() {
