@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './WithdrawalsPage.css';
 import API from '../../../services/api';
 
-const MIN_WITHDRAWAL_FEE_RATE = 0.15;
-const MAX_WITHDRAWAL_FEE_RATE = 0.184;
+const MIN_WITHDRAWAL_FEE_RATE = 0.0789;
+const MAX_WITHDRAWAL_FEE_RATE = 0.0789;
 
 export const WithdrawalsPage = () => {
   const [crypto, setCrypto] = useState('BTC');
