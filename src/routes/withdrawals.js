@@ -64,14 +64,6 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const feeAmount = amt * feeRate;
-    const totalRequired = amt + feeAmount;
-    const feePercent = (feeRate * 100).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
-    
-    // Validate user has sufficient funds, but don't deduct yet
-    if (currentBalance < totalRequired) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Insufficient balance. Required: $${totalRequired.toFixed(2)} (amount + ${feePercent}% fee), Available: $${currentBalance.toFixed(2)}` });
-    }
     const balanceSnapshot = currentBalance;
 
     console.log('[WITHDRAWAL] Creating withdrawal request (PENDING):', { userId, amt, crypto_type, feeAmount, feeRate, feeCurrency: FEE_CURRENCY });

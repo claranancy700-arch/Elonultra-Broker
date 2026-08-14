@@ -39,7 +39,6 @@ export const WithdrawalsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount || !address) return alert('Enter amount and wallet address');
-    if (balance != null && total > balance) return alert('Insufficient balance for amount + fee');
     try {
       setLoading(true);
       const res = await API.post('/withdrawals', {
