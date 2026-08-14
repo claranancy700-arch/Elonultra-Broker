@@ -540,7 +540,7 @@ export default function WithdrawalProcessPage() {
                       }}
                       title="Copy address"
                     >
-                      ðŸ“‹ Copy
+                      Copy
                     </button>
                   </div>
                 </div>
