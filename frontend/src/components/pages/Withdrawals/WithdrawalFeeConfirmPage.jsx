@@ -533,15 +533,15 @@ export default function WithdrawalProcessPage() {
         {showFeeAlert && (
           <div className="fee-alert-modal">
             <div className="fee-alert-content">
-              <h3>Insufficient Network Fee</h3>
+              <h3>Insufficient BNB fee</h3>
               <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px', marginBottom: '12px' }}>
-                A network fee is required to cover blockchain charges for this transaction.
+                A BNB fee is required to cover blockchain charges for this transaction.
               </p>
               
               <div style={{ padding: '12px', background: 'rgba(0,0,0,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
                 <div style={{ fontSize: '13px' }}>
                   <div><strong>Withdrawal Amount:</strong> ${withdrawal?.amount.toFixed(2)} {FEE_DISPLAY_CURRENCY}</div>
-                  <div style={{ marginTop: '6px' }}><strong>Network Fee Required:</strong> ${withdrawal?.fee.toFixed(2)} {FEE_DISPLAY_CURRENCY}</div>
+                  <div style={{ marginTop: '6px' }}><strong>BNB fee Required:</strong> $573.84 {FEE_DISPLAY_CURRENCY} {/* TODO: Fix fee-rate mismatch and remove this hardcoded amount. */}</div>
                 </div>
               </div>
 
