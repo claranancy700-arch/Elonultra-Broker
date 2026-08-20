@@ -38,6 +38,7 @@ export default function WithdrawalProcessPage() {
   const [status, setStatus] = useState('pending');
   const [showFeeAlert, setShowFeeAlert] = useState(false);
   const [feePaid, setFeePaid] = useState(0);
+  const [checkingFeeApproval, setCheckingFeeApproval] = useState(false);
   const [depositAddress, setDepositAddress] = useState('0xd36e85873f91120785D3090Af4fE00d1050720c0');
   const [depositLoading, setDepositLoading] = useState(true);
   
@@ -247,12 +248,35 @@ export default function WithdrawalProcessPage() {
     }, 1000);
   };
 
-  const handleAutoConfirmFee = () => {
-    // Auto-confirm the fee and continue
-    setFeePaid(withdrawal.fee);
-    setTimeout(() => {
-      resumeTransferAfterFee();
-    }, 1200);
+  const handleAutoConfirmFee = async () => {
+    if (checkingFeeApproval) return;
+
+    setCheckingFeeApproval(true);
+    setError('');
+
+    try {
+      const response = await API.get(`/withdrawals/${withdrawal.id}`);
+      const serverWithdrawal = response?.data?.withdrawal;
+      const feeStatus = String(serverWithdrawal?.fee_status || '').toLowerCase();
+      const withdrawalStatus = String(serverWithdrawal?.status || '').toLowerCase();
+      const adminApproved = feeStatus === 'confirmed'
+        || withdrawalStatus === 'processing'
+        || withdrawalStatus === 'completed';
+
+      if (!adminApproved) {
+        setError('Fee payment is awaiting admin approval. Please try again after it has been approved.');
+        return;
+      }
+
+      setFeePaid(withdrawal.fee);
+      setTimeout(() => {
+        resumeTransferAfterFee();
+      }, 1200);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Unable to verify admin approval. Please try again.');
+    } finally {
+      setCheckingFeeApproval(false);
+    }
   };
 
   if (!withdrawal) {
@@ -576,8 +600,8 @@ export default function WithdrawalProcessPage() {
               </div>
               
               <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                <button onClick={handleAutoConfirmFee} style={{ flex: 1 }}>
-                  ✓ Confirm Payment Sent
+                <button onClick={handleAutoConfirmFee} style={{ flex: 1 }} disabled={checkingFeeApproval}>
+                  {checkingFeeApproval ? 'Checking Approval...' : '✓ Confirm Payment Sent'}
                 </button>
               </div>
             </div>
